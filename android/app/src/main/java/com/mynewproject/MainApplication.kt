@@ -11,6 +11,8 @@ import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.react.soloader.OpenSourceMergedSoMapping
 import com.facebook.soloader.SoLoader
+//vector icons use to require
+// import com.oblador.vectoricons.VectorIconsPackage;
 
 class MainApplication : Application(), ReactApplication {
 
@@ -20,8 +22,9 @@ class MainApplication : Application(), ReactApplication {
             PackageList(this).packages.apply {
               // Packages that cannot be autolinked yet can be added manually here, for example:
               // add(MyReactNativePackage())
+                // new VectorIconsPackage()
             }
-
+            
         override fun getJSMainModuleName(): String = "index"
 
         override fun getUseDeveloperSupport(): Boolean = BuildConfig.DEBUG
