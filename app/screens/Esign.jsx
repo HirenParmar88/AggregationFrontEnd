@@ -6,7 +6,7 @@ import { Modal, Portal, Text, TextInput } from "react-native-paper";
 import Fontisto from 'react-native-vector-icons/Fontisto';
 
 const { width, height } = Dimensions.get("window");
-console.log("Widht & heig ", width, height)
+//console.log("Widht & heig ", width, height)
 
 function EsignPage({ openModal, setOpenModal, setStatus ,handleAuthResult,config}) {
     const [userID, setUserID] = useState('');
@@ -14,12 +14,12 @@ function EsignPage({ openModal, setOpenModal, setStatus ,handleAuthResult,config
     const [remark, setRemark] = useState('');
 
     const containerStyle = { backgroundColor: 'white', padding: 10, margin: 20, borderRadius: 6, position: 'static', display: 'flex' };
-    console.log("Config ",config)
+    //console.log("Config ",config)
     const handleVerification = async (status) => {
         console.log(status)
         try{
 
-            const response = await axios.post(`http://192.168.1.15:3000/api/v1/auth/security-check`, {
+            const response = await axios.post(`${url}/auth/security-check`, {
                 "userId": userID,
                 "password": password,
                 "remark": remark,

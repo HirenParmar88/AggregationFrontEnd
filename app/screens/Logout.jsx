@@ -17,7 +17,7 @@ function Logout({ route }) {
   const showModal = () => setVisible(true);
 
   // Hide the logout confirmation modal
-  const hideModal = () => setVisible(false);
+  const hideModal = () => setVisible(false); 
 
   // Handle logout
   const handleLogout = async () => {

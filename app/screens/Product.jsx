@@ -1,7 +1,7 @@
 //app/screens/Products.jsx
 import React, { useState, useEffect } from "react";
 import { Text, View, StyleSheet, Alert, TouchableOpacity } from "react-native";
-import { Button, Appbar } from "react-native-paper";
+import { Appbar } from "react-native-paper";
 import AntDesign from "react-native-vector-icons/AntDesign";
 import { Dropdown } from 'react-native-element-dropdown';
 import axios from "axios";
@@ -33,7 +33,7 @@ function ProductComponent() {
         const loadTokenAndData = async () => {
             try {
                 const storedToken = await AsyncStorage.getItem("authToken");
-                console.log("JWT token : ", storedToken);
+                //console.log("JWT token : ", storedToken);
                 if (storedToken) {
                     decodeAndSetConfig(setConfig, storedToken)
                     setToken(storedToken);
@@ -62,18 +62,18 @@ function ProductComponent() {
     const fetchProductData = async (token) => {
         try {
             setLoading(true);
-            const productResponse = await axios.get(`${url}/product/?limit=-1`, {
+            const productResponse = await axios.get(`${url}/product/`, {
                 headers: {
                     "Content-Type": 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
             });
             const { products } = productResponse.data.data; //destructuring objects
-            console.log('This is products Data :', products)
+            //console.log('This is products Data :', products)
             console.log("ProductID :-", products[0].product_id);
             
             if (products) {
-                console.log("Dropdown Products :", products)
+                //console.log("Dropdown Products :", products)
                 const fetchedProducts = products.map(product => ({
                     label: product.product_name,
                     value: product.id,
@@ -100,9 +100,9 @@ function ProductComponent() {
                     Authorization: `Bearer ${token}`,
                 },
             });
-            console.log("Batch Response :", batchResponse)
+            //console.log("Batch Response :", batchResponse)
             const { batches } = batchResponse?.data?.data;
-            console.log("Batch Data :", batches);
+            console.log(" :", batches);
 
             if (batches) {
                 const fetchedBatches = batches.map(batch => ({
@@ -143,10 +143,6 @@ function ProductComponent() {
         }
         return null;
     };
-
-    // Dropdown Data
-    const dropdownProductData = products; // Use the fetched products array
-    const dropdownBatchData = batches;    // Use the fetched batches array
 
     const processApproval = async (user,aggregrateId) => {
         console.log("aggregate id :", aggregateId)
@@ -308,7 +304,7 @@ function ProductComponent() {
                         selectedTextStyle={styles.selectedTextStyle}
                         inputSearchStyle={styles.inputSearchStyle}
                         iconStyle={styles.iconStyle}
-                        data={dropdownProductData}
+                        data={products}
                         search
                         maxHeight={300}
                         labelField="label"
@@ -338,7 +334,7 @@ function ProductComponent() {
                         selectedTextStyle={styles.selectedTextStyle}
                         inputSearchStyle={styles.inputSearchStyle}
                         iconStyle={styles.iconStyle}
-                        data={dropdownBatchData}
+                        data={batches}
                         search
                         maxHeight={300}
                         labelField="label"
@@ -445,5 +441,5 @@ const styles = StyleSheet.create({
         fontSize: 20,
         textAlign: 'center',
         color: '#fff'
-    }
+    },
 });

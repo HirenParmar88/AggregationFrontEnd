@@ -34,7 +34,7 @@ function Reprint() {
         const loadTokenAndData = async () => {
             try {
                 const storedToken = await AsyncStorage.getItem("authToken");
-                console.log("JWT token : ", storedToken);
+                //console.log("JWT token : ", storedToken);
                 if (storedToken) {
                     decodeAndSetConfig(setConfig, storedToken)
                     setToken(storedToken);
@@ -59,14 +59,14 @@ function Reprint() {
     const fetchProductData = async (token) => {
         try {
             setLoading(true);
-            const productResponse = await axios.get(`${url}/product/?limit=-1`, {
+            const productResponse = await axios.get(`${url}/product/`, {
                 headers: {
                     "Content-Type": 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
             });
             const { products } = productResponse.data.data; //destructuring objects
-            console.log('This is products Data :', products)
+            //console.log('This is products Data :', products)
             //console.log("ProductID :-", products[0].product_id);
 
             if (products) {
@@ -82,7 +82,7 @@ function Reprint() {
                 console.error("No products data available");
             }
         } catch (error) {
-            console.error("Error fetching Product data:", error);
+            console.error("Error fetching Product data for Reprint :", error);
         } finally {
             setLoading(false);
         }
@@ -97,9 +97,9 @@ function Reprint() {
                     Authorization: `Bearer ${token}`,
                 },
             });
-            console.log("Batch Response :", batchResponse)
+            //console.log("Batch Response :", batchResponse)
             const { batches } = batchResponse?.data?.data;
-            console.log("Batch Data :", batches);
+            //console.log("Batch Data :", batches);
 
             if (batches) {
                 const fetchedBatches = batches.map(batch => ({
@@ -113,7 +113,7 @@ function Reprint() {
             }
         }
         catch (error) {
-            console.error("Error Fetching batch data", error)
+            console.error("Error Fetching batch data for Reprint ", error)
         } finally {
             setLoading(false)
         }
@@ -176,7 +176,14 @@ function Reprint() {
 
     const print = () => {
         console.log("Reprint success.");
-        
+        setVisible(false);
+        navigation.navigate('Home');
+    }
+
+    const cancel = () => {
+        console.log("reprint cancel btn press ");
+        setVisible(false);
+        navigation.navigate('Home');
     }
 
     return (
@@ -308,7 +315,7 @@ function Reprint() {
                                     <TouchableOpacity
                                         style={styles.cancelbtn}
                                         mode="contained"
-                                        onPress={print}
+                                        onPress={cancel}
                                     >
                                         <Text style={styles.btnText}>Cancel</Text>
                                     </TouchableOpacity>
@@ -384,11 +391,11 @@ const styles = StyleSheet.create({
     },
     reprintButton: {
         borderRadius: 0,
-        padding: 15,
+        padding: 20,
         backgroundColor: 'rgb(80, 189, 160)',
     },
     reprintText: {
-        fontSize: 18,
+        fontSize: 20,
         textAlign: 'center',
         color: '#fff',
     },

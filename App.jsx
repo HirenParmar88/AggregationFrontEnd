@@ -37,12 +37,12 @@ function App() {
     try {
       const token = await AsyncStorage.getItem("authToken");
       const decoded = jwtDecode(token);
-      console.log("decode toekn ", decoded)
+      //console.log("decode toekn ", decoded)
       const currentTime = Math.floor(Date.now() / 1000);
 
       // Check if the token is expired
       if (currentTime > decoded.exp) {
-        console.log("Token is expired.");
+        //console.log("Token is expired.");
         setIsAuthenticated(false);
       } else {
         console.log("Token is still valid.");

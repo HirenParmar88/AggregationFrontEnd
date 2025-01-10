@@ -12,7 +12,7 @@ function HomeScreen() {
     const navigation = useNavigation();
 
     const handleAggregationBtn = () => {
-        console.log("Aggregation Btn Called..");
+        //console.log("Aggregation Btn Called..");
         navigation.navigate('Product');
     }
 

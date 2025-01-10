@@ -28,7 +28,7 @@ function ScanList() {
 
   const handleScannedData = async () => {
     //console.log("Temp Token :-",token);
-    console.log("scan List call function.");
+    //console.log("scan List call function.");
 
     try {
       // console.log("package level :",currentlevel);
