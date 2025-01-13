@@ -18,7 +18,6 @@ import EsignPage from './app/screens/Esign';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
 
-
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 

@@ -1,445 +1,563 @@
 //app/components/screens/Reprint.jsx
 
-import React, { useState, useEffect } from "react";
-import { StyleSheet, View, KeyboardAvoidingView, TouchableOpacity, Alert } from "react-native";
-import { Appbar, Text, TextInput, Modal, Portal, PaperProvider, Divider } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
-import { Dropdown } from 'react-native-element-dropdown';
-import AntDesign from "react-native-vector-icons/AntDesign";
-import { url } from "../../utils/constant";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { decodeAndSetConfig } from "../../utils/tokenUtils";
-import axios from "axios";
+import React, {useState, useEffect} from 'react';
+import {
+  StyleSheet,
+  View,
+  KeyboardAvoidingView,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
+import {
+  Appbar,
+  Text,
+  TextInput,
+  Modal,
+  Portal,
+  PaperProvider,
+  Divider,
+  Snackbar,
+} from 'react-native-paper';
+import {useIsFocused, useNavigation} from '@react-navigation/native';
+import {Dropdown} from 'react-native-element-dropdown';
+import AntDesign from 'react-native-vector-icons/AntDesign';
+import {url} from '../../utils/constant';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 
 function Reprint() {
-    const navigation = useNavigation();
-    const [text, setText] = useState("");
-    //dynamic product and batch fetch
-    const [loading, setLoading] = useState(true);
-    const [token, setToken] = useState(null);
-    const [valueProduct, setValueProduct] = useState(null);
-    const [valueBatch, setValueBatch] = useState(null);
-    const [isFocusProduct, setIsFocusProduct] = useState(false);
-    const [isFocusBatch, setIsFocusBatch] = useState(false);
-    const [config, setConfig] = useState(null);
-    const [products, setProducts] = useState([]);
-    const [batches, setBatches] = useState([]);
-    //for modal dialogue
-    const [visible, setVisible] = useState(false);
-    const showModal = () => setVisible(true);
-    const hideModal = () => setVisible(false);
-    const containerStyle = { backgroundColor: 'white', padding: 20, height: 350, width: 320, marginLeft: 20, borderRadius: 6, };
+  const navigation = useNavigation();
+  const isFocused = useIsFocused();
+  const [text, setText] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState({ id: null, name: null });
+  const [selectedBatch, setSelectedBatch] = useState({ id: null, name: null });
+  const [isFocusProduct, setIsFocusProduct] = useState(false);
+  const [isFocusBatch, setIsFocusBatch] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [batches, setBatches] = useState([]);
+  const [countryCode, setCountryCode] = useState(null);
+  const [visible, setVisible] = useState(false);
+   const [snackbarInfo, setSnackbarInfo] = useState({
+      visible: false,
+      message: '',
+    });
+  const showModal = () => setVisible(true);
+  const hideModal = () => setVisible(false);
+  const onToggleSnackBar = message => setSnackbarInfo({visible: true, message});
+  const onDismissSnackBar = () => setSnackbarInfo({visible: false, message: ''});
 
-    useEffect(() => {
-        const loadTokenAndData = async () => {
-            try {
-                const storedToken = await AsyncStorage.getItem("authToken");
-                //console.log("JWT token : ", storedToken);
-                if (storedToken) {
-                    decodeAndSetConfig(setConfig, storedToken)
-                    setToken(storedToken);
-                    fetchProductData(storedToken);
+  const containerStyle = {
+    backgroundColor: 'white',
+    padding: 20,
+    height: 350,
+    width: 320,
+    marginLeft: 20,
+    borderRadius: 6,
+  };
 
-                } else {
-                    throw new Error("Token is missing");
-                }
-            } catch (error) {
-                console.error("Error fetching token:", error);
-                setLoading(false);
-            }
-        };
-        loadTokenAndData();
-        return () => {
-            setValueProduct(null);
-            setValueBatch(null);
+  useEffect(() => {
+    const loadTokenAndData = async () => {
+      try {
+        const storedToken = await AsyncStorage.getItem('authToken');
+        if (storedToken) {
+            setToken(storedToken);
+            console.log("JWT token : ", storedToken);
+          fetchProductData(storedToken);
+        } else {
+          throw new Error('Token is missing');
         }
-
-    }, []);
-
-    const fetchProductData = async (token) => {
-        try {
-            setLoading(true);
-            const productResponse = await axios.get(`${url}/product/`, {
-                headers: {
-                    "Content-Type": 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            const { products } = productResponse.data.data; //destructuring objects
-            //console.log('This is products Data :', products)
-            //console.log("ProductID :-", products[0].product_id);
-
-            if (products) {
-                //console.log("Dropdown Products :", products)
-                const fetchedProducts = products.map(product => ({
-                    label: product.product_name,
-                    value: product.id,
-                }));
-                // console.log("value :",value);
-
-                setProducts(fetchedProducts);
-            } else {
-                console.error("No products data available");
-            }
-        } catch (error) {
-            console.error("Error fetching Product data for Reprint :", error);
-        } finally {
-            setLoading(false);
-        }
+      } catch (error) {
+        console.error('Error fetching token:', error);
+        setLoading(false);
+      }
     };
-    //Fetch batch
-    const fetchBatchData = async (token, product_id) => {
-        try {
-            setLoading(true)
-            const batchResponse = await axios.get(`${url}/batch/${product_id}`, {
-                headers: {
-                    "Content-Type": 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            //console.log("Batch Response :", batchResponse)
-            const { batches } = batchResponse?.data?.data;
-            //console.log("Batch Data :", batches);
+ 
+    loadTokenAndData();
 
-            if (batches) {
-                const fetchedBatches = batches.map(batch => ({
-                    label: batch.batch_no,
-                    value: batch.id,
-                }));
-                setBatches(fetchedBatches);
-                //console.log("Store for select :", batches)
-            } else {
-                console.error("No batches data available");
-            }
-        }
-        catch (error) {
-            console.error("Error Fetching batch data for Reprint ", error)
-        } finally {
-            setLoading(false)
-        }
+    return () => {
+      setSelectedProduct({ id: null, name: null });
+      setSelectedBatch({ id: null, name: null });
+      setText('');
+    };
+  }, [isFocused]);
+
+  useEffect(() => {
+    console.log('Is compatible:', HoneywellBarcodeReader.isCompatible);
+
+    HoneywellBarcodeReader.register().then(claimed => {
+      console.log(
+        claimed ? 'Barcode reader is claimed' : 'Barcode reader is busy',
+      );
+    });
+
+    HoneywellBarcodeReader.onBarcodeReadSuccess(event => {
+      console.log('Current Scanned data :', event.data);
+      console.log("Country code is ", countryCode)
+      const uniqueCode = getUniqueCode(event.data, countryCode);
+      setText(uniqueCode);
+    });
+
+    HoneywellBarcodeReader.onBarcodeReadFail(() => {
+      console.log('Barcode read failed');
+    });
+
+    HoneywellBarcodeReader.onTriggerStateChange(state => {
+      console.log('onTriggerStateChange', state);
+    });
+
+    HoneywellBarcodeReader.barcodeReaderInfo(details => {
+      console.log('barcodeReaderClaimed', details);
+    });
+
+    return () => {};
+  }, [countryCode]);
+
+  useEffect(() => {
+      if(selectedProduct.id){
+    (async () => {
+            await fetchCountryCode();
+            await fetchBatchData();
+        })();
+    }
+    return () => {
+    }
+  }, [selectedProduct.id])
+  
+
+  const fetchProductData = async token => {
+    try {
+      setLoading(true);
+      const productResponse = await axios.get(`${url}/product/`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const {products} = productResponse.data.data; //destructuring objects
+      //console.log('This is products Data :', products)
+      //console.log("ProductID :-", products[0].product_id);
+
+      if (products) {
+        //console.log("Dropdown Products :", products)
+        const fetchedProducts = products.map(product => ({
+          name: product.product_name,
+          id: product.id,
+        }));
+        // console.log("value :",value);
+
+        setProducts(fetchedProducts);
+      } else {
+        console.error('No products data available');
+      }
+    } catch (error) {
+      console.error('Error fetching Product data for Reprint :', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchBatchData = async () => {
+    try {
+      setLoading(true);
+      const batchResponse = await axios.get(`${url}/batch/${selectedProduct.id}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log("Batch Response :", batchResponse.data);
+
+      if (batchResponse?.data?.success) {
+        const fetchedBatches = batchResponse.data.data?.batches?.map(batch => {
+            console.log('batch id ', batch.id);
+            return {
+              id: batch.id,
+              name: batch.batch_no,
+            };
+          });
+        setBatches(fetchedBatches);
+        //console.log("Store for select :", batches)
+      } else {
+        console.error('No batches data available');
+      }
+    } catch (error) {
+      console.error('Error Fetching batch data for Reprint ', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCountryCode = async () => {
+    try {
+      setLoading(true);
+      console.log("token in c ", token)
+      const response = await axios.get(
+        `${url}/product/countrycode/${selectedProduct.id}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      console.log('Get country code Response :', response.data);
+
+      if (response.data?.success) {
+        console.log('settting country code ', response.data.data.country_code);
+        setCountryCode(response.data.data.country_code.toString());
+      } else {
+        console.error('No coutryt code data available');
+      }
+    } catch (error) {
+      console.error('Error Fetching country code ', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getUniqueCode = (url, format) => {
+    // console.log("country code ", format);
+    // Split the format and input by "/"
+    const formatParts = format.split('/');
+    const inputParts = url.split('/');
+    // console.log("formatParts ", formatParts)
+    // console.log("inputParts ", inputParts)
+
+    // Find the index of "uniqueCode" in the format
+    const uniqueCodeIndex = formatParts.indexOf(' uniqueCode ');
+    // console.log("uniqueCodeIndex ", uniqueCodeIndex)
+
+    // Extract and normalize the unique code
+    const uniqueCode = inputParts[uniqueCodeIndex];
+    console.log('Unique Code:', uniqueCode);
+    return uniqueCode;
+  };
+
+  const handleDropdownProductChange = async item => {
+    setSelectedProduct({ id: item.id, name: item.name });
+    setIsFocusProduct(false);
+    setBatches([]);
+  };
+
+  const handleReprint = () => {
+    if (!selectedProduct.id || !selectedBatch.id) {
+      Alert.alert('Error', 'Please select both product and batch.');
+      return;
+    }
+    if (!text) {
+      Alert.alert('Error', 'Please scan or enter unique code');
+      return;
     }
 
-    const renderLabelProducts = () => {
-        if (valueProduct || isFocusProduct) {
-            return (
-                <Text style={[styles.label, isFocusProduct && { color: 'rgb(80, 189, 160)' }]}>
-                    {/* Dropdown label */}
-                </Text>
-            );
-        }
-        return null;
-    };
+    setVisible(true); //modal open
+    console.log('Reprint pressed..');
+  };
 
-    const renderLabelBatches = () => {
-        if (valueBatch || isFocusBatch) {
-            return (
-                <Text style={[styles.label, isFocusBatch && { color: 'rgb(80, 189, 160)' }]}>
-                    {/* Dropdown label */}
-                </Text>
-            );
-        }
-        return null;
-    };
-
-    const handleDropdownProductChange = async (item) => {
-        setValueProduct(item.value);
-        setIsFocusProduct(false);
-        setBatches([]); // Clear batches when product changes
-        await fetchBatchData(token, item.value); // Fetch batches for selected product
-    };
-
-    const handleReprint = () => {
-        if (!valueProduct || !valueBatch) {
-            Alert.alert("Error", "Please select both product and batch.");
-            return;
-        }
-        // Alert.alert(
-        //     "Selected Data",
-        //     `Product: ${products.find(p => p.value === valueProduct)?.label}\nBatch: ${batches.find(b => b.value === valueBatch)?.label}`,
-        //     [{ text: "OK" }]
-        // );
-        //Reset fields after reprint
-
-        setVisible(true);   //modal open
-        console.log('Reprint pressed..');
-        setValueProduct(null);
-        setValueBatch(null);
-    };
-
-    if (loading) {
-        return (
-            <View style={styles.container}>
-                <Text>Loading...</Text>
-            </View>
-        );
-    }
-
-    const print = () => {
-        console.log("Reprint success.");
-        setVisible(false);
-        navigation.navigate('Home');
-    }
-
-    const cancel = () => {
-        console.log("reprint cancel btn press ");
-        setVisible(false);
-        navigation.navigate('Home');
-    }
-
+  if (loading) {
     return (
-        <>
-            <KeyboardAvoidingView
-                style={{ flex: 1 }}
-                behavior={Platform.OS === "ios" ? "padding" : undefined}
-            >
-                <Appbar.Header>
-                    <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
-                    <Appbar.Content title="Reprint" />
-                </Appbar.Header>
+      <View style={styles.container}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
 
-                <View style={styles.container}>
+  const print = async () => {
+    console.log('Reprint success.');
+    const reprintRes = await axios.post(
+      `${url}/reprint/code`,
+      {
+        product_id: selectedProduct.id,
+        batch_id: selectedBatch.id,
+        code: text,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
 
-                    <View style={styles.dropdownContainer}>
-                        {/* <Text variant="titleMedium" style={styles.labelText}>Product</Text> */}
-                        <View style={styles.containerDropdownItem}>
-                            {renderLabelProducts()}
-                            <Dropdown
-                                style={[styles.dropdown, isFocusProduct && { borderColor: 'rgb(80, 189, 160)' }]}
-                                placeholderStyle={styles.placeholderStyle}
-                                selectedTextStyle={styles.selectedTextStyle}
-                                inputSearchStyle={styles.inputSearchStyle}
-                                iconStyle={styles.iconStyle}
-                                //data={dataProduct}
-                                data={products}   //dynamic data
-                                search
-                                maxHeight={300}
-                                labelField="label"
-                                valueField="value"
-                                placeholder={!isFocusProduct ? 'Select Product' : '...'}
-                                searchPlaceholder="Search..."
-                                value={valueProduct}
-                                onFocus={() => setIsFocusProduct(true)}
-                                onBlur={() => setIsFocusProduct(false)}
-                                onChange={handleDropdownProductChange}
-                                renderLeftIcon={() => (
-                                    <AntDesign
-                                        style={styles.icon}
-                                        color={isFocusProduct ? 'rgb(80, 189, 160)' : 'black'}
-                                        //name="Safety"
-                                        size={20}
-                                    />
-                                )}
-                            />
-                        </View>
-                    </View>
+    console.log('Response of reprint code ', reprintRes.data);
+    if (reprintRes.data.success) {
+        setText('');
+        setSelectedProduct({ id: null, name: null });
+        setSelectedBatch({ id: null, name: null });
+        onToggleSnackBar('Reprint successfully done.');
+    //   navigation.navigate('Home');
+    }
+    else {
+      onToggleSnackBar('Fail to reprint');
+    }
+    hideModal();
+  };
 
-                    <View style={styles.dropdownContainer}>
-                        {/* <Text variant="titleMedium" style={styles.labelText}>Batch</Text> */}
-                        <View style={styles.containerDropdownItem}>
-                            {renderLabelBatches()}
-                            <Dropdown
-                                style={[styles.dropdown, isFocusBatch && { borderColor: 'rgb(80, 189, 160)' }]}
-                                placeholderStyle={styles.placeholderStyle}
-                                selectedTextStyle={styles.selectedTextStyle}
-                                inputSearchStyle={styles.inputSearchStyle}
-                                iconStyle={styles.iconStyle}
-                                //data={dataBatch}
-                                data={batches}   //dynamic fetch batch
-                                search
-                                maxHeight={300}
-                                labelField="label"
-                                valueField="value"
-                                placeholder={!isFocusBatch ? 'Select Batch' : '...'}
-                                searchPlaceholder="Search..."
-                                value={valueBatch}
-                                onFocus={() => setIsFocusBatch(true)}
-                                onBlur={() => setIsFocusBatch(false)}
-                                onChange={item => {
-                                    setValueBatch(item.value);
-                                    setIsFocusBatch(false);
-                                }}
-                                renderLeftIcon={() => (
-                                    <AntDesign
-                                        style={styles.icon}
-                                        color={isFocusBatch ? 'rgb(80, 189, 160)' : 'black'}
-                                        //name="Safety"
-                                        size={20}
-                                    />
-                                )}
-                            />
-                        </View>
-                    </View>
+  const cancel = () => {
+    console.log('reprint cancel btn press ');
+    setVisible(false);
+    navigation.navigate('Home');
+  };
 
-                    <View style={styles.txtInputStyle}>
-                        <Text variant="titleMedium" style={styles.labelText}>Scan</Text>
-                        <TextInput
-                            label="Scanned"
-                            value={text}
-                            mode="outlined"
-                            onChangeText={text => setText(text)}
-                            style={styles.textInput}
-                        />
-                    </View>
+  return (
+    <>
+      <KeyboardAvoidingView
+        style={{flex: 1}}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <Appbar.Header>
+          <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
+          <Appbar.Content title="Reprint" />
+        </Appbar.Header>
 
-                </View>
-                <View>
-                    <TouchableOpacity
-                        mode="contained"
-                        //labelStyle={{ fontSize: 20 }}
-                        style={styles.reprintButton}
-                        onPress={handleReprint}
-                    >
-                        <Text style={styles.reprintText}>Reprint</Text>
-                    </TouchableOpacity>
-                </View>
+        <View style={styles.container}>
+          <View style={styles.dropdownContainer}>
+            {/* <Text variant="titleMedium" style={styles.labelText}>Product</Text> */}
+            <View style={styles.containerDropdownItem}>
+              <Dropdown
+                style={[
+                  styles.dropdown,
+                  isFocusProduct && {borderColor: 'rgb(80, 189, 160)'},
+                ]}
+                placeholderStyle={styles.placeholderStyle}
+                selectedTextStyle={styles.selectedTextStyle}
+                inputSearchStyle={styles.inputSearchStyle}
+                iconStyle={styles.iconStyle}
+                data={products}
+                maxHeight={300}
+                labelField="name"
+                valueField="id"
+                placeholder={!isFocusProduct ? 'Select Product' : '...'}
+                searchPlaceholder="Search..."
+                value={selectedProduct.id}
+                onFocus={() => setIsFocusProduct(true)}
+                onBlur={() => setIsFocusProduct(false)}
+                onChange={handleDropdownProductChange}
+                renderLeftIcon={() => (
+                  <AntDesign
+                    style={styles.icon}
+                    color={isFocusProduct ? 'rgb(80, 189, 160)' : 'black'}
+                    //name="Safety"
+                    size={20}
+                  />
+                )}
+              />
+            </View>
+          </View>
 
+          <View style={styles.dropdownContainer}>
+            {/* <Text variant="titleMedium" style={styles.labelText}>Batch</Text> */}
+            <View style={styles.containerDropdownItem}>
+              <Dropdown
+                style={[
+                  styles.dropdown,
+                  isFocusBatch && {borderColor: 'rgb(80, 189, 160)'},
+                ]}
+                placeholderStyle={styles.placeholderStyle}
+                selectedTextStyle={styles.selectedTextStyle}
+                inputSearchStyle={styles.inputSearchStyle}
+                iconStyle={styles.iconStyle}
+                data={batches}
+                maxHeight={300}
+                labelField="name"
+                valueField="id"
+                placeholder={!isFocusBatch ? 'Select Batch' : '...'}
+                searchPlaceholder="Search..."
+                value={selectedBatch.id}
+                onFocus={() => setIsFocusBatch(true)}
+                onBlur={() => setIsFocusBatch(false)}
+                onChange={item => {
+                  setSelectedBatch({ id: item.id, name: item.name });
+                  setIsFocusBatch(false);
+                }}
+                renderLeftIcon={() => (
+                  <AntDesign
+                    style={styles.icon}
+                    color={isFocusBatch ? 'rgb(80, 189, 160)' : 'black'}
+                    //name="Safety"
+                    size={20}
+                  />
+                )}
+              />
+            </View>
+          </View>
 
-                <Portal>
-                    <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={containerStyle}>
-                        <View style={styles.modalContainer}>
-                                <View style={styles.modalHeader}>
-                                    <Text style={styles.modalHeader}>Reprint</Text>
-                                </View>
-                                <Divider />
-                                <View style={styles.modalBody}>
-                                    <Text style={styles.bodyTxt}>Printing in Progress..</Text>
-                                </View>
-                                <View style={styles.footer}>
-                                    <TouchableOpacity
-                                        style={styles.printbtn}
-                                        mode="contained"
-                                        onPress={print}
-                                    >
-                                        <Text style={styles.btnText}>Print</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={styles.cancelbtn}
-                                        mode="contained"
-                                        onPress={cancel}
-                                    >
-                                        <Text style={styles.btnText}>Cancel</Text>
-                                    </TouchableOpacity>
-                                </View>
-                        </View>
-                    </Modal>
-                </Portal>
+          <View style={styles.txtInputStyle}>
+            <Text variant="titleMedium" style={styles.labelText}>
+              Scan or write a code
+            </Text>
+            <TextInput
+              label="Enter reprint code"
+              value={text}
+              mode="outlined"
+              onChangeText={text => setText(text)}
+              style={styles.textInput}
+            />
+          </View>
+        </View>
+        <View>
+          <TouchableOpacity
+            mode="contained"
+            //labelStyle={{ fontSize: 20 }}
+            style={styles.reprintButton}
+            onPress={handleReprint}>
+            <Text style={styles.reprintText}>Reprint</Text>
+          </TouchableOpacity>
+        </View>
 
-            </KeyboardAvoidingView>
-        </>
-    )
+        <Portal>
+          <Modal
+            visible={visible}
+            onDismiss={hideModal}
+            contentContainerStyle={containerStyle}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalHeader}>Reprint</Text>
+              </View>
+              <Divider />
+              <View style={styles.modalBody}>
+                <Text style={styles.bodyTxt}>
+                  Are you sure you want to print '{text}' code details.
+                </Text>
+              </View>
+              <View style={styles.footer}>
+                <TouchableOpacity
+                  style={styles.printbtn}
+                  mode="contained"
+                  onPress={print}>
+                  <Text style={styles.btnText}>Print</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.cancelbtn}
+                  mode="contained"
+                  onPress={cancel}>
+                  <Text style={styles.btnText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+        </Portal>
+        <Snackbar
+          visible={snackbarInfo.visible}
+          onDismiss={onDismissSnackBar}
+          duration={3000}
+          style={styles.snackbar}>
+          {snackbarInfo.message}
+        </Snackbar>
+      </KeyboardAvoidingView>
+    </>
+  );
 }
 export default Reprint;
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        //backgroundColor: 'lightblue',
-    },
-    dropdownContainer: {
-        //backgroundColor:'yellow',
-        marginTop: 20,
-    },
-    labelText: {
-        //backgroundColor: 'pink',
-        paddingLeft: 20,
-        paddingTop: 15,
-    },
-    containerDropdownItem: {
-        //backgroundColor: 'white',
-        padding: 16,
-    },
-    dropdown: {
-        height: 50,
-        borderColor: 'gray',
-        borderWidth: 0.5,
-        borderRadius: 4,
-        paddingHorizontal: 8,
-    },
-    icon: {
-        marginRight: 5,
-    },
-    label: {
-        position: 'absolute',
-        //backgroundColor: 'white',
-        left: 22,
-        top: 8,
-        zIndex: 999,
-        paddingHorizontal: 8,
-        fontSize: 14,
-    },
-    placeholderStyle: {
-        fontSize: 16,
-    },
-    selectedTextStyle: {
-        fontSize: 16,
-    },
-    iconStyle: {
-        width: 20,
-        height: 20,
-    },
-    inputSearchStyle: {
-        height: 40,
-        fontSize: 16,
-    },
-    textInput: {
-        margin: 18,
-        //border:'outlined',
-    },
-    txtInputStyle: {
-        //backgroundColor:'red',
-        marginTop: 0,
-    },
-    reprintButton: {
-        borderRadius: 0,
-        padding: 20,
-        backgroundColor: 'rgb(80, 189, 160)',
-    },
-    reprintText: {
-        fontSize: 20,
-        textAlign: 'center',
-        color: '#fff',
-    },
-    modalContainer: {
-        //backgroundColor: 'yellow',
-        flex: 1,
-        position:'relative',
-        //position:'absolute'
-    },
-    modalHeader:{
-        //backgroundColor:'red',
-        textAlign:'center',
-        fontSize:30,
-    },
-    modalBody:{
-        //backgroundColor:'blue',
-        height:220,
-    },
-    bodyTxt:{
-        fontSize:20,
-        textAlign:'center',
-        paddingTop:50,
-    },
-    footer:{
-        //backgroundColor:'orange',
-        bottom:0,
-        display: 'flex',
-        flexDirection: 'row',
-        justifyContent: 'space-evenly',
-    },
-    btnText:{
-        fontSize:20,
-    },
-    printbtn:{
-        backgroundColor:'rgb(80, 189, 160)',
-        paddingLeft:26,
-        paddingRight:26,
-        paddingTop:15,
-        paddingBottom:15,
-        borderRadius:4,
-    },
-    cancelbtn:{
-        backgroundColor:'gray',
-        padding:15,
-        borderRadius:4,
-    },
+  container: {
+    flex: 1,
+  },
+  dropdownContainer: {
+    marginTop: 20,
+  },
+  labelText: {
+    paddingLeft: 20,
+    paddingTop: 15,
+  },
+  containerDropdownItem: {
+    padding: 16,
+  },
+  dropdown: {
+    height: 50,
+    borderColor: 'gray',
+    borderWidth: 0.5,
+    borderRadius: 4,
+    paddingHorizontal: 8,
+  },
+  icon: {
+    marginRight: 5,
+  },
+  label: {
+    position: 'absolute',
+    left: 22,
+    top: 8,
+    zIndex: 999,
+    paddingHorizontal: 8,
+    fontSize: 14,
+  },
+  placeholderStyle: {
+    fontSize: 16,
+  },
+  selectedTextStyle: {
+    fontSize: 16,
+  },
+  iconStyle: {
+    width: 20,
+    height: 20,
+  },
+  inputSearchStyle: {
+    height: 40,
+    fontSize: 16,
+  },
+  textInput: {
+    margin: 18,
+  },
+  txtInputStyle: {
+    marginTop: 0,
+  },
+  reprintButton: {
+    borderRadius: 0,
+    padding: 20,
+    backgroundColor: 'rgb(80, 189, 160)',
+  },
+  reprintText: {
+    fontSize: 20,
+    textAlign: 'center',
+    color: '#fff',
+  },
+  modalContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  modalHeader: {
+    textAlign: 'center',
+    fontSize: 30,
+  },
+  modalBody: {
+    height: 220,
+  },
+  bodyTxt: {
+    fontSize: 20,
+    textAlign: 'center',
+    paddingTop: 50,
+  },
+  footer: {
+    bottom: 0,
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+  },
+  btnText: {
+    fontSize: 20,
+  },
+  printbtn: {
+    backgroundColor: 'rgb(80, 189, 160)',
+    paddingLeft: 26,
+    paddingRight: 26,
+    paddingTop: 15,
+    paddingBottom: 15,
+    borderRadius: 4,
+  },
+  cancelbtn: {
+    backgroundColor: 'gray',
+    padding: 15,
+    borderRadius: 4,
+  },
+  snackbar: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 10,
+    borderRadius: 2,
+    marginBottom: 10, // Extra space from the bottom if needed
+  },
 });
