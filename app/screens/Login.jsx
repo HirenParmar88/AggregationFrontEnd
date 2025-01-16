@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgb(80, 189, 160)',
   },
   cancelButton: {
-    backgroundColor: '#ddd',
+    backgroundColor: '#878f99',
   },
   modalButtonText: {
         fontSize: 16,

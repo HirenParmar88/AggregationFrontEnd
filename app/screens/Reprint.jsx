@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   TouchableOpacity,
   Alert,
+  ScrollView,
 } from 'react-native';
 import {
   Appbar,
@@ -310,7 +311,7 @@ function Reprint() {
           <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
           <Appbar.Content title="Reprint" />
         </Appbar.Header>
-
+        <ScrollView>
         <View style={styles.container}>
           <View style={styles.dropdownContainer}>
             {/* <Text variant="titleMedium" style={styles.labelText}>Product</Text> */}
@@ -318,18 +319,19 @@ function Reprint() {
               <Dropdown
                 style={[
                   styles.dropdown,
-                  isFocusProduct && {borderColor: 'rgb(80, 189, 160)'},
+                  {borderColor: 'rgb(80, 189, 160)'},
                 ]}
                 placeholderStyle={styles.placeholderStyle}
                 selectedTextStyle={styles.selectedTextStyle}
                 inputSearchStyle={styles.inputSearchStyle}
-                iconStyle={styles.iconStyle}
+                //iconStyle={styles.iconStyle}
                 data={products}
                 maxHeight={300}
                 labelField="name"
                 valueField="id"
-                placeholder={!isFocusProduct ? 'Select Product' : '...'}
-                searchPlaceholder="Search..."
+                placeholder='Select Product'
+                //placeholder={!isFocusProduct ? 'Select Product' : '...'}
+                //searchPlaceholder="Search..."
                 value={selectedProduct.id}
                 onFocus={() => setIsFocusProduct(true)}
                 onBlur={() => setIsFocusProduct(false)}
@@ -352,18 +354,19 @@ function Reprint() {
               <Dropdown
                 style={[
                   styles.dropdown,
-                  isFocusBatch && {borderColor: 'rgb(80, 189, 160)'},
+                  {borderColor: 'rgb(80, 189, 160)'},
                 ]}
                 placeholderStyle={styles.placeholderStyle}
                 selectedTextStyle={styles.selectedTextStyle}
                 inputSearchStyle={styles.inputSearchStyle}
-                iconStyle={styles.iconStyle}
+                //iconStyle={styles.iconStyle}
                 data={batches}
                 maxHeight={300}
                 labelField="name"
                 valueField="id"
-                placeholder={!isFocusBatch ? 'Select Batch' : '...'}
-                searchPlaceholder="Search..."
+                placeholder='Select Batch'
+                //placeholder={!isFocusBatch ? 'Select Batch' : '...'}
+                //searchPlaceholder="Search..."
                 value={selectedBatch.id}
                 onFocus={() => setIsFocusBatch(true)}
                 onBlur={() => setIsFocusBatch(false)}
@@ -396,6 +399,7 @@ function Reprint() {
             />
           </View>
         </View>
+        </ScrollView>
         <View>
           <TouchableOpacity
             mode="contained"

@@ -36,7 +36,6 @@ function HomeScreen() {
                             <Card.Cover source={require('../../assets/images/Aggregation.png')} style={styles.img} />
                         </Card>
                     </View>
-
                     <View style={styles.textGroups}>
                         <Text style={styles.headerTxt}>Welcome to Inspecta-Trace</Text>
                         <Text style={styles.subHeaderTxt}>What would you like to do today?</Text>

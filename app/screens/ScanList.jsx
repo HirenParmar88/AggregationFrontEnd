@@ -22,8 +22,8 @@ function ScanList() {
   const [text, setText] = useState('');
 
   const [quantity, setQuantity] = useState(0);
-  const [currentlevel, setCurrentLevel] = useState(0);
-  const [totallevel, setTotalLevel] = useState(0);
+  const [currentLevel, setCurrentLevel] = useState(0);
+  const [totalLevel, setTotalLevel] = useState(0);
   const [packaged, setPackage] = useState(0);
 
   const [token, setToken] = useState(" ");
@@ -38,7 +38,7 @@ function ScanList() {
       
       const response = await axios.post(`${url}/packagingHierarchy`, {
         product_id: router.params.id,
-        currentLevel: currentlevel,
+        currentLevel: currentLevel,
       }, {
         headers: {
           "Content-Type": 'application/json',
@@ -47,14 +47,17 @@ function ScanList() {
       });
       console.log("handle Scan Res :", response.data);
       if (response.data.success) {
-        const { packaged, quantity, currentLevel, totallevel } = response.data.data;
+        const { packaged, quantity, currentLevel, totalLevel } = response.data.data;
         setQuantity(quantity);
         setPackage(packaged);
         setCurrentLevel(currentLevel);
-        setTotalLevel(totallevel);
+        setTotalLevel(totalLevel);
         console.log("Success.");
         console.log("package level :",packaged);
         console.log("Quantity :", quantity);
+        console.log("Current level :", currentLevel);
+        console.log("total level :", totalLevel);
+        
       } else {
         Alert.alert('Authentication failed. Please try again.');
         return;
@@ -74,8 +77,6 @@ function ScanList() {
     }
   }, [isFocused])
   
-  
-
   useEffect(() => {
     console.log("Is compatible:", HoneywellBarcodeReader.isCompatible);
 
@@ -206,18 +207,18 @@ function ScanList() {
 
             <View style={styles.modalFooter}>
               <Button
-                mode="outlined"
+                mode="contained"
+                onPress={() => handleParentModalDismiss(true)} // Confirm button action
+                style={styles.modalConfirmButton}
+              >
+                Confirm
+              </Button>
+              <Button
+                mode="contained"
                 onPress={() => handleParentModalDismiss(false)} // Cancel button action
                 style={styles.modalButton}
               >
                 Cancel
-              </Button>
-              <Button
-                mode="contained"
-                onPress={() => handleParentModalDismiss(true)} // Confirm button action
-                style={styles.modalButton}
-              >
-                Confirm
               </Button>
             </View>
           </Modal>
@@ -368,11 +369,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     marginTop: 10,
   },
+  modalConfirmButton: {
+    width: '48%',
+    borderRadius: 2,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
   modalButton: {
     width: '48%',
     borderRadius: 2,
     flexDirection: 'row',
     justifyContent: 'center',
+    backgroundColor:'#878f99'
   },
   modalOKButton: {
     width: '48%',
@@ -386,7 +394,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'red',
   },
   modalSuccessText: {
-    color: "green",
+    //color: "green",
     fontSize: 18,
     textAlign: 'center'
   },
