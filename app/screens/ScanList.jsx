@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { ScrollView, StyleSheet, View, KeyboardAvoidingView, Platform, Alert, TouchableOpacity } from "react-native";
-import { Appbar, Text, TextInput, Button, List, Divider, Portal, Modal, Snackbar } from "react-native-paper";
+import { Appbar, Text, Button, List, Divider, Portal, Modal, Snackbar } from "react-native-paper";
 import { useIsFocused, useNavigation, useRoute } from "@react-navigation/native";
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage"; // To handle token storage
 import { url } from "../../utils/constant";
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 
 function ScanList() {
   const navigation = useNavigation();
@@ -196,6 +198,9 @@ function ScanList() {
             </View>
 
             <ScrollView contentContainerStyle={styles.modalContent}>
+              <View>
+                <MaterialCommunityIcons name='cloud-print' size={50} color='#000000' style={styles.statusSuccess} />
+              </View>
               <Text style={styles.modalText}>Shipper printing in progress..</Text>
             </ScrollView>
 
@@ -230,6 +235,9 @@ function ScanList() {
             </View>
 
             <ScrollView contentContainerStyle={styles.modalContent}>
+            <View>
+              <MaterialIcons name="done" size={50} color='#000000' style={styles.statusSuccess}/>
+              </View>
               <Text style={styles.modalSuccessText}>Printing Completed!</Text>
             </ScrollView>
 
@@ -255,8 +263,10 @@ function ScanList() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Status</Text>
             </View>
-
             <ScrollView contentContainerStyle={styles.modalContent}>
+              <View>
+                <MaterialIcons name="sms-failed" size={50} color='#000000' style={styles.statusSuccess} /> 
+              </View>
               <Text style={styles.modalFailedText}>Shipper printing Failed!</Text>
             </ScrollView>
 
@@ -319,7 +329,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgb(80, 189, 160)',
   },
   endTranTxt: {
-    fontSize: 18,
+    fontSize: 20,
     textAlign: 'center',
     color: '#fff',
     //padding: 10,
@@ -328,7 +338,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 20,
     marginHorizontal: 40,
-    height: 350,
+    height: 250,
     borderRadius: 6,
     justifyContent: 'space-between',
   },
@@ -366,13 +376,13 @@ const styles = StyleSheet.create({
   },
   modalOKButton: {
     width: '48%',
-    borderRadius: 6,
+    borderRadius: 4,
     flexDirection: 'row',
     justifyContent: 'center',
   },
   modelRetryButton: {
     width: '48%',
-    borderRadius: 6,
+    borderRadius: 4,
     backgroundColor: 'red',
   },
   modalSuccessText: {
@@ -407,4 +417,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between'
   },
+  statusSuccess:{
+    textAlign:'center',
+    //backgroundColor:'red'
+  }
 });

@@ -51,12 +51,15 @@ function DropoutFun() {
 
   const containerStyle = {
     backgroundColor: 'white',
-    height: 400,
-    width: 290,
-    marginLeft: 35,
+    height: 250,
+    width: 250,
+    marginLeft: 54,
     borderRadius: 2,
     display: 'grid',
     alignContent: 'space-between',
+    display:'flex',
+    justifyContent:'row',
+    // alignItems:'center'
   };
 
   const dataConfirmDropout = [
@@ -508,13 +511,13 @@ function DropoutFun() {
             visible={visibleBatch}
             onDismiss={() => setVisibleBatch(false)}
             contentContainerStyle={containerStyle}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Batch Dropout</Text>
+            <View style={styles.modalBatchHeader}>
+              <Text style={styles.modalBatchTitle}>Batch Dropout</Text>
             </View>
-            <Text style={styles.modalContent}>
+            <Text style={styles.modalBatchContent}>
               Are you sure you want to dropout?
             </Text>
-            <View style={{padding: 30}}>
+            <View style={{padding: 10}}>
               <Text style={{fontSize: 18, fontWeight: 'bold'}}>
                 Batch: {selectedBatch.name}
               </Text>
@@ -522,14 +525,14 @@ function DropoutFun() {
                 Product: {selectedProduct.name}
               </Text>
             </View>
-            <View style={styles.modalFooter}>
+            <View style={styles.modalBatchFooter}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.confirmButton]}
+                style={[styles.modalBatchButton, styles.confirmButton]}
                 onPress={handleBatchDropout}>
                 <Text style={styles.modalButtonText}>Yes</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+                style={[styles.modalBatchButton, styles.cancelButton]}
                 onPress={() => setVisibleBatch(false)}>
                 <Text style={styles.modalButtonText}>No</Text>
               </TouchableOpacity>
@@ -699,7 +702,7 @@ const styles = StyleSheet.create({
     marginTop: 70,
   },
   dropdownConfirmBatchDropoutContainer: {
-    marginTop: 50,
+    marginTop: 35,
     height: 70,
   },
   containerConfirmBatchDropoutItem: {
@@ -756,7 +759,16 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ddd',
     paddingBottom: 10,
     marginBottom: 10,
-    marginTop: 20,
+    //marginTop: 20,
+    alignItems: 'center',
+    //backgroundColor:'red'
+  },
+  modalBatchHeader: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    paddingBottom: 10,
+    //marginBottom: 10,
+    marginTop: 5,
     alignItems: 'center',
     //backgroundColor:'red'
   },
@@ -765,10 +777,14 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ddd',
     paddingBottom: 10,
     marginBottom: 10,
-    marginTop: 20,
+    marginTop: 10,
     alignItems: 'center',
   },
   modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  modalBatchTitle: {
     fontSize: 20,
     fontWeight: 'bold',
   },
@@ -781,19 +797,30 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'red',
   },
-  modalContent: {
+  modalBatchContent: {
     fontSize: 20,
     textAlign: 'center',
     marginVertical: 20,
+    //color:'red'
   },
   modalFooter: {
     marginTop: 20,
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
+  modalBatchFooter: {
+    marginTop: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
   modalButton: {
     paddingVertical: 10,
     paddingHorizontal: 50,
+    borderRadius: 2,
+  },
+  modalBatchButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 35,
     borderRadius: 2,
   },
   confirmButton: {
