@@ -1,6 +1,6 @@
 //app/screens/Logout.jsx
 
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Text, Alert, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage"; // To handle token storage
 import axios from "axios";

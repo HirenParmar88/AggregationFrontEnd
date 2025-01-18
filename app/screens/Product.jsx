@@ -58,6 +58,8 @@ function ProductComponent() {
   // console.log("Config :->", config);
 
   const fetchProductData = async token => {
+    console.log("Product APIs called..");
+    
     try {
       setLoading(true);
       const productResponse = await axios.get(`${url}/product/`, {
@@ -67,8 +69,8 @@ function ProductComponent() {
         },
       });
       const {products} = productResponse.data.data; //destructuring objects
-      //console.log('This is products Data :', products)
-      console.log('ProductID :-', products[0].product_id);
+      console.log('This is products Data :', products);
+      //console.log('product_id :-', products[0].product_id);
 
       if (products) {
         //console.log("Dropdown Products :", products)
@@ -76,8 +78,6 @@ function ProductComponent() {
           label: product.product_name,
           value: product.id,
         }));
-        // console.log("value :",value);
-
         setProducts(fetchedProducts);
       } else {
         console.error('No products data available');
@@ -90,6 +90,8 @@ function ProductComponent() {
   };
   //Fetch batch
   const fetchBatchData = async (token, product_id) => {
+    console.log("Batch APIs called..");
+    
     try {
       setLoading(true);
       const batchResponse = await axios.get(`${url}/batch/${product_id}`, {
@@ -100,7 +102,7 @@ function ProductComponent() {
       });
       //console.log("Batch Response :", batchResponse)
       const {batches} = batchResponse?.data?.data;
-      console.log(' :', batches);
+      console.log('Batche Res :', batches);
 
       if (batches) {
         const fetchedBatches = batches.map(batch => ({
@@ -265,8 +267,9 @@ function ProductComponent() {
       console.log('selected product :', selectedProduct.label);
       console.log('selected batch:', selectedBatch.label);
       console.log('PID :-', valueProduct);
-
-      navigation.navigate('ScanList', {id: valueProduct});
+      console.log('BID :-', valueBatch);
+      
+      navigation.navigate('ScanList', {id: valueProduct, id: valueBatch});
     } else {
       Alert.alert('Error', 'Please select both product and batch.');
     }
@@ -280,7 +283,8 @@ function ProductComponent() {
       return;
     }
     // addAggregrate("approved")
-    navigation.navigate('ScanList', {id: valueProduct});
+    navigation.navigate('ScanList', {id: valueProduct, bid: valueBatch});
+
     setValueProduct(null);
     setValueBatch(null);
   };
@@ -315,11 +319,6 @@ function ProductComponent() {
       <View style={styles.container}>
         {/* {renderLabelProduct()} */}
         <View style={styles.dropdownContainer}>
-
-          {/* <View>
-            <Dropdown />
-          </View> */}
-
           <Dropdown
             style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
             placeholderStyle={styles.placeholderStyle}

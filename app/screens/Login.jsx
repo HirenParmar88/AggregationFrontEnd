@@ -22,7 +22,7 @@ import {useNavigation} from '@react-navigation/native';
 const Login = ({route, navigation}) => {
   const {setIsAuthenticated} = route.params;
 
-  const [username, setUsername] = useState('');
+  const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
@@ -38,7 +38,7 @@ const Login = ({route, navigation}) => {
 
   const handleLogin = async (forceFully = false) => {
     console.log('Force fully ', forceFully);
-    if (!username) {
+    if (!userId) {
       onToggleSnackBar('Username cannot be Empty!');
       return;
     }
@@ -52,7 +52,7 @@ const Login = ({route, navigation}) => {
       const res = await axios.post(
         `${url}/auth/login`,
         {
-          user_id: username,
+          userId: userId,
           password,
           forceFully
         },
@@ -78,11 +78,21 @@ const Login = ({route, navigation}) => {
       } else if (res.data.code === 2012) {
         onToggleSnackBar(res.data.message);
         console.log('User Already Logged in..');
-      } else {
+      } else if(res.data.code === 429){
+        onToggleSnackBar(res.data.message);
+        console.log('Too many failed login attempts. Please try again later.');
+      } else if(res.data.code === 418){
+        onToggleSnackBar(res.data.message);
+        console.log("users blocked :",res.data.message);
+      } else if(res.data.code === 401){
+        onToggleSnackBar(res.data.message);
+        console.log("users password are expired !!");
+
+      }else {
         onToggleSnackBar('Invalid username or password.');
       }
     } catch (error) {
-      console.error('Error logging in:', error);
+      console.error('Error while user login :', error);
       onToggleSnackBar('An error occurred. Please try again later.');
     }
   };
@@ -106,8 +116,8 @@ const Login = ({route, navigation}) => {
                 label="Username"
                 style={styles.input}
                 placeholder="Enter Username"
-                value={username}
-                onChangeText={setUsername}
+                value={userId}
+                onChangeText={setUserId}
               />
 
               <TextInput

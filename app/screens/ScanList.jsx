@@ -1,3 +1,4 @@
+'use client'
 import React, { useState, useEffect } from "react";
 import { ScrollView, StyleSheet, View, KeyboardAvoidingView, Platform, Alert, TouchableOpacity } from "react-native";
 import { Appbar, Text, Button, List, Divider, Portal, Modal, Snackbar } from "react-native-paper";
@@ -24,20 +25,58 @@ function ScanList() {
   const [quantity, setQuantity] = useState(0);
   const [currentLevel, setCurrentLevel] = useState(0);
   const [totalLevel, setTotalLevel] = useState(0);
-  const [packaged, setPackage] = useState(0);
+  const [packageNo, setPackageNo] = useState(0);
+  
+  //code scan validation
+  const scanValidation = async(barcodeData)=>{
+    console.log('scan validation call....');
+    console.log('scan validation call started with barcode :', barcodeData);
+    
+    try {
+      const tokenToScanAPIs=await AsyncStorage.getItem("authToken");
+      console.log("tokenToScanAPIs : ",tokenToScanAPIs);
 
-  const [token, setToken] = useState(" ");
+      const payload={
+        productId : router.params?.id,
+        //productId: router.params?.id,
+        batchId: router.params?.bid,
+        uniqueCode: barcodeData,
+        packageLevel: currentLevel,
+        package: packageNo,
+        quantity: quantity,
+      }
+      console.log("Payload for scan validation :",payload);
+      
+      const scanRes= await axios.post(`${url}/scanvalidation`,payload,{
+        headers:{
+          Authorization:`Bearer ${await AsyncStorage.getItem("authToken")}`,
+          "Content-Type":'application/json',
+        }
+      })
+      console.log("Scan Validation APIs Res 2 :",scanRes.data);
+      
+      if (scanRes.data && scanRes.data.code === 200) {
+        console.log("Scan validation successful:", scanRes.data.message);
+        Alert.alert(scanRes.data.message);
+      }else if(scanRes.data.code === 409){
+        console.log("Invalid scan res :",scanRes.data.message);
+        Alert.alert(scanRes.data.message);
+      } else if(scanRes.data.code === 404){
+        console.log("404 : ",scanRes.data.message);
+        Alert.alert(scanRes.data.message);
+      }else{
+        console.log('error !');
+      }
+    } catch (error) {
+      console.error("Error to scan validation",error);
+    }
+
+  }
 
   const handleScannedData = async () => {
-    //console.log("Temp Token :-",token);
-    //console.log("scan List call function.");
-
     try {
-      // console.log("package level :",currentlevel);
-      // console.log("Quantity :", quantity);
-      
       const response = await axios.post(`${url}/packagingHierarchy`, {
-        product_id: router.params.id,
+        productId: router.params.id,
         currentLevel: currentLevel,
       }, {
         headers: {
@@ -47,13 +86,13 @@ function ScanList() {
       });
       console.log("handle Scan Res :", response.data);
       if (response.data.success) {
-        const { packaged, quantity, currentLevel, totalLevel } = response.data.data;
+        const { packageNo, quantity, currentLevel, totalLevel } = response.data.data;
         setQuantity(quantity);
-        setPackage(packaged);
+        setPackageNo(packageNo);
         setCurrentLevel(currentLevel);
         setTotalLevel(totalLevel);
         console.log("Success.");
-        console.log("package level :",packaged);
+        console.log("package level :",packageNo);
         console.log("Quantity :", quantity);
         console.log("Current level :", currentLevel);
         console.log("total level :", totalLevel);
@@ -71,17 +110,21 @@ function ScanList() {
   //product table pid
   useEffect(() => {
     console.log("PID :- ", router.params?.id);
+    console.log("BID :- ", router.params?.bid);
     handleScannedData();
+    //scanValidation();
     return () => {
       
     }
   }, [isFocused])
   
   useEffect(() => {
+    
     console.log("Is compatible:", HoneywellBarcodeReader.isCompatible);
 
     HoneywellBarcodeReader.register().then((claimed) => {
       console.log(claimed ? 'Barcode reader is claimed' : 'Barcode reader is busy');
+      
     });
 
     HoneywellBarcodeReader.onBarcodeReadSuccess(event => {
@@ -89,17 +132,19 @@ function ScanList() {
       console.log('Current Scanned data :', event.data);
       console.log("Previous data is :", data);
 
+      scanValidation(event.data);
+
       setData(prevData => {
         const alreadyExist = prevData.find((item) => item === event.data)
         if (!alreadyExist) {
           return [...prevData, event.data];
         } else {
-          console.log("Already exitst...")
-          Alert.alert("Items Already Exists!")
+          //console.log("Already exitst...")
+          //Alert.alert("Items Already Exists!")
           return [...prevData]
         }
       },
-      );
+      );      
     });
 
     HoneywellBarcodeReader.onBarcodeReadFail(() => {
@@ -147,7 +192,7 @@ function ScanList() {
         <View style={styles.formContainer}>
           <View style={styles.row}>
             <Text style={styles.label}>Pack Level:</Text>
-            <Text style={styles.label} >{packaged}</Text>
+            <Text style={styles.label} >{currentLevel}</Text>
           </View>
 
           <View style={styles.row}>
@@ -157,6 +202,7 @@ function ScanList() {
         </View>
         <View>
           <Text>PID : {router.params?.id}</Text>
+          <Text>BID : {router.params?.bid}</Text>
         </View>
 
         <Divider />
@@ -409,7 +455,7 @@ const styles = StyleSheet.create({
   },
   ListSubheader: {
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: 16,
     paddingLeft: 10,
     marginBottom: 5,
     zIndex: 1,
