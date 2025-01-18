@@ -1,14 +1,31 @@
-'use client'
-import React, { useState, useEffect } from "react";
-import { ScrollView, StyleSheet, View, KeyboardAvoidingView, Platform, Alert, TouchableOpacity } from "react-native";
-import { Appbar, Text, Button, List, Divider, Portal, Modal, Snackbar } from "react-native-paper";
-import { useIsFocused, useNavigation, useRoute } from "@react-navigation/native";
+'use client';
+import React, {useState, useEffect} from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  View,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+  TouchableOpacity,
+} from 'react-native';
+import {
+  Appbar,
+  Text,
+  Button,
+  List,
+  Divider,
+  Portal,
+  Modal,
+  Snackbar,
+} from 'react-native-paper';
+import {useIsFocused, useNavigation, useRoute} from '@react-navigation/native';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
-import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // To handle token storage
-import { url } from "../../utils/constant";
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // To handle token storage
+import {url} from '../../utils/constant';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 function ScanList() {
   const navigation = useNavigation();
@@ -26,125 +43,158 @@ function ScanList() {
   const [currentLevel, setCurrentLevel] = useState(0);
   const [totalLevel, setTotalLevel] = useState(0);
   const [packageNo, setPackageNo] = useState(0);
+
+  const [snackbarInfo, setSnackbarInfo] = useState({
+    visible: false,
+    message: '',
+  });
+  const onToggleSnackBar = (message, code) => {
+    const backgroundColor =
+      code === 200
+        ? 'green'  // Success color
+        
+        : 'red';   // Default color for others
   
+    setSnackbarInfo({
+      visible: true,
+      message,
+      snackbarStyle: { backgroundColor },
+    });
+  };
+  //const onToggleSnackBar = message => setSnackbarInfo({visible: true, message});
+  const onDismissSnackBar = () =>
+    setSnackbarInfo({visible: false, message: ''});
+
   //code scan validation
-  const scanValidation = async(barcodeData)=>{
+  const scanValidation = async barcodeData => {
     console.log('scan validation call....');
     console.log('scan validation call started with barcode :', barcodeData);
-    
-    try {
-      const tokenToScanAPIs=await AsyncStorage.getItem("authToken");
-      console.log("tokenToScanAPIs : ",tokenToScanAPIs);
 
-      const payload={
-        productId : router.params?.id,
+    try {
+      const tokenToScanAPIs = await AsyncStorage.getItem('authToken');
+      console.log('tokenToScanAPIs : ', tokenToScanAPIs);
+
+      const payload = {
+        productId: router.params?.id,
         //productId: router.params?.id,
         batchId: router.params?.bid,
         uniqueCode: barcodeData,
         packageLevel: currentLevel,
         package: packageNo,
         quantity: quantity,
-      }
-      console.log("Payload for scan validation :",payload);
-      
-      const scanRes= await axios.post(`${url}/scanvalidation`,payload,{
-        headers:{
-          Authorization:`Bearer ${await AsyncStorage.getItem("authToken")}`,
-          "Content-Type":'application/json',
-        }
-      })
-      console.log("Scan Validation APIs Res 2 :",scanRes.data);
-      
+      };
+      console.log('Payload for scan validation :', payload);
+
+      const scanRes = await axios.post(`${url}/scanvalidation`, payload, {
+        headers: {
+          Authorization: `Bearer ${await AsyncStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log('Scan Validation APIs Res 2 :', scanRes.data);
+
       if (scanRes.data && scanRes.data.code === 200) {
-        console.log("Scan validation successful:", scanRes.data.message);
-        Alert.alert(scanRes.data.message);
-      }else if(scanRes.data.code === 409){
-        console.log("Invalid scan res :",scanRes.data.message);
-        Alert.alert(scanRes.data.message);
-      } else if(scanRes.data.code === 404){
-        console.log("404 : ",scanRes.data.message);
-        Alert.alert(scanRes.data.message);
-      }else{
+        console.log('Scan validation successful:', scanRes.data.message);
+        //Alert.alert(scanRes.data.message);
+        onToggleSnackBar(scanRes.data.message, 200);
+        return scanRes.data;
+      } else if (scanRes.data.code === 409) {
+        console.log('Invalid scan res :', scanRes.data.message);
+        //Alert.alert(scanRes.data.message);
+        onToggleSnackBar(scanRes.data.message, 409);
+        return null;
+      } else if (scanRes.data.code === 404) {
+        console.log('404 : ', scanRes.data.message);
+        //Alert.alert(scanRes.data.message);
+        onToggleSnackBar(scanRes.data.message, 404);
+        return null;
+      } else if (scanRes.data.code === 400) {
+        console.log('Invalid packege level :  ', scanRes.data.message);
+        //Alert.alert(scanRes.data.message);
+        onToggleSnackBar(scanRes.data.message, 400);
+        return null;
+      } else {
         console.log('error !');
       }
     } catch (error) {
-      console.error("Error to scan validation",error);
+      console.error('Error to scan validation', error);
     }
-
-  }
+  };
 
   const handleScannedData = async () => {
     try {
-      const response = await axios.post(`${url}/packagingHierarchy`, {
-        productId: router.params.id,
-        currentLevel: currentLevel,
-      }, {
-        headers: {
-          "Content-Type": 'application/json',
-          Authorization: `Bearer ${await AsyncStorage.getItem("authToken")}`,
-        }
-      });
-      console.log("handle Scan Res :", response.data);
+      const response = await axios.post(
+        `${url}/packagingHierarchy`,
+        {
+          productId: router.params.id,
+          currentLevel: currentLevel,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${await AsyncStorage.getItem('authToken')}`,
+          },
+        },
+      );
+      console.log('handle Scan Res :', response.data);
       if (response.data.success) {
-        const { packageNo, quantity, currentLevel, totalLevel } = response.data.data;
+        const {packageNo, quantity, currentLevel, totalLevel} =
+          response.data.data;
         setQuantity(quantity);
         setPackageNo(packageNo);
         setCurrentLevel(currentLevel);
         setTotalLevel(totalLevel);
-        console.log("Success.");
-        console.log("package level :",packageNo);
-        console.log("Quantity :", quantity);
-        console.log("Current level :", currentLevel);
-        console.log("total level :", totalLevel);
-        
+        console.log('Success.');
+        console.log('package level :', packageNo);
+        console.log('Quantity :', quantity);
+        console.log('Current level :', currentLevel);
+        console.log('total level :', totalLevel);
       } else {
         Alert.alert('Authentication failed. Please try again.');
         return;
       }
+    } catch (err) {
+      console.log('Error :', err);
     }
-    catch (err) {
-      console.log("Error :", err)
-    }
-  }
+  };
 
   //product table pid
   useEffect(() => {
-    console.log("PID :- ", router.params?.id);
-    console.log("BID :- ", router.params?.bid);
+    console.log('PID :- ', router.params?.id);
+    console.log('BID :- ', router.params?.bid);
     handleScannedData();
     //scanValidation();
-    return () => {
-      
-    }
-  }, [isFocused])
-  
-  useEffect(() => {
-    
-    console.log("Is compatible:", HoneywellBarcodeReader.isCompatible);
+    return () => {};
+  }, [isFocused]);
 
-    HoneywellBarcodeReader.register().then((claimed) => {
-      console.log(claimed ? 'Barcode reader is claimed' : 'Barcode reader is busy');
-      
+  useEffect(() => {
+    console.log('Is compatible:', HoneywellBarcodeReader.isCompatible);
+
+    HoneywellBarcodeReader.register().then(claimed => {
+      console.log(
+        claimed ? 'Barcode reader is claimed' : 'Barcode reader is busy',
+      );
     });
 
-    HoneywellBarcodeReader.onBarcodeReadSuccess(event => {
+    HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
       console.log('Received data :', event);
       console.log('Current Scanned data :', event.data);
-      console.log("Previous data is :", data);
+      console.log('Previous data is :', data);
 
-      scanValidation(event.data);
+      const scanRes = await scanValidation(event.data);
 
-      setData(prevData => {
-        const alreadyExist = prevData.find((item) => item === event.data)
-        if (!alreadyExist) {
-          return [...prevData, event.data];
-        } else {
-          //console.log("Already exitst...")
-          //Alert.alert("Items Already Exists!")
-          return [...prevData]
-        }
-      },
-      );      
+      if (scanRes && scanRes.code === 200) {
+        setData(prevData => {
+          const alreadyExist = prevData.find(item => item === event.data);
+          if (!alreadyExist) {
+            return [...prevData, event.data];
+          } else {
+            //console.log("Already exitst...")
+            //Alert.alert("Items Already Exists!")
+            return [...prevData];
+          }
+        });
+      }
     });
 
     HoneywellBarcodeReader.onBarcodeReadFail(() => {
@@ -159,18 +209,17 @@ function ScanList() {
       console.log('barcodeReaderClaimed', details);
     });
 
-    return () => {
-    };
+    return () => {};
   }, []);
 
   const handleEndTransaction = () => {
-    console.log("End transaction button pressed..");
+    console.log('End transaction button pressed..');
     setParentModalVisible(true); // Show parent modal asking for confirmation
   };
 
-  const handleParentModalDismiss = (confirmed) => {
+  const handleParentModalDismiss = confirmed => {
     setParentModalVisible(false); // Close the parent modal
-    setTransactionStatus(confirmed ? "completed" : "failed"); // Set status for child modal
+    setTransactionStatus(confirmed ? 'completed' : 'failed'); // Set status for child modal
     setChildModalVisible(true); // Show the corresponding child modal (completed or failed)
   };
 
@@ -181,9 +230,8 @@ function ScanList() {
   return (
     <>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+        style={{flex: 1}}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Appbar.Header>
           <Appbar.BackAction onPress={() => navigation.navigate('Product')} />
           <Appbar.Content title="Scan List" />
@@ -192,27 +240,31 @@ function ScanList() {
         <View style={styles.formContainer}>
           <View style={styles.row}>
             <Text style={styles.label}>Pack Level:</Text>
-            <Text style={styles.label} >{currentLevel}</Text>
+            <Text style={styles.label}>{currentLevel}</Text>
           </View>
 
           <View style={styles.row}>
             <Text style={styles.label}>Quantity:</Text>
-            <Text style={styles.label} keyboardType="numeric" >{quantity}</Text>
+            <Text style={styles.label} keyboardType="numeric">
+              {quantity}
+            </Text>
           </View>
         </View>
-        <View>
+
+        {/* <View>
           <Text>PID : {router.params?.id}</Text>
           <Text>BID : {router.params?.bid}</Text>
-        </View>
+        </View> */}
 
         <Divider />
         <View style={styles.ListSubheaderView}>
           <Text style={styles.ListSubheader}>{data.length} Show Results</Text>
         </View>
         {/* <Divider /> */}
-
+        {/* <View> */}
+        
         <ScrollView contentContainerStyle={styles.container}>
-          <List.Section style={{ flexDirection: 'column-reverse' }}>
+          <List.Section style={{flexDirection: 'column-reverse'}}>
             {data.map((item, index) => (
               <List.Item
                 key={index}
@@ -221,15 +273,27 @@ function ScanList() {
               />
             ))}
           </List.Section>
+          
         </ScrollView>
+        
+        {/* </View> */}
 
         <Divider />
+
+        <Snackbar
+          visible={snackbarInfo.visible}
+          onDismiss={onDismissSnackBar}
+          duration={3000}
+          //style={styles.snackbar}>
+          style={[styles.snackbar, snackbarInfo.snackbarStyle]}>
+          {snackbarInfo.message}
+        </Snackbar>
+
         <TouchableOpacity
           mode="contained"
           //labelStyle={{ fontSize: 20 }}
           style={styles.submitButton}
-          onPress={handleEndTransaction}
-        >
+          onPress={handleEndTransaction}>
           <Text style={styles.endTranTxt}>End Transaction</Text>
         </TouchableOpacity>
 
@@ -238,32 +302,36 @@ function ScanList() {
           <Modal
             visible={parentModalVisible}
             onDismiss={() => handleParentModalDismiss(false)} // Dismiss on Cancel
-            contentContainerStyle={styles.modalContainer}
-          >
+            contentContainerStyle={styles.modalContainer}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Scan List</Text>
             </View>
 
             <ScrollView contentContainerStyle={styles.modalContent}>
               <View>
-                <MaterialCommunityIcons name='cloud-print' size={50} color='#000000' style={styles.statusSuccess} />
+                <MaterialCommunityIcons
+                  name="cloud-print"
+                  size={50}
+                  color="#000000"
+                  style={styles.statusSuccess}
+                />
               </View>
-              <Text style={styles.modalText}>Shipper printing in progress..</Text>
+              <Text style={styles.modalText}>
+                Shipper printing in progress..
+              </Text>
             </ScrollView>
 
             <View style={styles.modalFooter}>
               <Button
                 mode="contained"
                 onPress={() => handleParentModalDismiss(true)} // Confirm button action
-                style={styles.modalConfirmButton}
-              >
+                style={styles.modalConfirmButton}>
                 Confirm
               </Button>
               <Button
                 mode="contained"
                 onPress={() => handleParentModalDismiss(false)} // Cancel button action
-                style={styles.modalButton}
-              >
+                style={styles.modalButton}>
                 Cancel
               </Button>
             </View>
@@ -273,17 +341,21 @@ function ScanList() {
         {/* Child Modal (Printing Completed) */}
         <Portal>
           <Modal
-            visible={childModalVisible && transactionStatus === "completed"}
+            visible={childModalVisible && transactionStatus === 'completed'}
             onDismiss={handleChildModalDismiss} // Close the modal
-            contentContainerStyle={styles.modalContainer}
-          >
+            contentContainerStyle={styles.modalContainer}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Status</Text>
             </View>
 
             <ScrollView contentContainerStyle={styles.modalContent}>
-            <View>
-              <MaterialIcons name="done" size={50} color='#000000' style={styles.statusSuccess}/>
+              <View>
+                <MaterialIcons
+                  name="done"
+                  size={50}
+                  color="#000000"
+                  style={styles.statusSuccess}
+                />
               </View>
               <Text style={styles.modalSuccessText}>Printing Completed!</Text>
             </ScrollView>
@@ -292,8 +364,7 @@ function ScanList() {
               <Button
                 mode="contained"
                 onPress={handleChildModalDismiss} // OK button action to close the modal
-                style={styles.modalOKButton}
-              >
+                style={styles.modalOKButton}>
                 OK
               </Button>
             </View>
@@ -303,33 +374,37 @@ function ScanList() {
         {/* Child Modal (Printing Failed) */}
         <Portal>
           <Modal
-            visible={childModalVisible && transactionStatus === "failed"}
+            visible={childModalVisible && transactionStatus === 'failed'}
             onDismiss={handleChildModalDismiss} // Close the modal
-            contentContainerStyle={styles.modalContainer}
-          >
+            contentContainerStyle={styles.modalContainer}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Status</Text>
             </View>
             <ScrollView contentContainerStyle={styles.modalContent}>
               <View>
-                <MaterialIcons name="sms-failed" size={50} color='#000000' style={styles.statusSuccess} /> 
+                <MaterialIcons
+                  name="sms-failed"
+                  size={50}
+                  color="#000000"
+                  style={styles.statusSuccess}
+                />
               </View>
-              <Text style={styles.modalFailedText}>Shipper printing Failed!</Text>
+              <Text style={styles.modalFailedText}>
+                Shipper printing Failed!
+              </Text>
             </ScrollView>
 
             <View style={styles.childModalFooter}>
               <Button
                 mode="contained"
                 onPress={handleChildModalDismiss} // OK button action to close the modal
-                style={styles.modelRetryButton}
-              >
+                style={styles.modelRetryButton}>
                 Retry
               </Button>
             </View>
           </Modal>
         </Portal>
       </KeyboardAvoidingView>
-
     </>
   );
 }
@@ -339,9 +414,11 @@ export default ScanList;
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingHorizontal: 10,
-    paddingBottom: 0,
-    //backgroundColor:'yellow',
+    paddingLeft:20,
+    //paddingHorizontal: 10,
+    //paddingBottom: 0,
+    //backgroundColor: 'yellow',
+    //height:200,
   },
   formContainer: {
     marginTop: 0,
@@ -356,7 +433,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     marginRight: 10,
     color: '#333',
     width: 110,
@@ -365,7 +442,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     height: 30,
-    fontWeight: 'bold'
+    fontWeight: 'bold',
   },
   submitButton: {
     //position: 'absolute',
@@ -426,7 +503,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     flexDirection: 'row',
     justifyContent: 'center',
-    backgroundColor:'#878f99'
+    backgroundColor: '#878f99',
   },
   modalOKButton: {
     width: '48%',
@@ -442,12 +519,12 @@ const styles = StyleSheet.create({
   modalSuccessText: {
     //color: "green",
     fontSize: 18,
-    textAlign: 'center'
+    textAlign: 'center',
   },
   modalFailedText: {
     color: 'red',
     fontSize: 18,
-    textAlign: 'center'
+    textAlign: 'center',
   },
   childModalFooter: {
     justifyContent: 'center',
@@ -469,10 +546,20 @@ const styles = StyleSheet.create({
   },
   SnackbarDispaly: {
     flex: 1,
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
   },
-  statusSuccess:{
-    textAlign:'center',
+  statusSuccess: {
+    textAlign: 'center',
     //backgroundColor:'red'
-  }
+  },
+  snackbar: {
+    //backgroundColor: "red",
+    position: 'absolute',
+    bottom: 70,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 10,
+    borderRadius: 2,
+    marginBottom: 10, // Extra space from the bottom if needed
+  },
 });
