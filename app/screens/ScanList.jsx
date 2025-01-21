@@ -51,21 +51,19 @@ function ScanList() {
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
       code === 200
-        ? 'green'  // Success color
-        
-        : 'red';   // Default color for others
-  
+        ? 'rgba(80, 189, 160, 0.7)': 'rgb(255, 99, 71)'; // Default color for others
+    
     setSnackbarInfo({
       visible: true,
       message,
-      snackbarStyle: { backgroundColor },
+      snackbarStyle: {backgroundColor},
     });
   };
   //const onToggleSnackBar = message => setSnackbarInfo({visible: true, message});
   const onDismissSnackBar = () =>
     setSnackbarInfo({visible: false, message: ''});
 
-  //code scan validation
+  //scanvalidation APIs
   const scanValidation = async barcodeData => {
     console.log('scan validation call....');
     console.log('scan validation call started with barcode :', barcodeData);
@@ -85,7 +83,7 @@ function ScanList() {
       };
       console.log('Payload for scan validation :', payload);
 
-      const scanRes = await axios.post(`${url}/scanvalidation`, payload, {
+      const scanRes = await axios.post(`${url}/scan/validation`, payload, {
         headers: {
           Authorization: `Bearer ${await AsyncStorage.getItem('authToken')}`,
           'Content-Type': 'application/json',
@@ -117,10 +115,11 @@ function ScanList() {
         console.log('error !');
       }
     } catch (error) {
-      console.error('Error to scan validation', error);
+      console.error('Error to scan validation API call', error);
     }
   };
 
+  //packaging Hierarchy API
   const handleScannedData = async () => {
     try {
       const response = await axios.post(
@@ -240,12 +239,12 @@ function ScanList() {
         <View style={styles.formContainer}>
           <View style={styles.row}>
             <Text style={styles.label}>Pack Level:</Text>
-            <Text style={styles.label}>{currentLevel}</Text>
+            <Text style={styles.label2}>{currentLevel}</Text>
           </View>
 
           <View style={styles.row}>
             <Text style={styles.label}>Quantity:</Text>
-            <Text style={styles.label} keyboardType="numeric">
+            <Text style={styles.label3} keyboardType="numeric">
               {quantity}
             </Text>
           </View>
@@ -262,7 +261,7 @@ function ScanList() {
         </View>
         {/* <Divider /> */}
         {/* <View> */}
-        
+
         <ScrollView contentContainerStyle={styles.container}>
           <List.Section style={{flexDirection: 'column-reverse'}}>
             {data.map((item, index) => (
@@ -273,9 +272,8 @@ function ScanList() {
               />
             ))}
           </List.Section>
-          
         </ScrollView>
-        
+
         {/* </View> */}
 
         <Divider />
@@ -414,7 +412,7 @@ export default ScanList;
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingLeft:20,
+    paddingLeft: 20,
     //paddingHorizontal: 10,
     //paddingBottom: 0,
     //backgroundColor: 'yellow',
@@ -423,7 +421,7 @@ const styles = StyleSheet.create({
   formContainer: {
     marginTop: 0,
     padding: 10,
-    //backgroundColor:'red',
+    backgroundColor:'rgba(80, 189, 160,0.7)',
   },
   row: {
     flexDirection: 'row',
@@ -437,6 +435,22 @@ const styles = StyleSheet.create({
     marginRight: 10,
     color: '#333',
     width: 110,
+  },
+  label2: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginRight: 25,
+    color: '#333',
+    //width: 110,
+    
+  },
+  label3: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginRight: 25,
+    color: '#333',
+    //width: 110,
+    
   },
   input: {
     flex: 1,
