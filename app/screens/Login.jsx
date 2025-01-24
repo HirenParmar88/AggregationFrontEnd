@@ -66,7 +66,8 @@ const Login = ({route, navigation}) => {
       console.log('Login :', res.data);
 
       if (res.data.success) {
-        await AsyncStorage.setItem('authToken', res.data.data.token);
+        const token = res.data.data.token;  //store token
+        await AsyncStorage.setItem('authToken', token);
         onToggleSnackBar('Successfully logged in!');
 
         setTimeout(() => {

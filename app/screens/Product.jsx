@@ -68,8 +68,10 @@ function ProductComponent() {
           Authorization: `Bearer ${token}`,
         },
       });
+      //console.log("Product API Response :->",productResponse);
+      
       const {products} = productResponse.data.data; //destructuring objects
-      console.log('This is products Data :', products);
+      //console.log('This is products Data :', products);
       //console.log('product_id :-', products[0].product_id);
 
       if (products) {
@@ -102,7 +104,7 @@ function ProductComponent() {
       });
       //console.log("Batch Response :", batchResponse)
       const {batches} = batchResponse?.data?.data;
-      console.log('Batche Res :', batches);
+      //console.log('Batche Res :', batches);
 
       if (batches) {
         const fetchedBatches = batches.map(batch => ({
@@ -229,6 +231,7 @@ function ProductComponent() {
   };
 
   const addAggregrate = async esign_status => {
+    console.log('Add Agregration')
     const aggregationtransactionResponse = await axios.post(
       `${url}/aggregationtransaction/addaggregation`,
       {
@@ -237,8 +240,8 @@ function ProductComponent() {
           performed_action: 'Add Aggeration ',
           remarks: 'none',
         },
-        product_id: valueProduct,
-        batch_id: valueBatch,
+        productId: valueProduct,
+        batchId: valueBatch,
         esign_status: esign_status,
       },
       {
@@ -250,7 +253,7 @@ function ProductComponent() {
     );
     console.log(
       'aggregationtransactionResponse :',
-      aggregationtransactionResponse.data.data,
+      aggregationtransactionResponse,
     );
     // setAggregateId(aggregationtransactionResponse.data.data)
     // await processApproval(user,aggregationtransactionResponse.data.data.id)
@@ -259,17 +262,20 @@ function ProductComponent() {
       const selectedProduct = products.find(p => p.value === valueProduct);
       const selectedBatch = batches.find(b => b.value === valueBatch);
 
-      Alert.alert(
-        'Selected Data',
-        `Product: ${selectedProduct.label}\nBatch: ${selectedBatch.label}`,
-        [{text: 'OK'}],
-      );
+      // Alert.alert(
+      //   'Selected Data',
+      //   `Product: ${selectedProduct.label}\nBatch: ${selectedBatch.label}`,
+      //   [{text: 'OK'}],
+      // );
       console.log('selected product :', selectedProduct.label);
       console.log('selected batch:', selectedBatch.label);
       console.log('PID :-', valueProduct);
       console.log('BID :-', valueBatch);
+       await AsyncStorage.setItem('productId',valueProduct);
+       await AsyncStorage.setItem('batchId',valueBatch);
+
       
-      navigation.navigate('ScanList', {id: valueProduct, id: valueBatch});
+       navigation.navigate('ScanList');
     } else {
       Alert.alert('Error', 'Please select both product and batch.');
     }
@@ -277,12 +283,13 @@ function ProductComponent() {
   };
 
   const handleSubmit = async () => {
+    console.log('Submit Product and Batch Id');
     console.log(config.config.esign_status, !openModal);
     if (config.config.esign_status && !openModal) {
       setOpenModal(true);
       return;
     }
-    // addAggregrate("approved")
+    addAggregrate("approved")
     navigation.navigate('ScanList', {id: valueProduct, bid: valueBatch});
 
     setValueProduct(null);
