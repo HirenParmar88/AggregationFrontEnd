@@ -16,8 +16,10 @@ import {
 } from 'react-native-paper';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {url} from '../../utils/constant';
+//import {url} from '../../utils/constant';
+
 import {useNavigation} from '@react-navigation/native';
+import config from '../../config';
 
 const Login = ({route, navigation}) => {
   const {setIsAuthenticated} = route.params;
@@ -34,7 +36,7 @@ const Login = ({route, navigation}) => {
   const onToggleSnackBar = message => setSnackbarInfo({visible: true, message});
   const onDismissSnackBar = () =>
     setSnackbarInfo({visible: false, message: ''});
-  console.log('process env :', url);
+  //console.log('process env :', url);
 
   const handleLogin = async (forceFully = false) => {
     console.log('Force fully ', forceFully);
@@ -49,8 +51,10 @@ const Login = ({route, navigation}) => {
 
     try {
       console.log('api calling....');
+      console.log("BACKEND DYNAMIC URLs :", config.API_URL);
+      
       const res = await axios.post(
-        `${url}/auth/login`,
+        `${config.API_URL}/auth/login`,
         {
           userId: userId,
           password,
@@ -139,6 +143,7 @@ const Login = ({route, navigation}) => {
             <Button mode="contained" onPress={() => handleLogin(false)} style={styles.btn}>
               LOGIN
             </Button>
+            <Text>{config.API_URL}</Text>
           </View>
         </View>
       </ScrollView>

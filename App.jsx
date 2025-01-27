@@ -21,6 +21,7 @@ import EsignPage from './app/screens/Esign';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {jwtDecode} from 'jwt-decode';
 import SettingScreen from './app/screens/Settings';
+import LoaderComponent from './app/components/Loader';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -197,6 +198,22 @@ function App() {
             initialParams={{setIsAuthenticated}}
             options={{
               drawerLabel: 'Logout',
+              headerShown: false,
+              drawerIcon: ({focused, size}) => (
+                <MaterialIcons
+                  name="logout"
+                  size={size}
+                  color={focused ? '#000000' : '#000000'}
+                />
+              ),
+            }} // You can customize the label here
+          />
+          <Drawer.Screen
+            name="Loader"
+            component={LoaderComponent}
+            initialParams={{setIsAuthenticated}}
+            options={{
+              drawerLabel: 'Loder',
               headerShown: false,
               drawerIcon: ({focused, size}) => (
                 <MaterialIcons

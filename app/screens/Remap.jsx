@@ -26,6 +26,7 @@ import {url} from '../../utils/constant';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
+import LoaderComponent from '../components/Loader';
 
 function RemapScreen() {
   const navigation = useNavigation();
@@ -259,9 +260,10 @@ function RemapScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
-      </View>
+      // <View style={styles.container}>
+      //   <Text>Loading...</Text>
+      // </View>
+      <LoaderComponent />
     );
   }
 

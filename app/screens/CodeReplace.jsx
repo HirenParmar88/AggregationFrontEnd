@@ -26,6 +26,7 @@ import {url} from '../../utils/constant';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
+import LoaderComponent from '../components/Loader';
 
 function CodeReplaceScreen() {
   const navigation = useNavigation();
@@ -264,9 +265,10 @@ function CodeReplaceScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Loading...</Text>
-      </View>
+      // <View style={styles.loadingContainer}>
+      //   <Text>Loading...</Text>
+      // </View>
+      <LoaderComponent />
     );
   }
 

@@ -9,7 +9,7 @@ import {useNavigation} from '@react-navigation/native';
 
 function HomeScreen() {
   const navigation = useNavigation();
-
+  
   const handleAggregationBtn = () => {
     //console.log("Aggregation Btn Called..");
     navigation.navigate('Aggregation');
@@ -31,7 +31,7 @@ function HomeScreen() {
   };
   const handleCodeReplaceBtn = () => {
     console.log('Code Replace Called..');
-    navigation.navigate('CodeReplace');
+    navigation.navigate('Code Replace');
   };
 
   return (
@@ -153,12 +153,6 @@ const styles = StyleSheet.create({
     width: 250,
     marginLeft: '15%',
     marginTop: 0,
-    //top: 0,
-    //padding:50,
-    // paddingTop: 20,
-    // paddingLeft: 40,
-    // paddingRight: 40,
-    //paddingBottom: 35,
     marginLeft: 35,
   },
   card: {
@@ -175,8 +169,8 @@ const styles = StyleSheet.create({
   },
   btnGroups: {
     marginTop: 20,
-    marginRight: 60,
-    marginLeft: 60,
+    marginRight: 55,
+    marginLeft: 55,
     borderRadius: 0,
     //backgroundColor:'yellow',
   },

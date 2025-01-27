@@ -1,6 +1,7 @@
 //app/screens/Products.jsx
 import React, {useState, useEffect} from 'react';
-import {Text, View, StyleSheet, Alert, TouchableOpacity} from 'react-native';
+import {Text, View, StyleSheet, Alert, TouchableOpacity, ActivityIndicator} from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import {Appbar} from 'react-native-paper';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import {Dropdown} from 'react-native-element-dropdown';
@@ -10,6 +11,7 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import EsignPage from './Esign';
 import {decodeAndSetConfig} from '../../utils/tokenUtils';
 import {url} from '../../utils/constant';
+import LoaderComponent from '../components/Loader';
 
 function ProductComponent() {
   const navigation = useNavigation();
@@ -305,9 +307,10 @@ function ProductComponent() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
-      </View>
+      // <View style={styles.LoadingContainer}>
+      //   <ActivityIndicator size="large" />
+      // </View>
+      <LoaderComponent />
     );
   }
   const handleDropdownProductChange = async item => {
@@ -318,6 +321,7 @@ function ProductComponent() {
   };
   return (
     <>
+   
       {/* <Appbar.Header>
                 <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
                 <Appbar.Content title="Product" />
@@ -423,6 +427,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignContent: 'center',
     width: '100%',
+  },
+  LoadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  horizontal: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 10,
   },
   dropdownContainer: {
     //backgroundColor:'red',
