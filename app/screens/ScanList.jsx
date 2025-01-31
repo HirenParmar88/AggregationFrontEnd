@@ -102,7 +102,7 @@ function ScanList() {
     });
 
     return () => {};
-  }, [transactionId, quantity, currentIndex, currentLevel, packageNo, perPackageProduct, totalLevel, totalProduct]);
+  }, [transactionId, quantity, currentIndex, currentLevel, packageNo, perPackageProduct, totalLevel, totalProduct, currentPackageLevel]);
 
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
@@ -129,7 +129,7 @@ function ScanList() {
         productId: productId,
         batchId: batchId,
         uniqueCode: barcodeData,
-        packageLevel: currentLevel,
+        packageLevel: currentPackageLevel,
       };
       console.log('Payload for scan/validation :', payload);
 
@@ -142,7 +142,8 @@ function ScanList() {
       console.log('scan/validation APIs Res :', scanRes.data);
 
       if (scanRes.data.code === 200 && scanRes.data.success === true) {
-        onToggleSnackBar(scanRes.data.message, 200);
+        //onToggleSnackBar(scanRes.data.message, 200);
+        console.log(scanRes.data.message, 200);
         return scanRes.data;
       } else if (scanRes.data.code === 409) {
         console.log('Invalid scan res :', scanRes.data.message);
@@ -210,7 +211,7 @@ function ScanList() {
         uniqueCode: barcodeData,
         transactionId: transactionId,
         packageNo: packageNo,
-        currentPackageLevel: currentLevel,
+        currentPackageLevel: currentPackageLevel,
         quantity: quantity,
         perPackageProduct: perPackageProduct,
         totalLevel: totalLevel,
@@ -231,7 +232,8 @@ function ScanList() {
       );
       console.log('codeScan APIs Response :', codeScanResponse.data);
 
-      if (codeScanResponse.data.success) {
+      if (codeScanResponse.data.success && codeScanResponse.data.code ===200) {
+        onToggleSnackBar(codeScanResponse.data.message,200)
         console.log("Transaction ID :",transactionId)
         setTransactionId(codeScanResponse.data.data.transactionId);
         setPackageNo(codeScanResponse.data.data.packageNo);
@@ -243,8 +245,8 @@ function ScanList() {
         setTotalProduct(codeScanResponse.data.data.totalProduct);
         setCurrentPackageLevel(codeScanResponse.data.data.currentPackageLevel); //set current level value
         console.log('Updated..');
-
-        //console.log("New Data is :",transactionId,packageNo,perPackageProduct,quantity,totalLevel,totalProduct,currentPackageLevel);
+      }else if(codeScanResponse.data.code === 400){
+        onToggleSnackBar(codeScanResponse.data.message);
       }
     } catch (error) {
       console.error('Error to code scan API call..', error);
@@ -281,7 +283,7 @@ function ScanList() {
         <View style={styles.formContainer}>
           <View style={styles.row}>
             <Text style={styles.label}>Pack Level:</Text>
-            <Text style={styles.label2}>{currentLevel}</Text>
+            <Text style={styles.label2}>{currentPackageLevel}</Text>
           </View>
 
           <View style={styles.row}>
