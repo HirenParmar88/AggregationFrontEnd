@@ -22,39 +22,42 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {jwtDecode} from 'jwt-decode';
 import SettingScreen from './app/screens/Settings';
 import LoaderComponent from './app/components/Loader';
+import UrlScreen from './app/screens/UrlScreens';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
 function App() {
-  useEffect(() => {
-    (async () => {
-      await checkUserAuth();
-    })();
+  // useEffect(() => {
+  //   (async () => {
+  //     await checkUserAuth();
+  //   })();
 
-    return () => {};
-  }, []);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  //   return () => {};
+  // }, []);
+   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const checkUserAuth = async () => {
-    try {
-      const token = await AsyncStorage.getItem('authToken');
-      const decoded = jwtDecode(token);
-      //console.log("decode toekn ", decoded)
-      const currentTime = Math.floor(Date.now() / 1000);
+  // const checkUserAuth = async () => {
+  //   try {
+  //     const token = await AsyncStorage.getItem('authToken');
+  //     console.log("Auth TOKEN :", token);
+      
+  //     const decoded = jwtDecode(token);
+  //     //console.log("decode toekn ", decoded)
+  //     const currentTime = Math.floor(Date.now() / 1000);
 
-      // Check if the token is expired
-      if (currentTime > decoded.exp) {
-        //console.log("Token is expired.");
-        setIsAuthenticated(false);
-      } else {
-        console.log('Token is still valid.');
-        setIsAuthenticated(true);
-      }
-    } catch (error) {
-      console.log('Error in token get ', error);
-    }
-  };
+  //     // Check if the token is expired
+  //     if (currentTime > decoded.exp) {
+  //       //console.log("Token is expired.");
+  //       setIsAuthenticated(false);
+  //     } else {
+  //       console.log('Token is still valid.');
+  //       setIsAuthenticated(true);
+  //     }
+  //   } catch (error) {
+  //     console.log('Error in token get ', error);
+  //   }
+  // };
 
   return (
     <NavigationContainer>
@@ -80,8 +83,25 @@ function App() {
             options={{
               headerShown: true,
               drawerIcon: ({focused, size}) => (
-                <Feather
-                  name="box"
+                <FontAwesome5
+                  name="boxes"
+                  size={size}
+                  color={focused ? '#000000' : '#000000'}
+                />
+              ),
+            }}
+          />
+          <Drawer.Screen
+            name="Dropout"
+            component={DropoutFun}
+            options={{
+              headerShown: false,
+              //drawerLabel:()=>null,
+              //title: null,
+              //drawerIcon: () => null,
+              drawerIcon: ({focused, size}) => (
+                <MaterialCommunityIcons
+                  name="alert-box"
                   size={size}
                   color={focused ? '#000000' : '#000000'}
                 />
@@ -109,8 +129,8 @@ function App() {
             options={{
               headerShown: false,
               drawerIcon: ({focused, size}) => (
-                <Foundation
-                  name="print"
+                <MaterialCommunityIcons
+                  name="cloud-print"
                   size={size}
                   color={focused ? '#000000' : '#000000'}
                 />
@@ -139,24 +159,6 @@ function App() {
               drawerIcon: ({focused, size}) => (
                 <MaterialCommunityIcons
                   name="find-replace"
-                  size={size}
-                  color={focused ? '#000000' : '#000000'}
-                />
-              ),
-            }}
-          />
-
-          <Drawer.Screen
-            name="Dropout"
-            component={DropoutFun}
-            options={{
-              headerShown: false,
-              //drawerLabel:()=>null,
-              //title: null,
-              //drawerIcon: () => null,
-              drawerIcon: ({focused, size}) => (
-                <MaterialCommunityIcons
-                  name="alert-box"
                   size={size}
                   color={focused ? '#000000' : '#000000'}
                 />
@@ -208,12 +210,29 @@ function App() {
               ),
             }} // You can customize the label here
           />
-          <Drawer.Screen
+          {/* <Drawer.Screen
             name="Loader"
             component={LoaderComponent}
             initialParams={{setIsAuthenticated}}
             options={{
               drawerLabel: 'Loder',
+              headerShown: false,
+              drawerIcon: ({focused, size}) => (
+                <MaterialIcons
+                  name="logout"
+                  size={size}
+                  color={focused ? '#000000' : '#000000'}
+                />
+              ),
+            }} // You can customize the label here
+          /> */}
+          <Drawer.Screen
+            name="UrlScreen"
+            component={UrlScreen}
+            initialParams={{setIsAuthenticated}}
+            options={{
+              //drawerItemStyle: { display: 'none' }, //to hide the drawer Item
+              drawerLabel: 'UrlScreen',
               headerShown: false,
               drawerIcon: ({focused, size}) => (
                 <MaterialIcons
@@ -233,12 +252,6 @@ function App() {
             initialParams={{setIsAuthenticated}}
             options={{headerShown: false}} // Hide header for login screen
           />
-          {/* <Stack.Screen 
-            name="Dropout"
-            component={DropoutFun}
-            //initialParams={{ setIsAuthenticated }}
-            options={{ headerShown: true }}
-          /> */}
         </Stack.Navigator>
       )}
     </NavigationContainer>

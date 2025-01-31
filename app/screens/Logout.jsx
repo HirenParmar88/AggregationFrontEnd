@@ -13,21 +13,20 @@ function Logout({ route }) {
   const navigation = useNavigation(); // Get navigation object using the hook
   const { setIsAuthenticated } = route.params; // Retrieve setIsAuthenticated from params
 
-  // Show the logout confirmation modal
   const showModal = () => setVisible(true);
-
-  // Hide the logout confirmation modal
   const hideModal = () => setVisible(false); 
 
   // Handle logout
   const handleLogout = async () => {
+    console.log("aaaa");
     try {
       const token = await AsyncStorage.getItem("authToken");
+      console.log("Token use for Logout :",token);
+      
       if (!token) {
         Alert.alert("Error", "No token found. Please log in again.");
         return;
       }
-
       // Make the logout API request
       const response = await axios.post(
         `${url}/auth/logout`,
@@ -39,6 +38,8 @@ function Logout({ route }) {
           },
         }
       );
+      console.log("bbbb");
+      console.log("Logout Api Res :", response);
       
       // Handle successful logout
       if (response.data.success) {
@@ -48,7 +49,6 @@ function Logout({ route }) {
         //Alert.alert("Success", "You have been logged out!");
         navigation.navigate("Login");
         console.log("User Logged Out Successfully..");
-        
       } else {
         // Handle error response
         hideModal();
@@ -58,7 +58,8 @@ function Logout({ route }) {
     } catch (error) {
       console.error("Error logging out:", error);
       hideModal();
-      Alert.alert("Error", "An error occurred while logging out. Please try again.");
+      navigation.navigate("Home")
+      Alert.alert("Error", "An error occurred while logout out. Please try again.");
     }
   };
 

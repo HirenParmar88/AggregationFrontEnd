@@ -22,6 +22,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {url} from '../../utils/constant';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
+import LoaderComponent from '../components/Loader';
 
 function DropoutFun() {
   const navigation = useNavigation();
@@ -400,9 +401,10 @@ function DropoutFun() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
-      </View>
+      // <View style={styles.container}>
+      //   <Text>Loading...</Text>
+      // </View>
+      <LoaderComponent />
     );
   }
 

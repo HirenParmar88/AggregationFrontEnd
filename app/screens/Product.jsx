@@ -1,7 +1,15 @@
 //app/screens/Products.jsx
 import React, {useState, useEffect} from 'react';
-import {Text, View, StyleSheet, Alert, TouchableOpacity, ActivityIndicator} from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import {
+  Text,
+  View,
+  StyleSheet,
+  Alert,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+} from 'react-native';
+import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 import {Appbar} from 'react-native-paper';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import {Dropdown} from 'react-native-element-dropdown';
@@ -60,8 +68,8 @@ function ProductComponent() {
   // console.log("Config :->", config);
 
   const fetchProductData = async token => {
-    console.log("Product APIs called..");
-    
+    console.log('Product APIs called..');
+
     try {
       setLoading(true);
       const productResponse = await axios.get(`${url}/product/`, {
@@ -71,7 +79,7 @@ function ProductComponent() {
         },
       });
       //console.log("Product API Response :->",productResponse);
-      
+
       const {products} = productResponse.data.data; //destructuring objects
       //console.log('This is products Data :', products);
       //console.log('product_id :-', products[0].product_id);
@@ -94,8 +102,8 @@ function ProductComponent() {
   };
   //Fetch batch
   const fetchBatchData = async (token, product_id) => {
-    console.log("Batch APIs called..");
-    
+    console.log('Batch APIs called..');
+
     try {
       setLoading(true);
       const batchResponse = await axios.get(`${url}/batch/${product_id}`, {
@@ -233,7 +241,7 @@ function ProductComponent() {
   };
 
   const addAggregrate = async esign_status => {
-    console.log('Add Agregration')
+    console.log('Add Agregration');
     const aggregationtransactionResponse = await axios.post(
       `${url}/aggregationtransaction/addaggregation`,
       {
@@ -273,11 +281,10 @@ function ProductComponent() {
       console.log('selected batch:', selectedBatch.label);
       console.log('PID :-', valueProduct);
       console.log('BID :-', valueBatch);
-       await AsyncStorage.setItem('productId',valueProduct);
-       await AsyncStorage.setItem('batchId',valueBatch);
+      await AsyncStorage.setItem('productId', valueProduct);
+      await AsyncStorage.setItem('batchId', valueBatch);
 
-      
-       navigation.navigate('ScanList');
+      navigation.navigate('ScanList');
     } else {
       Alert.alert('Error', 'Please select both product and batch.');
     }
@@ -291,7 +298,7 @@ function ProductComponent() {
       setOpenModal(true);
       return;
     }
-    addAggregrate("approved")
+    addAggregrate('approved');
     navigation.navigate('ScanList', {id: valueProduct, bid: valueBatch});
 
     setValueProduct(null);
@@ -321,12 +328,22 @@ function ProductComponent() {
   };
   return (
     <>
-   
       {/* <Appbar.Header>
                 <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
                 <Appbar.Content title="Product" />
             </Appbar.Header> */}
-
+      <View style={styles.imageView}>
+        <Image
+          source={require('../../assets/images/start_aggregation.png')}
+          style={styles.img}
+        />
+      </View>
+      <View>
+        <Text style={styles.txt1}>Ready To Start Aggregation?</Text>
+        <Text style={styles.txt1}>
+          Select Your Product & Batch to Continue.
+        </Text>
+      </View>
       <View style={styles.container}>
         {/* {renderLabelProduct()} */}
         <View style={styles.dropdownContainer}>
@@ -423,10 +440,31 @@ const styles = StyleSheet.create({
   container: {
     //backgroundColor: 'yellow',
     padding: 16,
+    // paddingLeft:16,
+    // paddingRight:16,
     flex: 1,
     justifyContent: 'center',
     alignContent: 'center',
     width: '100%',
+  },
+  imageView: {
+    //marginLeft:20,
+    //backgroundColor:'red',
+  },
+  img: {
+    //backgroundColor: 'lightblue',
+    height: 250,
+    width: 250,
+    //marginLeft: '15%',
+    marginTop: 0,
+    marginLeft: 53,
+  },
+  txt1: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 5,
+    //backgroundColor:'rgb(80, 189, 160)',
   },
   LoadingContainer: {
     flex: 1,

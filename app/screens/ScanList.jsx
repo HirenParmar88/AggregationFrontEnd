@@ -19,7 +19,7 @@ import {
   Modal,
   Snackbar,
 } from 'react-native-paper';
-import {useIsFocused, useNavigation, useRoute} from '@react-navigation/native';
+import {useIsFocused, useNavigation} from '@react-navigation/native';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // To handle token storage
@@ -29,15 +29,11 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 
 function ScanList() {
   const navigation = useNavigation();
-  const router = useRoute();
   const isFocused = useIsFocused();
   const [data, setData] = useState([]);
-  const [count, setCount] = useState(0);
-
-  const [parentModalVisible, setParentModalVisible] = useState(false); // Parent modal (confirmation)
-  const [childModalVisible, setChildModalVisible] = useState(false); // Child modal (completed or failed)
-  const [transactionStatus, setTransactionStatus] = useState(null); // Track transaction status (completed or failed)
-  const [text, setText] = useState('');
+  const [parentModalVisible, setParentModalVisible] = useState(false);
+  const [childModalVisible, setChildModalVisible] = useState(false); 
+  const [transactionStatus, setTransactionStatus] = useState(null);
 
   const [quantity, setQuantity] = useState(0);
   const [currentLevel, setCurrentLevel] = useState(0);
@@ -45,11 +41,69 @@ function ScanList() {
   const [packageNo, setPackageNo] = useState(0);
   const [totalProduct, setTotalProduct] = useState(0);
   const [perPackageProduct, setPerPackageProduct] = useState(0);
+  const [transactionId, setTransactionId] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentPackageLevel, setCurrentPackageLevel] = useState(0);
 
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
   });
+
+  useEffect(() => {
+    if(!packageNo && !quantity){
+    handleScannedData();
+    }
+    //scanValidation();
+    return () => {};
+  }, [isFocused]);
+
+  useEffect(() => {
+    //console.log('Is compatible:', HoneywellBarcodeReader.isCompatible);
+
+    HoneywellBarcodeReader.register().then(claimed => {
+      console.log(
+        claimed ? 'Barcode reader is claimed' : 'Barcode reader is busy',
+      );
+    });
+
+    HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
+      console.log('Received data :', event);
+      console.log('Current Scanned data :', event.data);
+      console.log('Previous data is :', data);
+
+      const scanRes = await scanValidation(event.data);
+      //console.log('Inside BarcodeRead Callback ', scanRes);
+      if (scanRes && scanRes.code === 200) {
+        await codeScan(event.data); //codeScan API call
+        setData(prevData => {
+          const alreadyExist = prevData.find(item => item === event.data);
+          if (!alreadyExist) {
+            return [...prevData, event.data];
+          } else {
+            //console.log("Already exitst...")
+            //Alert.alert("Items Already Exists!")
+            return [...prevData];
+          }
+        });
+      }
+    });
+
+    HoneywellBarcodeReader.onBarcodeReadFail(() => {
+      console.log('Barcode read failed');
+    });
+
+    HoneywellBarcodeReader.onTriggerStateChange(state => {
+      console.log('onTriggerStateChange', state);
+    });
+
+    HoneywellBarcodeReader.barcodeReaderInfo(details => {
+      //console.log('barcodeReaderClaimed', details);
+    });
+
+    return () => {};
+  }, [transactionId, quantity, currentIndex, currentLevel, packageNo, perPackageProduct, totalLevel, totalProduct]);
+
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
       code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
@@ -60,33 +114,24 @@ function ScanList() {
       snackbarStyle: {backgroundColor},
     });
   };
-  //const onToggleSnackBar = message => setSnackbarInfo({visible: true, message});
+
   const onDismissSnackBar = () =>
     setSnackbarInfo({visible: false, message: ''});
 
-  //scanvalidation APIs
+  //scan Validation API
   const scanValidation = async barcodeData => {
     console.log('scan validation call....');
-    console.log('scan validation call started with barcode :', barcodeData);
-
     try {
-      const tokenToScanValidationAPIs = await AsyncStorage.getItem('authToken');
-      console.log('tokenToScanValidationAPIs : ', tokenToScanValidationAPIs);
       const productId = await AsyncStorage.getItem('productId');
       const batchId = await AsyncStorage.getItem('batchId');
-      console.log('PID uses for scanValidation:- ', productId);
-      console.log('BID uses for scanValidation:- ', batchId);
 
       const payload = {
         productId: productId,
-        //productId: router.params?.id,
         batchId: batchId,
         uniqueCode: barcodeData,
         packageLevel: currentLevel,
-        package: packageNo,
-        quantity: quantity,
       };
-      console.log('Payload for scan validation :', payload);
+      console.log('Payload for scan/validation :', payload);
 
       const scanRes = await axios.post(`${url}/scan/validation`, payload, {
         headers: {
@@ -94,12 +139,9 @@ function ScanList() {
           'Content-Type': 'application/json',
         },
       });
-      console.log('Scan Validation APIs Res 2 :', scanRes.data);
+      console.log('scan/validation APIs Res :', scanRes.data);
 
-      if (scanRes.data && scanRes.data.code === 200) {
-        console.log('Scan validation successful:', scanRes.data.message);
-        //Alert.alert(scanRes.data.message);
-
+      if (scanRes.data.code === 200 && scanRes.data.success === true) {
         onToggleSnackBar(scanRes.data.message, 200);
         return scanRes.data;
       } else if (scanRes.data.code === 409) {
@@ -125,58 +167,10 @@ function ScanList() {
     }
   };
 
-  //codescan API
-  // const codeScan = async (barcodeData)=>{
-  //   console.log("code scan Api called......");
-  //   console.log("Barcode Data codescan API :", barcodeData);
-  //   const transactionId=await AsyncStorage.getItem('transactionId');
-  //   const productId = await AsyncStorage.getItem('productId');
-  //   const batchId=await AsyncStorage.getItem('batchId');
-  //   console.log("transactionId use for codeScan APIs:", transactionId);
-  //   console.log("productId for codescan API :", productId);
-  //   console.log("batchId for codescan API :", batchId);
-
-  //   console.log(transactionId,typeof(transactionId))
-  //   try {
-  //     const payload = {
-  //       uniqueCode: barcodeData,
-  //       currentPackageLevel: currentLevel,
-  //       packageNo: packageNo,
-  //       quantity: quantity,
-  //       totalProduct: totalProduct,
-  //       perPackageProduct: perPackageProduct,
-  //       totalLevel: totalLevel,
-  //       transactionId: transactionId,
-  //     }
-  //     console.log('Payload for code scan api res :', payload);
-
-  //     const codeScanResponse = await axios.post(`${url}/scan/codescan`, payload, {
-  //       headers: {
-  //         Authorization: `Bearer ${await AsyncStorage.getItem('authToken')}`,
-  //         'Content-Type': 'application/json',
-  //       },
-  //     });
-  //     console.log('code Scan APIs Response :', codeScanResponse.data);
-  //     if(codeScanResponse.data.code === 200){
-  //       const {packageNo,perPackageProduct,quantity,totalLevel,totalProduct} = codeScanResponse.data.data;
-  //       setPackageNo(packageNo);
-  //       setPerPackageProduct(perPackageProduct);
-  //       setQuantity(quantity);
-  //       setTotalLevel(totalLevel);
-  //       setTotalProduct(totalProduct);
-  //       console.log("Updated..");
-  //       console.log("New Data is :",packageNo,perPackageProduct,quantity,totalLevel,totalProduct);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error to code scan API call..', error);
-  //   }
-  // }
-
   //packaging Hierarchy API
   const handleScannedData = async () => {
     try {
       const productId = await AsyncStorage.getItem('productId');
-      const batchId = await AsyncStorage.getItem('batchId');
       const response = await axios.post(
         `${url}/packagingHierarchy`,
         {
@@ -190,33 +184,15 @@ function ScanList() {
           },
         },
       );
-      console.log('handle Scan Res :', response.data);
+      console.log('Packaging Hierarchy API Res :', response.data);
       if (response.data.success) {
-        const {
-          packageNo,
-          quantity,
-          transactionId,
-          currentLevel,
-          totalLevel,
-          perPackageProduct,
-          totalProduct,
-        } = response.data.data;
-        setQuantity(quantity);
-        setPackageNo(packageNo);
-        setCurrentLevel(currentLevel);
-        setTotalLevel(totalLevel);
-        setTotalProduct(totalProduct);
-        setPerPackageProduct(perPackageProduct);
-        await AsyncStorage.setItem('transactionId :', transactionId);
-
-        console.log('Success.');
-        console.log('package level :', packageNo);
-        console.log('Quantity :', quantity);
-        console.log('Current level :', currentLevel);
-        console.log('total level :', totalLevel);
-        console.log('totalProduct :', totalProduct);
-        console.log('perPackageProduct :', perPackageProduct);
-        console.log('transactionId :', transactionId);
+        setQuantity(response.data.data.quantity);
+        setPackageNo(response.data.data.packageNo);
+        setCurrentLevel(response.data.data.currentLevel);
+        setTotalLevel(response.data.data.totalLevel);
+        setTotalProduct(response.data.data.totalProduct);
+        setPerPackageProduct(response.data.data.perPackageProduct);
+        setTransactionId(response.data.data.transactionId);
       } else {
         Alert.alert('Authentication failed. Please try again.');
         return;
@@ -226,58 +202,54 @@ function ScanList() {
     }
   };
 
-  //product table pid
-  useEffect(() => {
-    handleScannedData();
-    //scanValidation();
-    return () => {};
-  }, [isFocused]);
+  //codescan API
+  const codeScan = async barcodeData => {
+    console.log('code scan Api called......');
+    try {
+      const payload = {
+        uniqueCode: barcodeData,
+        transactionId: transactionId,
+        packageNo: packageNo,
+        currentPackageLevel: currentLevel,
+        quantity: quantity,
+        perPackageProduct: perPackageProduct,
+        totalLevel: totalLevel,
+        totalProduct: totalProduct,
+        currentIndex: currentIndex,
+      };
+      console.log('Payload for codeScan api req :', payload);
 
-  useEffect(() => {
-    console.log('Is compatible:', HoneywellBarcodeReader.isCompatible);
-
-    HoneywellBarcodeReader.register().then(claimed => {
-      console.log(
-        claimed ? 'Barcode reader is claimed' : 'Barcode reader is busy',
+      const codeScanResponse = await axios.post(
+        `${url}/scan/codeScan`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${await AsyncStorage.getItem('authToken')}`,
+            'Content-Type': 'application/json',
+          },
+        },
       );
-    });
+      console.log('codeScan APIs Response :', codeScanResponse.data);
 
-    HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
-      console.log('Received data :', event);
-      console.log('Current Scanned data :', event.data);
-      console.log('Previous data is :', data);
+      if (codeScanResponse.data.success) {
+        console.log("Transaction ID :",transactionId)
+        setTransactionId(codeScanResponse.data.data.transactionId);
+        setPackageNo(codeScanResponse.data.data.packageNo);
+        setPerPackageProduct(codeScanResponse.data.data.perPackageProduct);
+        setQuantity(codeScanResponse.data.data.quantity);
+        setCurrentIndex(codeScanResponse.data.data.currentIndex);
 
-      const scanRes = await scanValidation(event.data);
+        setTotalLevel(codeScanResponse.data.data.totalLevel);
+        setTotalProduct(codeScanResponse.data.data.totalProduct);
+        setCurrentPackageLevel(codeScanResponse.data.data.currentPackageLevel); //set current level value
+        console.log('Updated..');
 
-      if (scanRes && scanRes.code === 200) {
-        await codeScan(event.data); //codeScan API call
-        setData(prevData => {
-          const alreadyExist = prevData.find(item => item === event.data);
-          if (!alreadyExist) {
-            return [...prevData, event.data];
-          } else {
-            //console.log("Already exitst...")
-            //Alert.alert("Items Already Exists!")
-            return [...prevData];
-          }
-        });
+        //console.log("New Data is :",transactionId,packageNo,perPackageProduct,quantity,totalLevel,totalProduct,currentPackageLevel);
       }
-    });
-
-    HoneywellBarcodeReader.onBarcodeReadFail(() => {
-      console.log('Barcode read failed');
-    });
-
-    HoneywellBarcodeReader.onTriggerStateChange(state => {
-      console.log('onTriggerStateChange', state);
-    });
-
-    HoneywellBarcodeReader.barcodeReaderInfo(details => {
-      console.log('barcodeReaderClaimed', details);
-    });
-
-    return () => {};
-  }, []);
+    } catch (error) {
+      console.error('Error to code scan API call..', error);
+    }
+  };
 
   const handleEndTransaction = () => {
     console.log('End transaction button pressed..');
