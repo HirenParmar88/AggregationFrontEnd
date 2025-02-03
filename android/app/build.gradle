@@ -1,6 +1,8 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+//vector icons use dependency
+apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -116,4 +118,6 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+     // For vector icon uses
+    implementation project(':react-native-vector-icons')
 }
