@@ -44,6 +44,8 @@ function ScanList() {
   const [transactionId, setTransactionId] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentPackageLevel, setCurrentPackageLevel] = useState(0);
+  const [ssccNumber, setSsccNumber] = useState();
+  const [serialNumber, setSerialNumber] = useState();
 
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
@@ -76,19 +78,6 @@ function ScanList() {
       //console.log('Inside BarcodeRead Callback ', scanRes);
       if (scanRes && scanRes.code === 200) {
         await codeScan(event.data); //codeScan API call
-        setData(prevData => {
-          if(totalProduct > 0){
-            const alreadyExist = prevData.find(item => item === event.data);
-            if (!alreadyExist) {
-              return [...prevData, event.data];
-            } else {
-              //console.log("Already exitst...")
-              //Alert.alert("Items Already Exists!")
-              return [...prevData];
-            }
-          }
-          
-        });
       }
     });
 
@@ -236,6 +225,14 @@ function ScanList() {
       console.log('codeScan APIs Response :', codeScanResponse.data);
 
       if (codeScanResponse.data.success && codeScanResponse.data.code ===200) {
+        setData(prevData => {
+            const alreadyExist = prevData.find(item => item === barcodeData);
+            if (!alreadyExist) {
+              return [...prevData, barcodeData];
+            } else {
+              return [...prevData];
+            }
+        });
         onToggleSnackBar(codeScanResponse.data.message,200)
         console.log("Transaction ID :",transactionId)
         setTransactionId(codeScanResponse.data.data.transactionId);
@@ -248,7 +245,18 @@ function ScanList() {
         setTotalProduct(codeScanResponse.data.data.totalProduct);
         setCurrentPackageLevel(codeScanResponse.data.data.currentPackageLevel); //set current level value
         console.log('Updated..');
+
+        if(codeScanResponse.data.data.quantity === 0){
+          setCurrentPackageLevel(0);
+          setSerialNumber(codeScanResponse.data.data.serialNo);
+          setSsccNumber(codeScanResponse.data.data.sscc_code);
+          handleScannedData();
+          setData([]);
+        }
       }else if(codeScanResponse.data.code === 400){
+        onToggleSnackBar(codeScanResponse.data.message);
+      }
+      else if(codeScanResponse.data.code === 500){
         onToggleSnackBar(codeScanResponse.data.message);
       }
     } catch (error) {
@@ -261,15 +269,49 @@ function ScanList() {
     setParentModalVisible(true); // Show parent modal asking for confirmation
   };
 
-  const handleParentModalDismiss = confirmed => {
+  const handleParentModalDismiss =async confirmed => {
     setParentModalVisible(false); // Close the parent modal
     setTransactionStatus(confirmed ? 'completed' : 'failed'); // Set status for child modal
-    setChildModalVisible(true); // Show the corresponding child modal (completed or failed)
+    console.log(confirmed)
+    if(confirmed && (ssccNumber != undefined || ssccNumber?.trim()) != "" && serialNumber != 0 && typeof(serialNumber) == "number"){
+      await handlePrintCode(ssccNumber, parseInt(serialNumber));
+
+    }
+     // Show the corresponding child modal (completed or failed)
   };
 
   const handleChildModalDismiss = () => {
     setChildModalVisible(false); // Close the child modal
   };
+
+  //Print SSCC codes API
+  const handlePrintCode = async (SsccCode, SerialNo)=> {
+    try {
+      const res = await axios.post( 
+        `${url}/sscc`,
+        {
+          SsccCode,
+          SerialNo,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${await AsyncStorage.getItem('authToken')}`,
+          },
+        });
+
+      console.log("Response of handle print ", res.data);
+      if(res.data.success){
+        setChildModalVisible(true);
+      }
+      else{
+        onToggleSnackBar(res.data.data.message, res.data.code)
+      }
+      
+    } catch (error) {
+      console.log("Error to print code for ", SsccCode);
+    }
+  }
 
   return (
     <>
@@ -346,7 +388,7 @@ function ScanList() {
         <Portal>
           <Modal
             visible={parentModalVisible}
-            onDismiss={() => handleParentModalDismiss(false)} // Dismiss on Cancel
+            onDismiss={async() => await handleParentModalDismiss(false)} // Dismiss on Cancel
             contentContainerStyle={styles.modalContainer}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Scan List</Text>
@@ -369,13 +411,13 @@ function ScanList() {
             <View style={styles.modalFooter}>
               <Button
                 mode="contained"
-                onPress={() => handleParentModalDismiss(true)} // Confirm button action
+                onPress={async() => await handleParentModalDismiss(true)} // Confirm button action
                 style={styles.modalConfirmButton}>
                 Confirm
               </Button>
               <Button
                 mode="contained"
-                onPress={() => handleParentModalDismiss(false)} // Cancel button action
+                onPress={async() => await handleParentModalDismiss(false)} // Cancel button action
                 style={styles.modalButton}>
                 Cancel
               </Button>
