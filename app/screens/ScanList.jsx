@@ -26,13 +26,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage'; // To hand
 import {url} from '../../utils/constant';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Feather from 'react-native-vector-icons/Feather';
 
 function ScanList() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [data, setData] = useState([]);
   const [parentModalVisible, setParentModalVisible] = useState(false);
-  const [childModalVisible, setChildModalVisible] = useState(false); 
+  const [childModalVisible, setChildModalVisible] = useState(false);
   const [transactionStatus, setTransactionStatus] = useState(null);
 
   const [quantity, setQuantity] = useState(0);
@@ -53,8 +54,8 @@ function ScanList() {
   });
 
   useEffect(() => {
-    if(!packageNo && !quantity){
-    handleScannedData();
+    if (!packageNo && !quantity) {
+      handleScannedData();
     }
     //scanValidation();
     return () => {};
@@ -94,7 +95,17 @@ function ScanList() {
     });
 
     return () => {};
-  }, [transactionId, quantity, currentIndex, currentLevel, packageNo, perPackageProduct, totalLevel, totalProduct, currentPackageLevel]);
+  }, [
+    transactionId,
+    quantity,
+    currentIndex,
+    currentLevel,
+    packageNo,
+    perPackageProduct,
+    totalLevel,
+    totalProduct,
+    currentPackageLevel,
+  ]);
 
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
@@ -224,17 +235,17 @@ function ScanList() {
       );
       console.log('codeScan APIs Response :', codeScanResponse.data);
 
-      if (codeScanResponse.data.success && codeScanResponse.data.code ===200) {
+      if (codeScanResponse.data.success && codeScanResponse.data.code === 200) {
         setData(prevData => {
-            const alreadyExist = prevData.find(item => item === barcodeData);
-            if (!alreadyExist) {
-              return [...prevData, barcodeData];
-            } else {
-              return [...prevData];
-            }
+          const alreadyExist = prevData.find(item => item === barcodeData);
+          if (!alreadyExist) {
+            return [...prevData, barcodeData];
+          } else {
+            return [...prevData];
+          }
         });
-        onToggleSnackBar(codeScanResponse.data.message,200)
-        console.log("Transaction ID :",transactionId)
+        onToggleSnackBar(codeScanResponse.data.message, 200);
+        console.log('Transaction ID :', transactionId);
         setTransactionId(codeScanResponse.data.data.transactionId);
         setPackageNo(codeScanResponse.data.data.packageNo);
         setPerPackageProduct(codeScanResponse.data.data.perPackageProduct);
@@ -246,17 +257,16 @@ function ScanList() {
         setCurrentPackageLevel(codeScanResponse.data.data.currentPackageLevel); //set current level value
         console.log('Updated..');
 
-        if(codeScanResponse.data.data.quantity === 0){
+        if (codeScanResponse.data.data.quantity === 0) {
           setCurrentPackageLevel(0);
           setSerialNumber(codeScanResponse.data.data.serialNo);
           setSsccNumber(codeScanResponse.data.data.sscc_code);
           handleScannedData();
           setData([]);
         }
-      }else if(codeScanResponse.data.code === 400){
+      } else if (codeScanResponse.data.code === 400) {
         onToggleSnackBar(codeScanResponse.data.message);
-      }
-      else if(codeScanResponse.data.code === 500){
+      } else if (codeScanResponse.data.code === 500) {
         onToggleSnackBar(codeScanResponse.data.message);
       }
     } catch (error) {
@@ -269,15 +279,19 @@ function ScanList() {
     setParentModalVisible(true); // Show parent modal asking for confirmation
   };
 
-  const handleParentModalDismiss =async confirmed => {
+  const handleParentModalDismiss = async confirmed => {
     setParentModalVisible(false); // Close the parent modal
     setTransactionStatus(confirmed ? 'completed' : 'failed'); // Set status for child modal
-    console.log(confirmed)
-    if(confirmed && (ssccNumber != undefined || ssccNumber?.trim()) != "" && serialNumber != 0 && typeof(serialNumber) == "number"){
+    console.log(confirmed);
+    if (
+      confirmed &&
+      (ssccNumber != undefined || ssccNumber?.trim()) != '' &&
+      serialNumber != 0 &&
+      typeof serialNumber == 'number'
+    ) {
       await handlePrintCode(ssccNumber, parseInt(serialNumber));
-
     }
-     // Show the corresponding child modal (completed or failed)
+    // Show the corresponding child modal (completed or failed)
   };
 
   const handleChildModalDismiss = () => {
@@ -285,9 +299,9 @@ function ScanList() {
   };
 
   //Print SSCC codes API
-  const handlePrintCode = async (SsccCode, SerialNo)=> {
+  const handlePrintCode = async (SsccCode, SerialNo) => {
     try {
-      const res = await axios.post( 
+      const res = await axios.post(
         `${url}/sscc`,
         {
           SsccCode,
@@ -298,20 +312,19 @@ function ScanList() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${await AsyncStorage.getItem('authToken')}`,
           },
-        });
+        },
+      );
 
-      console.log("Response of handle print ", res.data);
-      if(res.data.success){
+      console.log('Response of handle print ', res.data);
+      if (res.data.success) {
         setChildModalVisible(true);
+      } else {
+        onToggleSnackBar(res.data.data.message, res.data.code);
       }
-      else{
-        onToggleSnackBar(res.data.data.message, res.data.code)
-      }
-      
     } catch (error) {
-      console.log("Error to print code for ", SsccCode);
+      console.log('Error to print code for ', SsccCode);
     }
-  }
+  };
 
   return (
     <>
@@ -357,7 +370,13 @@ function ScanList() {
               <List.Item
                 key={index}
                 title={item}
-                left={() => <List.Icon icon="barcode-scan" />}
+                left={() => (
+                  <Feather
+                    name="package"
+                    size={25}
+                    style={{paddingRight: 0}}
+                  />
+                )}
               />
             ))}
           </List.Section>
@@ -388,7 +407,7 @@ function ScanList() {
         <Portal>
           <Modal
             visible={parentModalVisible}
-            onDismiss={async() => await handleParentModalDismiss(false)} // Dismiss on Cancel
+            onDismiss={async () => await handleParentModalDismiss(false)} // Dismiss on Cancel
             contentContainerStyle={styles.modalContainer}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Scan List</Text>
@@ -411,13 +430,13 @@ function ScanList() {
             <View style={styles.modalFooter}>
               <Button
                 mode="contained"
-                onPress={async() => await handleParentModalDismiss(true)} // Confirm button action
+                onPress={async () => await handleParentModalDismiss(true)} // Confirm button action
                 style={styles.modalConfirmButton}>
                 Confirm
               </Button>
               <Button
                 mode="contained"
-                onPress={async() => await handleParentModalDismiss(false)} // Cancel button action
+                onPress={async () => await handleParentModalDismiss(false)} // Cancel button action
                 style={styles.modalButton}>
                 Cancel
               </Button>

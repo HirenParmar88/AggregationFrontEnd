@@ -64,12 +64,12 @@ function Logout({ route }) {
         await AsyncStorage.removeItem("authToken");
         setIsAuthenticated(false);
         hideModal();
-        Alert.alert("Success", "You have been logged out!");
-        //navigation.navigate("Login");
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "Login" }],
-        });
+        //Alert.alert("Success", "You have been logged out!");
+        navigation.navigate("Login");
+        // navigation.reset({
+        //   index: 0,
+        //   routes: [{ name: "Login" }],
+        // });
         console.log("User Logged Out Successfully..");
       } else {
         hideModal();

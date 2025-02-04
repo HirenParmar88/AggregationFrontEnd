@@ -11,6 +11,7 @@ import {
   Appbar,
   Text,
   RadioButton,
+  List,
   Modal,
   Portal,
   Snackbar,
@@ -23,6 +24,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {url} from '../../utils/constant';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import LoaderComponent from '../components/Loader';
+import Feather from 'react-native-vector-icons/Feather';
 
 function DropoutFun() {
   const navigation = useNavigation();
@@ -53,6 +55,8 @@ function DropoutFun() {
       snackbarStyle: {backgroundColor},
     });
   };
+  const onDismissSnackBar = () =>
+    setSnackbarInfo({visible: false, message: ''});
 
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
@@ -94,22 +98,27 @@ function DropoutFun() {
       );
     });
 
-    HoneywellBarcodeReader.onBarcodeReadSuccess(event => {
+    HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
       console.log('Received data :', event);
       console.log('Current Scanned data :', event.data);
+      console.log("Token inside barcode codes drop :",token);
+      
       console.log('Previous data is :', scannedCodes);
-
-      setScannedCodes(prevData => {
-        const uniqueCode = getUniqueCode(event.data, countryCode);
-        const alreadyExist = prevData.find(item => item === uniqueCode);
-        if (!alreadyExist) {
-          return [...prevData, uniqueCode];
-        } else {
-          console.log('Already exitst...');
-          Alert.alert('Items Already Exists!');
-          return [...prevData];
-        }
-      });
+      const scanRes = await scanValidation(event.data);
+      if (scanRes && scanRes.code === 200) {
+        setScannedCodes(prevData => {
+          const uniqueCode = getUniqueCode(event.data, countryCode);
+          const alreadyExist = prevData.find(item => item === uniqueCode);
+          if (!alreadyExist) {
+            // onToggleSnackBar("scanned successfully..",200)
+            return [...prevData, uniqueCode];
+          } else {
+            console.log('Already exitst...');
+            Alert.alert('Items Already Exists!');
+            return [...prevData];
+          }
+        });
+      }
     });
 
     HoneywellBarcodeReader.onBarcodeReadFail(() => {
@@ -125,7 +134,7 @@ function DropoutFun() {
     });
 
     return () => {};
-  }, [countryCode]);
+  }, [selectedProduct,selectedBatch]);
 
   const getUniqueCode = (url, format) => {
     // console.log("country code ", format);
@@ -163,10 +172,7 @@ function DropoutFun() {
       loadTokenAndData();
     }
     return () => {
-      // setSelectedProduct(null)
-      // setSelectedBatch(null)
-      // setProducts([])
-      // setBatches([])
+     
     };
   }, [isFocused]);
 
@@ -180,6 +186,61 @@ function DropoutFun() {
 
     return () => {};
   }, [selectedProduct]);
+
+  //scan Validation API
+  const scanValidation = async (barcodeData) => {
+    console.log('scan validation API call for dropout ..');
+    try {
+      console.log("Token is scan Validation in Dropout :",token)
+      const payload = {
+        productId:selectedProduct.id,
+        batchId: selectedBatch.id ,
+        uniqueCode: barcodeData,
+
+      };
+      console.log('Payload for scan/validation :', payload);
+      const scanRes = await axios.post(`${url}/scan/validation`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log('scan/validation APIs Res for DropOut :', scanRes.data);
+
+      if (scanRes.data.code === 200 && scanRes.data.success === true) {
+        onToggleSnackBar(scanRes.data.message, 200);
+        console.log(scanRes.data.message, 200);
+        return scanRes.data;
+      }else if (scanRes.data.code === 401) {
+        console.log(scanRes.data.message);
+        onToggleSnackBar(scanRes.data.message, 401);
+        return null;
+      }else if (scanRes.data.code === 500) {
+        console.log(scanRes.data.message);
+        onToggleSnackBar(scanRes.data.message, 500);
+        return null;
+      }else if (scanRes.data.code === 409) {
+        console.log('Invalid scan res :', scanRes.data.message);
+        //Alert.alert(scanRes.data.message);
+        onToggleSnackBar(scanRes.data.message, 409);
+        return null;
+      } else if (scanRes.data.code === 404) {
+        console.log('404 : ', scanRes.data.message);
+        //Alert.alert(scanRes.data.message);
+        onToggleSnackBar(scanRes.data.message, 404);
+        return null;
+      } else if (scanRes.data.code === 400) {
+        console.log('Invalid packege level :  ', scanRes.data.message);
+        //Alert.alert(scanRes.data.message);
+        onToggleSnackBar(scanRes.data.message, 400);
+        return null;
+      } else {
+        console.log('error !');
+      }
+    } catch (error) {
+      console.error('Error to scan validation API call', error);
+    }
+  };
 
   const fetchProductData = async token => {
     try {
@@ -265,8 +326,9 @@ function DropoutFun() {
       );
       console.log('Get country code API Response :', response.data);
 
-      if (response.data?.success) {
-        console.log('settting country code ', response.data.data.country_code);
+      if (response.data?.success === true && response.data.code === 200) {
+        //onToggleSnackBar(response.data.message, 200);
+        console.log('settting country code :', response.data.data.country_code);
         setCountryCode(response.data.data.country_code.toString());
       } else if (response.data.code === 401) {
         await AsyncStorage.removeItem('authToken');
@@ -312,7 +374,7 @@ function DropoutFun() {
     // );
     console.log('Dropout Selected Product :', selectedProduct.id);
     console.log('Dropout Selected Batch :', selectedBatch.id);
-    console.log('RAdio select :', wholeBatch ? 'Batch' : 'code');
+    console.log('Radio Item selected :', wholeBatch ? 'Batch' : 'code');
     if (wholeBatch) {
       setVisibleBatch(true);
     } else {
@@ -349,8 +411,8 @@ function DropoutFun() {
     );
 
     console.log('Response of batch dropout ', batchDropRes.data);
-    if (batchDropRes.data.success) {
-      onToggleSnackBar('Batch dropout successfully');
+    if (batchDropRes.data.success === true && batchDropRes.data.code === 200) {
+      onToggleSnackBar(batchDropRes.data.message, 200);
       setDropoutReason('');
       setSelectedBatch({id: null, value: null});
       setSelectedProduct({id: null, value: null});
@@ -361,7 +423,7 @@ function DropoutFun() {
   };
 
   const handleCodesDropout = () => {
-    console.log('Codes Dropout Confirmed!!');
+    // console.log('Codes Dropout Confirmed!!');
     setDropoutReason('');
     setVisibleCodes(false); // Hide the Codes modal
     setVisibleConfirmCodes(true); // Show Confirm Codes Dropout Modal
@@ -390,13 +452,13 @@ function DropoutFun() {
 
     console.log('Response of codes dropout: ', codesDropRes.data);
     if (codesDropRes.data.success && codesDropRes.data.code === 200) {
-      onToggleSnackBar('Scanned codes dropout successfully', 200);
+      onToggleSnackBar(codesDropRes.data.message, 200);
       setSelectedBatch({id: null, value: null});
       setSelectedProduct({id: null, value: null});
       setDropoutReason('');
       setScannedCodes([]);
-    }else if(codesDropRes.data.code === 500){
-      onToggleSnackBar(codesDropRes.data.message)
+    } else if (codesDropRes.data.code === 500) {
+      onToggleSnackBar(codesDropRes.data.message);
     }
     setVisibleConfirmCodes(false); // Close the confirm dropout modal
   };
@@ -407,9 +469,6 @@ function DropoutFun() {
   };
 
   //const onToggleSnackBar = message => setSnackbarInfo({visible: true, message});
-
-  const onDismissSnackBar = () =>
-    setSnackbarInfo({visible: false, message: ''});
 
   if (loading) {
     return (
@@ -503,23 +562,23 @@ function DropoutFun() {
             Show Results ({scannedCodes.length})
           </Text>
 
-          <ScrollView style={styles.scrollView}>
+          <ScrollView >
             {!wholeBatch && (
-              <View style={styles.codesList}>
-                {scannedCodes.map(item => (
-                  <Text
-                    key={item}
-                    style={{
-                      fontSize: 18,
-                      marginVertical: 4,
-                      paddingHorizontal: 4,
-                      paddingVertical: 4,
-                      //backgroundColor: 'rgb(222, 238, 234)',
-                    }}>
-                    {item}
-                  </Text>
+              <List.Section style={{flexDirection: 'column-reverse'}}>
+                {scannedCodes.map((item, index) => (
+                  <List.Item
+                    key={index}
+                    title={item}
+                    left={() => (
+                      <Feather
+                        name="package"
+                        size={25}
+                        style={{marginLeft: 5}}
+                      />
+                    )}
+                  />
                 ))}
-              </View>
+              </List.Section>
             )}
           </ScrollView>
         </View>
@@ -629,14 +688,14 @@ function DropoutFun() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Codes Dropout</Text>
             </View>
-            <Text style={styles.modalContent}>
+            <Text style={styles.modalCodesContent}>
               Are you sure you want to dropout?
             </Text>
-            <View style={{padding: 50}}>
-              <Text style={{fontSize: 18, fontWeight: 'bold'}}>
+            <View style={{paddingTop: 25}}>
+              <Text style={{fontSize: 16, fontWeight: 'bold'}}>
                 Batch: {selectedBatch.name}
               </Text>
-              <Text style={{fontSize: 18, fontWeight: 'bold'}}>
+              <Text style={{fontSize: 16, fontWeight: 'bold'}}>
                 Product: {selectedProduct.name}
               </Text>
             </View>
@@ -704,7 +763,7 @@ function DropoutFun() {
           visible={snackbarInfo.visible}
           onDismiss={onDismissSnackBar}
           duration={3000}
-          style={styles.snackbar}>
+          style={[styles.snackbar, snackbarInfo.snackbarStyle]}>
           {snackbarInfo.message}
         </Snackbar>
       </KeyboardAvoidingView>
@@ -777,6 +836,7 @@ const styles = StyleSheet.create({
   },
   confirmCodesDropoutContainer: {
     //backgroundColor:'yellow',
+    //width:270,
     flex: 1,
   },
   modalHeader: {
@@ -784,7 +844,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ddd',
     paddingBottom: 10,
     marginBottom: 10,
-    //marginTop: 20,
+    marginTop: 5,
     alignItems: 'center',
     //backgroundColor:'red'
   },
@@ -808,6 +868,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    marginTop: 5,
   },
   modalBatchTitle: {
     fontSize: 20,
@@ -877,13 +938,17 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     marginBottom: 50, // Extra space from the bottom if needed
   },
-  showResultLabel:{
+  showResultLabel: {
     fontSize: 18,
-    marginTop:6,
-    fontWeight:'bold',
-    paddingLeft:8,
+    marginTop: 6,
+    fontWeight: 'bold',
+    paddingLeft: 8,
     //backgroundColor:'yellow'
-  }
+  },
+  modalCodesContent: {
+    //backgroundColor:'red',
+    fontSize: 16,
+  },
 });
 
 export default DropoutFun;

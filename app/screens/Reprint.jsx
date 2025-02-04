@@ -34,22 +34,35 @@ function Reprint() {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
-  const [selectedProduct, setSelectedProduct] = useState({ id: null, name: null });
-  const [selectedBatch, setSelectedBatch] = useState({ id: null, name: null });
+  const [selectedProduct, setSelectedProduct] = useState({
+    id: null,
+    name: null,
+  });
+  const [selectedBatch, setSelectedBatch] = useState({id: null, name: null});
   const [isFocusProduct, setIsFocusProduct] = useState(false);
   const [isFocusBatch, setIsFocusBatch] = useState(false);
   const [products, setProducts] = useState([]);
   const [batches, setBatches] = useState([]);
   const [countryCode, setCountryCode] = useState(null);
   const [visible, setVisible] = useState(false);
-   const [snackbarInfo, setSnackbarInfo] = useState({
-      visible: false,
-      message: '',
+  const [snackbarInfo, setSnackbarInfo] = useState({
+    visible: false,
+    message: '',
+  });
+  const onToggleSnackBar = (message, code) => {
+    const backgroundColor =
+      code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
+
+    setSnackbarInfo({
+      visible: true,
+      message,
+      snackbarStyle: {backgroundColor},
     });
+  };
+  const onDismissSnackBar = () =>
+    setSnackbarInfo({visible: false, message: ''});
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
-  const onToggleSnackBar = message => setSnackbarInfo({visible: true, message});
-  const onDismissSnackBar = () => setSnackbarInfo({visible: false, message: ''});
 
   const containerStyle = {
     backgroundColor: 'white',
@@ -65,8 +78,8 @@ function Reprint() {
       try {
         const storedToken = await AsyncStorage.getItem('authToken');
         if (storedToken) {
-            setToken(storedToken);
-            console.log("JWT token : ", storedToken);
+          setToken(storedToken);
+          console.log('JWT token : ', storedToken);
           fetchProductData(storedToken);
         } else {
           throw new Error('Token is missing');
@@ -76,12 +89,12 @@ function Reprint() {
         setLoading(false);
       }
     };
- 
+
     loadTokenAndData();
 
     return () => {
-      setSelectedProduct({ id: null, name: null });
-      setSelectedBatch({ id: null, name: null });
+      setSelectedProduct({id: null, name: null});
+      setSelectedBatch({id: null, name: null});
       setText('');
     };
   }, [isFocused]);
@@ -97,7 +110,7 @@ function Reprint() {
 
     HoneywellBarcodeReader.onBarcodeReadSuccess(event => {
       console.log('Current Scanned data :', event.data);
-      console.log("Country code is ", countryCode)
+      console.log('Country code is ', countryCode);
       const uniqueCode = getUniqueCode(event.data, countryCode);
       setText(uniqueCode);
     });
@@ -118,16 +131,14 @@ function Reprint() {
   }, [countryCode]);
 
   useEffect(() => {
-      if(selectedProduct.id){
-    (async () => {
-            await fetchCountryCode();
-            await fetchBatchData();
-        })();
+    if (selectedProduct.id) {
+      (async () => {
+        await fetchCountryCode();
+        await fetchBatchData();
+      })();
     }
-    return () => {
-    }
-  }, [selectedProduct.id])
-  
+    return () => {};
+  }, [selectedProduct.id]);
 
   const fetchProductData = async token => {
     try {
@@ -164,22 +175,25 @@ function Reprint() {
   const fetchBatchData = async () => {
     try {
       setLoading(true);
-      const batchResponse = await axios.get(`${url}/batch/${selectedProduct.id}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+      const batchResponse = await axios.get(
+        `${url}/batch/${selectedProduct.id}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
-      console.log("Batch Response :", batchResponse.data);
+      );
+      console.log('Batch Response :', batchResponse.data);
 
       if (batchResponse?.data?.success) {
         const fetchedBatches = batchResponse.data.data?.batches?.map(batch => {
-            console.log('batch id ', batch.id);
-            return {
-              id: batch.id,
-              name: batch.batch_no,
-            };
-          });
+          console.log('batch id ', batch.id);
+          return {
+            id: batch.id,
+            name: batch.batch_no,
+          };
+        });
         setBatches(fetchedBatches);
         //console.log("Store for select :", batches)
       } else {
@@ -195,7 +209,7 @@ function Reprint() {
   const fetchCountryCode = async () => {
     try {
       setLoading(true);
-      console.log("token in c ", token)
+      console.log('token in c ', token);
       const response = await axios.get(
         `${url}/product/countrycode/${selectedProduct.id}`,
         {
@@ -237,7 +251,7 @@ function Reprint() {
   };
 
   const handleDropdownProductChange = async item => {
-    setSelectedProduct({ id: item.id, name: item.name });
+    setSelectedProduct({id: item.id, name: item.name});
     setIsFocusProduct(false);
     setBatches([]);
   };
@@ -268,11 +282,11 @@ function Reprint() {
   const print = async () => {
     console.log('Reprint success.');
     const reprintRes = await axios.post(
-      `${url}/code`,
+      `${url}/reprint`,
       {
         product_id: selectedProduct.id,
         batch_id: selectedBatch.id,
-        code: text,
+        SsccCode: text,
       },
       {
         headers: {
@@ -283,14 +297,13 @@ function Reprint() {
     );
 
     console.log('Response of reprint code ', reprintRes.data);
-    if (reprintRes.data.success) {
-        setText('');
-        setSelectedProduct({ id: null, name: null });
-        setSelectedBatch({ id: null, name: null });
-        onToggleSnackBar('Reprint successfully done.');
-    //   navigation.navigate('Home');
-    }
-    else {
+    if (reprintRes.data.success === true && reprintRes.data.code === 200) {
+      setText('');
+      setSelectedProduct({id: null, name: null});
+      setSelectedBatch({id: null, name: null});
+      onToggleSnackBar(reprintRes.data.message);
+      //navigation.navigate('Home');
+    } else {
       onToggleSnackBar('Fail to reprint');
     }
     hideModal();
@@ -312,93 +325,87 @@ function Reprint() {
           <Appbar.Content title="Reprint" />
         </Appbar.Header>
         <ScrollView>
-        <View style={styles.container}>
-          <View style={styles.dropdownContainer}>
-            {/* <Text variant="titleMedium" style={styles.labelText}>Product</Text> */}
-            <View style={styles.containerDropdownItem}>
-              <Dropdown
-                style={[
-                  styles.dropdown,
-                  {borderColor: 'rgb(80, 189, 160)'},
-                ]}
-                placeholderStyle={styles.placeholderStyle}
-                selectedTextStyle={styles.selectedTextStyle}
-                inputSearchStyle={styles.inputSearchStyle}
-                //iconStyle={styles.iconStyle}
-                data={products}
-                maxHeight={300}
-                labelField="name"
-                valueField="id"
-                placeholder='Select Product'
-                //placeholder={!isFocusProduct ? 'Select Product' : '...'}
-                //searchPlaceholder="Search..."
-                value={selectedProduct.id}
-                onFocus={() => setIsFocusProduct(true)}
-                onBlur={() => setIsFocusProduct(false)}
-                onChange={handleDropdownProductChange}
-                renderLeftIcon={() => (
-                  <AntDesign
-                    style={styles.icon}
-                    color={isFocusProduct ? 'rgb(80, 189, 160)' : 'black'}
-                    //name="Safety"
-                    size={20}
-                  />
-                )}
+          <View style={styles.container}>
+            <View style={styles.dropdownContainer}>
+              {/* <Text variant="titleMedium" style={styles.labelText}>Product</Text> */}
+              <View style={styles.containerDropdownItem}>
+                <Dropdown
+                  style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
+                  placeholderStyle={styles.placeholderStyle}
+                  selectedTextStyle={styles.selectedTextStyle}
+                  inputSearchStyle={styles.inputSearchStyle}
+                  //iconStyle={styles.iconStyle}
+                  data={products}
+                  maxHeight={300}
+                  labelField="name"
+                  valueField="id"
+                  placeholder="Select Product"
+                  //placeholder={!isFocusProduct ? 'Select Product' : '...'}
+                  //searchPlaceholder="Search..."
+                  value={selectedProduct.id}
+                  onFocus={() => setIsFocusProduct(true)}
+                  onBlur={() => setIsFocusProduct(false)}
+                  onChange={handleDropdownProductChange}
+                  renderLeftIcon={() => (
+                    <AntDesign
+                      style={styles.icon}
+                      color={isFocusProduct ? 'rgb(80, 189, 160)' : 'black'}
+                      //name="Safety"
+                      size={20}
+                    />
+                  )}
+                />
+              </View>
+            </View>
+
+            <View style={styles.dropdownContainer}>
+              {/* <Text variant="titleMedium" style={styles.labelText}>Batch</Text> */}
+              <View style={styles.containerDropdownItem}>
+                <Dropdown
+                  style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
+                  placeholderStyle={styles.placeholderStyle}
+                  selectedTextStyle={styles.selectedTextStyle}
+                  inputSearchStyle={styles.inputSearchStyle}
+                  //iconStyle={styles.iconStyle}
+                  data={batches}
+                  maxHeight={300}
+                  labelField="name"
+                  valueField="id"
+                  placeholder="Select Batch"
+                  //placeholder={!isFocusBatch ? 'Select Batch' : '...'}
+                  //searchPlaceholder="Search..."
+                  value={selectedBatch.id}
+                  onFocus={() => setIsFocusBatch(true)}
+                  onBlur={() => setIsFocusBatch(false)}
+                  onChange={item => {
+                    setSelectedBatch({id: item.id, name: item.name});
+                    setIsFocusBatch(false);
+                  }}
+                  renderLeftIcon={() => (
+                    <AntDesign
+                      style={styles.icon}
+                      color={isFocusBatch ? 'rgb(80, 189, 160)' : 'black'}
+                      //name="Safety"
+                      size={20}
+                    />
+                  )}
+                />
+              </View>
+            </View>
+
+            <View style={styles.txtInputStyle}>
+              <Text variant="titleMedium" style={styles.labelText}>
+                Scan or write a code
+              </Text>
+              <TextInput
+                label="Enter reprint code"
+                value={text}
+                mode="outlined"
+                onChangeText={text => setText(text)}
+                style={styles.textInput}
               />
             </View>
           </View>
-
-          <View style={styles.dropdownContainer}>
-            {/* <Text variant="titleMedium" style={styles.labelText}>Batch</Text> */}
-            <View style={styles.containerDropdownItem}>
-              <Dropdown
-                style={[
-                  styles.dropdown,
-                  {borderColor: 'rgb(80, 189, 160)'},
-                ]}
-                placeholderStyle={styles.placeholderStyle}
-                selectedTextStyle={styles.selectedTextStyle}
-                inputSearchStyle={styles.inputSearchStyle}
-                //iconStyle={styles.iconStyle}
-                data={batches}
-                maxHeight={300}
-                labelField="name"
-                valueField="id"
-                placeholder='Select Batch'
-                //placeholder={!isFocusBatch ? 'Select Batch' : '...'}
-                //searchPlaceholder="Search..."
-                value={selectedBatch.id}
-                onFocus={() => setIsFocusBatch(true)}
-                onBlur={() => setIsFocusBatch(false)}
-                onChange={item => {
-                  setSelectedBatch({ id: item.id, name: item.name });
-                  setIsFocusBatch(false);
-                }}
-                renderLeftIcon={() => (
-                  <AntDesign
-                    style={styles.icon}
-                    color={isFocusBatch ? 'rgb(80, 189, 160)' : 'black'}
-                    //name="Safety"
-                    size={20}
-                  />
-                )}
-              />
-            </View>
-          </View>
-
-          <View style={styles.txtInputStyle}>
-            <Text variant="titleMedium" style={styles.labelText}>
-              Scan or write a code
-            </Text>
-            <TextInput
-              label="Enter reprint code"
-              value={text}
-              mode="outlined"
-              onChangeText={text => setText(text)}
-              style={styles.textInput}
-            />
-          </View>
-        </View>
         </ScrollView>
         <View>
           <TouchableOpacity
@@ -446,7 +453,7 @@ function Reprint() {
           visible={snackbarInfo.visible}
           onDismiss={onDismissSnackBar}
           duration={3000}
-          style={styles.snackbar}>
+          style={[styles.snackbar, snackbarInfo.snackbarStyle]}>
           {snackbarInfo.message}
         </Snackbar>
       </KeyboardAvoidingView>

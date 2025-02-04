@@ -33,7 +33,21 @@ const Login = ({route}) => {
   const [passwordShow, setPasswordShow] = useState(false);
   const [showReLogin, setShowReLogin] = useState(false);
 
-  const onToggleSnackBar = message => setSnackbarInfo({visible: true, message});
+  const onToggleSnackBar = (message, code) => {
+    const backgroundColor =
+      code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
+
+    setSnackbarInfo({
+      visible: true,
+      message,
+      snackbarStyle: {backgroundColor},
+    });
+  };
+
+  const onDismissSnackBar = () =>
+    setSnackbarInfo({visible: false, message: ''});
+
+  //const onToggleSnackBar = message => setSnackbarInfo({visible: true, message});
   useEffect(() => {
     loadURL();
     return () => {
@@ -41,8 +55,6 @@ const Login = ({route}) => {
     }
   }, [])
   
-  const onDismissSnackBar = () =>
-    setSnackbarInfo({visible: false, message: ''});
   //console.log('process env :', url);
   const loadURL = async () => {
     try {
@@ -92,11 +104,11 @@ const Login = ({route}) => {
       console.log('api called...');
       console.log('Login :', res.data);
 
-      if (res.data.success && res.data.code === 200) {
+      if (res.data.success === true && res.data.code === 200) {
         const token = res.data.data.token; //store token
         await AsyncStorage.setItem('authToken', token);
-        onToggleSnackBar('Successfully logged in!');
-
+        onToggleSnackBar(res.data.message,200);
+        //return res.data;
         setTimeout(() => {
           setIsAuthenticated(true);
           navigation.navigate('Home');
@@ -104,16 +116,16 @@ const Login = ({route}) => {
       } else if (res.data.code === 2004) {
         setShowReLogin(true);
       } else if (res.data.code === 2012) {
-        onToggleSnackBar(res.data.message);
+        onToggleSnackBar(res.data.message, 2012);
         console.log('User Already Logged in..');
       } else if (res.data.code === 429) {
-        onToggleSnackBar(res.data.message);
+        onToggleSnackBar(res.data.message, 429);
         console.log('Too many failed login attempts. Please try again later.');
       } else if (res.data.code === 418) {
-        onToggleSnackBar(res.data.message);
+        onToggleSnackBar(res.data.message, 418);
         console.log('users blocked :', res.data.message);
       } else if (res.data.code === 401) {
-        onToggleSnackBar(res.data.message);
+        onToggleSnackBar(res.data.message, 401);
         console.log('users password are expired !!');
       } else {
         onToggleSnackBar('Invalid username or password.');
@@ -204,7 +216,7 @@ const Login = ({route}) => {
         visible={snackbarInfo.visible}
         onDismiss={onDismissSnackBar}
         duration={3000}
-        style={styles.snackbar}>
+        style={[styles.snackbar, snackbarInfo.snackbarStyle]}>
         {snackbarInfo.message}
       </Snackbar>
     </View>
