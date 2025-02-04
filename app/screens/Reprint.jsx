@@ -225,15 +225,13 @@ function Reprint() {
     // Split the format and input by "/"
     const formatParts = format.split('/');
     const inputParts = url.split('/');
-    // console.log("formatParts ", formatParts)
-    // console.log("inputParts ", inputParts)
+    console.log('formatParts ', formatParts);
+    console.log('inputParts ', inputParts);
 
-    // Find the index of "uniqueCode" in the format
-    const uniqueCodeIndex = formatParts.indexOf(' uniqueCode ');
-    // console.log("uniqueCodeIndex ", uniqueCodeIndex)
+    const uniqueCodeIndex = formatParts.indexOf('uniqueCode');
+    console.log('uniqueCodeIndex ', uniqueCodeIndex);
 
-    // Extract and normalize the unique code
-    const uniqueCode = inputParts[uniqueCodeIndex];
+    const uniqueCode = inputParts[inputParts.length - 1];
     console.log('Unique Code:', uniqueCode);
     return uniqueCode;
   };
@@ -270,7 +268,7 @@ function Reprint() {
   const print = async () => {
     console.log('Reprint success.');
     const reprintRes = await axios.post(
-      `${url}/reprint/code`,
+      `${url}/code`,
       {
         product_id: selectedProduct.id,
         batch_id: selectedBatch.id,

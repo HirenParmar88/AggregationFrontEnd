@@ -27,16 +27,6 @@ import LoaderComponent from '../components/Loader';
 function DropoutFun() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
-  const [snackbarInfo, setSnackbarInfo] = useState({
-    visible: false,
-    message: '',
-  });
-  const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(null);
-  const [selectedProduct, setSelectedProduct] = useState({
-    id: null,
-    name: null,
-  });
   const [selectedBatch, setSelectedBatch] = useState({id: null, name: null});
   const [products, setProducts] = useState([]);
   const [batches, setBatches] = useState([]);
@@ -49,6 +39,27 @@ function DropoutFun() {
   const [visibleCodes, setVisibleCodes] = useState(false);
   const [visibleConfirmBatch, setVisibleConfirmBatch] = useState(false);
   const [visibleConfirmCodes, setVisibleConfirmCodes] = useState(false); // Added for Codes Dropout Confirmation
+  const [snackbarInfo, setSnackbarInfo] = useState({
+    visible: false,
+    message: '',
+  });
+  const onToggleSnackBar = (message, code) => {
+    const backgroundColor =
+      code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
+
+    setSnackbarInfo({
+      visible: true,
+      message,
+      snackbarStyle: {backgroundColor},
+    });
+  };
+
+  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState({
+    id: null,
+    name: null,
+  });
 
   const containerStyle = {
     backgroundColor: 'white',
@@ -58,8 +69,8 @@ function DropoutFun() {
     borderRadius: 2,
     display: 'grid',
     alignContent: 'space-between',
-    display:'flex',
-    justifyContent:'row',
+    display: 'flex',
+    justifyContent: 'row',
     // alignItems:'center'
   };
 
@@ -87,7 +98,7 @@ function DropoutFun() {
       console.log('Received data :', event);
       console.log('Current Scanned data :', event.data);
       console.log('Previous data is :', scannedCodes);
-      
+
       setScannedCodes(prevData => {
         const uniqueCode = getUniqueCode(event.data, countryCode);
         const alreadyExist = prevData.find(item => item === uniqueCode);
@@ -121,15 +132,13 @@ function DropoutFun() {
     // Split the format and input by "/"
     const formatParts = format.split('/');
     const inputParts = url.split('/');
-    // console.log("formatParts ", formatParts)
-    // console.log("inputParts ", inputParts)
+    console.log('formatParts ', formatParts);
+    console.log('inputParts ', inputParts);
 
-    // Find the index of "uniqueCode" in the format
-    const uniqueCodeIndex = formatParts.indexOf(' uniqueCode ');
-    // console.log("uniqueCodeIndex ", uniqueCodeIndex)
+    const uniqueCodeIndex = formatParts.indexOf('uniqueCode');
+    console.log('uniqueCodeIndex ', uniqueCodeIndex);
 
-    // Extract and normalize the unique code
-    const uniqueCode = inputParts[uniqueCodeIndex];
+    const uniqueCode = inputParts[inputParts.length - 1];
     console.log('Unique Code:', uniqueCode);
     return uniqueCode;
   };
@@ -163,10 +172,10 @@ function DropoutFun() {
 
   useEffect(() => {
     if (selectedProduct.id) {
-      (async ()=> {
-          await fetchBatchData();
-          await fetchCountryCode();
-      })()
+      (async () => {
+        await fetchBatchData();
+        await fetchCountryCode();
+      })();
     }
 
     return () => {};
@@ -185,7 +194,7 @@ function DropoutFun() {
       //   console.log('This is products Data :', products);
       if (products) {
         const fetchedProducts = products?.map(product => {
-          console.log('id ', product.id);
+          //console.log('id ', product.id);
           return {
             id: product.id,
             name: product.product_name,
@@ -254,10 +263,10 @@ function DropoutFun() {
           },
         },
       );
-      console.log('Get country code Response :', response.data);
+      console.log('Get country code API Response :', response.data);
 
       if (response.data?.success) {
-        console.log("settting country code ", response.data.data.country_code)
+        console.log('settting country code ', response.data.data.country_code);
         setCountryCode(response.data.data.country_code.toString());
       } else if (response.data.code === 401) {
         await AsyncStorage.removeItem('authToken');
@@ -305,10 +314,11 @@ function DropoutFun() {
     console.log('Dropout Selected Batch :', selectedBatch.id);
     console.log('RAdio select :', wholeBatch ? 'Batch' : 'code');
     if (wholeBatch) {
-        setVisibleBatch(true);
+      setVisibleBatch(true);
     } else {
-      scannedCodes?.length > 0 ? setVisibleCodes(true) : onToggleSnackBar('Please scan code for dropout.');;
-        
+      scannedCodes?.length > 0
+        ? setVisibleCodes(true)
+        : onToggleSnackBar('Please scan code for dropout.');
     }
   };
 
@@ -321,35 +331,34 @@ function DropoutFun() {
   const handleConfirmBatchDropout = async () => {
     console.log('Batch dropout confirmed in final step!');
     if (!dropoutReason) {
-        onToggleSnackBar("Select dropout reason");
+      onToggleSnackBar('Select dropout reason');
     }
     const batchDropRes = await axios.post(
-        `${url}/dropout/wholebatch`,
-        {
-            product_id: selectedProduct.id,
-            batch_id: selectedBatch.id,
-            dropout_reason: dropoutReason,
+      `${url}/dropout/wholebatch`,
+      {
+        product_id: selectedProduct.id,
+        batch_id: selectedBatch.id,
+        dropout_reason: dropoutReason,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
-        {
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-            },
-        },
+      },
     );
-    
+
     console.log('Response of batch dropout ', batchDropRes.data);
     if (batchDropRes.data.success) {
-        onToggleSnackBar('Batch dropout successfully');
-        setDropoutReason('');
-        setSelectedBatch({id: null, value: null});
-        setSelectedProduct({id: null, value: null});
+      onToggleSnackBar('Batch dropout successfully');
+      setDropoutReason('');
+      setSelectedBatch({id: null, value: null});
+      setSelectedProduct({id: null, value: null});
+    } else if (batchResponse.data.code === 401) {
+      await AsyncStorage.removeItem('authToken');
     }
-    else if (batchResponse.data.code === 401) {
-        await AsyncStorage.removeItem('authToken');
-      } 
-    setVisibleConfirmBatch(false); 
-};
+    setVisibleConfirmBatch(false);
+  };
 
   const handleCodesDropout = () => {
     console.log('Codes Dropout Confirmed!!');
@@ -361,7 +370,7 @@ function DropoutFun() {
   const handleConfirmCodesDropout = async () => {
     console.log('Codes dropout confirmed in final step!');
     if (!dropoutReason) {
-        onToggleSnackBar("Select dropout reason");
+      onToggleSnackBar('Select dropout reason');
     }
     const codesDropRes = await axios.post(
       `${url}/dropout/codes`,
@@ -379,13 +388,15 @@ function DropoutFun() {
       },
     );
 
-    console.log('Response of codes dropout ', codesDropRes.data);
-    if (codesDropRes.data.success) {
-      onToggleSnackBar('Scanned codes dropout successfully');
+    console.log('Response of codes dropout: ', codesDropRes.data);
+    if (codesDropRes.data.success && codesDropRes.data.code === 200) {
+      onToggleSnackBar('Scanned codes dropout successfully', 200);
       setSelectedBatch({id: null, value: null});
       setSelectedProduct({id: null, value: null});
       setDropoutReason('');
-      setScannedCodes([])
+      setScannedCodes([]);
+    }else if(codesDropRes.data.code === 500){
+      onToggleSnackBar(codesDropRes.data.message)
     }
     setVisibleConfirmCodes(false); // Close the confirm dropout modal
   };
@@ -395,9 +406,10 @@ function DropoutFun() {
     setDropoutReason(item.value);
   };
 
-  const onToggleSnackBar = message => setSnackbarInfo({visible: true, message});
+  //const onToggleSnackBar = message => setSnackbarInfo({visible: true, message});
 
-  const onDismissSnackBar = () => setSnackbarInfo({visible: false, message: ''});
+  const onDismissSnackBar = () =>
+    setSnackbarInfo({visible: false, message: ''});
 
   if (loading) {
     return (
@@ -416,90 +428,101 @@ function DropoutFun() {
           <Appbar.Content title="Dropout" />
         </Appbar.Header>
 
-        <ScrollView style={styles.scrollView}>
-          <View style={styles.container}>
-            {/* Product Dropdown */}
-            <View style={styles.dropdownContainer}>
-              <View style={styles.containerDropdownItem}>
-                <Dropdown
-                  style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
-                  placeholderStyle={styles.placeholderStyle}
-                  selectedTextStyle={styles.selectedTextStyle}
-                  data={products}
-                  maxHeight={300}
-                  labelField="name"
-                  valueField="id"
-                  placeholder={'Select Product'}
-                  value={selectedProduct.id}
-                  onChange={handleDropdownProductChange}
-                  renderLeftIcon={() => (
-                    <AntDesign
-                      style={styles.icon}
-                      color={'rgb(80, 189, 160)'}
-                      size={20}
-                    />
-                  )}
-                />
-              </View>
+        <View style={styles.container}>
+          {/* Product Dropdown */}
+          <View style={styles.dropdownContainer}>
+            <View style={styles.containerDropdownItem}>
+              <Dropdown
+                style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
+                placeholderStyle={styles.placeholderStyle}
+                selectedTextStyle={styles.selectedTextStyle}
+                data={products}
+                maxHeight={300}
+                labelField="name"
+                valueField="id"
+                placeholder={'Select Product'}
+                value={selectedProduct.id}
+                onChange={handleDropdownProductChange}
+                renderLeftIcon={() => (
+                  <AntDesign
+                    style={styles.icon}
+                    color={'rgb(80, 189, 160)'}
+                    size={20}
+                  />
+                )}
+              />
             </View>
+          </View>
 
-            {/* Batch Dropdown */}
-            <View style={styles.dropdownContainer}>
-              <View style={styles.containerDropdownItem}>
-                <Dropdown
-                  style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
-                  placeholderStyle={styles.placeholderStyle}
-                  selectedTextStyle={styles.selectedTextStyle}
-                  data={batches}
-                  maxHeight={300}
-                  labelField="name"
-                  valueField="id"
-                  placeholder={'Select Batch'}
-                  value={selectedBatch.id}
-                  onChange={handleDropdownBatchChange}
-                  renderLeftIcon={() => (
-                    <AntDesign
-                      style={styles.icon}
-                      color={'rgb(80, 189, 160)'}
-                      size={20}
-                    />
-                  )}
-                />
-              </View>
+          {/* Batch Dropdown */}
+          <View style={styles.dropdownContainer}>
+            <View style={styles.containerDropdownItem}>
+              <Dropdown
+                style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
+                placeholderStyle={styles.placeholderStyle}
+                selectedTextStyle={styles.selectedTextStyle}
+                data={batches}
+                maxHeight={300}
+                labelField="name"
+                valueField="id"
+                placeholder={'Select Batch'}
+                value={selectedBatch.id}
+                onChange={handleDropdownBatchChange}
+                renderLeftIcon={() => (
+                  <AntDesign
+                    style={styles.icon}
+                    color={'rgb(80, 189, 160)'}
+                    size={20}
+                  />
+                )}
+              />
             </View>
+          </View>
 
-            {/* Radio Buttons for Batch and Codes */}
-            <View style={styles.radioGroups}>
-              <View style={styles.radioItem1}>
-                <RadioButton
-                  value="batch"
-                  status={wholeBatch ? 'checked' : 'unchecked'}
-                  onPress={radioBatchDropout}
-                />
-                <Text style={{fontSize: 16}}>Batch Dropout</Text>
-              </View>
-              <View style={styles.radioItem2}>
-                <RadioButton
-                  value="codes"
-                  status={!wholeBatch ? 'checked' : 'unchecked'}
-                  onPress={radioCodesDropout}
-                />
-                <Text style={{fontSize: 16}}>Codes Dropout</Text>
-              </View>
+          {/* Radio Buttons for Batch and Codes */}
+          <View style={styles.radioGroups}>
+            <View style={styles.radioItem1}>
+              <RadioButton
+                value="batch"
+                status={wholeBatch ? 'checked' : 'unchecked'}
+                onPress={radioBatchDropout}
+              />
+              <Text style={{fontSize: 16}}>Batch Dropout</Text>
             </View>
+            <View style={styles.radioItem2}>
+              <RadioButton
+                value="codes"
+                status={!wholeBatch ? 'checked' : 'unchecked'}
+                onPress={radioCodesDropout}
+              />
+              <Text style={{fontSize: 16}}>Codes Dropout</Text>
+            </View>
+          </View>
 
+          <Text style={styles.showResultLabel}>
+            Show Results ({scannedCodes.length})
+          </Text>
+
+          <ScrollView style={styles.scrollView}>
             {!wholeBatch && (
               <View style={styles.codesList}>
-                <Text style={{ fontSize: 22, marginBottom: 6 }}>
-                  Show Results ({scannedCodes.length})
-                </Text>
                 {scannedCodes.map(item => (
-                  <Text key={item} style={{ fontSize: 18, marginVertical: 4, paddingHorizontal: 4, paddingVertical: 4, backgroundColor: "rgb(222, 238, 234)" }}>{item}</Text>
+                  <Text
+                    key={item}
+                    style={{
+                      fontSize: 18,
+                      marginVertical: 4,
+                      paddingHorizontal: 4,
+                      paddingVertical: 4,
+                      //backgroundColor: 'rgb(222, 238, 234)',
+                    }}>
+                    {item}
+                  </Text>
                 ))}
               </View>
             )}
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </View>
 
         <View style={styles.submitView}>
           <TouchableOpacity style={styles.btn} onPress={handleSubmit}>
@@ -701,7 +724,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    marginTop: 70,
+    //backgroundColor:'red'
   },
   dropdownConfirmBatchDropoutContainer: {
     marginTop: 35,
@@ -852,8 +875,15 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 10,
     borderRadius: 2,
-    marginBottom: 10, // Extra space from the bottom if needed
+    marginBottom: 50, // Extra space from the bottom if needed
   },
+  showResultLabel:{
+    fontSize: 18,
+    marginTop:6,
+    fontWeight:'bold',
+    paddingLeft:8,
+    //backgroundColor:'yellow'
+  }
 });
 
 export default DropoutFun;
