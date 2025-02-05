@@ -3,15 +3,11 @@ import {StyleSheet, Text, View, TouchableOpacity, Alert} from 'react-native';
 import {TextInput, Button} from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-// import DeviceInfo from 'react-native-device-info';
-// import {getMacAddress, getIpAddress} from 'react-native-device-info';
 
 function UrlScreen() {
   const navigation=useNavigation();
   const [text, setText] = useState('');
-  // DeviceInfo.getIpAddress().then((ip) => {
-  //   // "92.168.32.44"
-  // });
+  
   const handleNextBtn=async()=>{
     console.log('Next btn pressed..');
     if(!text){
@@ -48,10 +44,6 @@ function UrlScreen() {
   return (
     <>
       <View style={styles.container}>
-      <View>
-        <Text></Text>
-        <Text></Text>
-      </View>
         <View style={styles.textbox}>
           <TextInput
             label="Back-End URL"

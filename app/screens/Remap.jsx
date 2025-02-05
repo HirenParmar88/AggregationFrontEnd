@@ -27,29 +27,42 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import LoaderComponent from '../components/Loader';
-
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 function RemapScreen() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
-  const [selectedProduct, setSelectedProduct] = useState({ id: null, name: null });
-  const [selectedBatch, setSelectedBatch] = useState({ id: null, name: null });
+  const [selectedProduct, setSelectedProduct] = useState({
+    id: null,
+    name: null,
+  });
+  const [selectedBatch, setSelectedBatch] = useState({id: null, name: null});
   const [isFocusProduct, setIsFocusProduct] = useState(false);
   const [isFocusBatch, setIsFocusBatch] = useState(false);
   const [products, setProducts] = useState([]);
   const [batches, setBatches] = useState([]);
   const [countryCode, setCountryCode] = useState(null);
   const [visible, setVisible] = useState(false);
-   const [snackbarInfo, setSnackbarInfo] = useState({
-      visible: false,
-      message: '',
+  const [snackbarInfo, setSnackbarInfo] = useState({
+    visible: false,
+    message: '',
+  });
+  const onToggleSnackBar = (message, code) => {
+    const backgroundColor =
+      code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
+
+    setSnackbarInfo({
+      visible: true,
+      message,
+      snackbarStyle: {backgroundColor},
     });
+  };
+  const onDismissSnackBar = () =>
+    setSnackbarInfo({visible: false, message: ''});
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
-  const onToggleSnackBar = message => setSnackbarInfo({visible: true, message});
-  const onDismissSnackBar = () => setSnackbarInfo({visible: false, message: ''});
 
   const containerStyle = {
     backgroundColor: 'white',
@@ -65,8 +78,8 @@ function RemapScreen() {
       try {
         const storedToken = await AsyncStorage.getItem('authToken');
         if (storedToken) {
-            setToken(storedToken);
-            console.log("JWT token : ", storedToken);
+          setToken(storedToken);
+          console.log('JWT token : ', storedToken);
           fetchProductData(storedToken);
         } else {
           throw new Error('Token is missing');
@@ -76,12 +89,12 @@ function RemapScreen() {
         setLoading(false);
       }
     };
- 
+
     loadTokenAndData();
 
     return () => {
-      setSelectedProduct({ id: null, name: null });
-      setSelectedBatch({ id: null, name: null });
+      setSelectedProduct({id: null, name: null});
+      setSelectedBatch({id: null, name: null});
       setText('');
     };
   }, [isFocused]);
@@ -97,7 +110,7 @@ function RemapScreen() {
 
     HoneywellBarcodeReader.onBarcodeReadSuccess(event => {
       console.log('Current Scanned data :', event.data);
-      console.log("Country code is ", countryCode)
+      console.log('Country code is ', countryCode);
       const uniqueCode = getUniqueCode(event.data, countryCode);
       setText(uniqueCode);
     });
@@ -118,16 +131,14 @@ function RemapScreen() {
   }, [countryCode]);
 
   useEffect(() => {
-      if(selectedProduct.id){
-    (async () => {
-            await fetchCountryCode();
-            await fetchBatchData();
-        })();
+    if (selectedProduct.id) {
+      (async () => {
+        await fetchCountryCode();
+        await fetchBatchData();
+      })();
     }
-    return () => {
-    }
-  }, [selectedProduct.id])
-  
+    return () => {};
+  }, [selectedProduct.id]);
 
   const fetchProductData = async token => {
     try {
@@ -164,22 +175,25 @@ function RemapScreen() {
   const fetchBatchData = async () => {
     try {
       setLoading(true);
-      const batchResponse = await axios.get(`${url}/batch/${selectedProduct.id}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+      const batchResponse = await axios.get(
+        `${url}/batch/${selectedProduct.id}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
-      console.log("Batch Response :", batchResponse.data);
+      );
+      console.log('Batch Response :', batchResponse.data);
 
       if (batchResponse?.data?.success) {
         const fetchedBatches = batchResponse.data.data?.batches?.map(batch => {
-            console.log('batch id ', batch.id);
-            return {
-              id: batch.id,
-              name: batch.batch_no,
-            };
-          });
+          console.log('batch id ', batch.id);
+          return {
+            id: batch.id,
+            name: batch.batch_no,
+          };
+        });
         setBatches(fetchedBatches);
         //console.log("Store for select :", batches)
       } else {
@@ -195,7 +209,7 @@ function RemapScreen() {
   const fetchCountryCode = async () => {
     try {
       setLoading(true);
-      console.log("token in c ", token)
+      console.log('token in c ', token);
       const response = await axios.get(
         `${url}/product/countrycode/${selectedProduct.id}`,
         {
@@ -221,25 +235,17 @@ function RemapScreen() {
   };
 
   const getUniqueCode = (url, format) => {
-    // console.log("country code ", format);
-    // Split the format and input by "/"
     const formatParts = format.split('/');
     const inputParts = url.split('/');
-    // console.log("formatParts ", formatParts)
-    // console.log("inputParts ", inputParts)
-
-    // Find the index of "uniqueCode" in the format
     const uniqueCodeIndex = formatParts.indexOf(' uniqueCode ');
-    // console.log("uniqueCodeIndex ", uniqueCodeIndex)
 
-    // Extract and normalize the unique code
     const uniqueCode = inputParts[uniqueCodeIndex];
     console.log('Unique Code:', uniqueCode);
     return uniqueCode;
   };
 
   const handleDropdownProductChange = async item => {
-    setSelectedProduct({ id: item.id, name: item.name });
+    setSelectedProduct({id: item.id, name: item.name});
     setIsFocusProduct(false);
     setBatches([]);
   };
@@ -259,12 +265,7 @@ function RemapScreen() {
   };
 
   if (loading) {
-    return (
-      // <View style={styles.container}>
-      //   <Text>Loading...</Text>
-      // </View>
-      <LoaderComponent />
-    );
+    return <LoaderComponent />;
   }
 
   const print = async () => {
@@ -285,14 +286,13 @@ function RemapScreen() {
     );
 
     console.log('Response of remap code ', remapRes.data);
-    if (remapRes.data.success) {
-        setText('');
-        setSelectedProduct({ id: null, name: null });
-        setSelectedBatch({ id: null, name: null });
-        onToggleSnackBar('Remap successfully done.');
-    //   navigation.navigate('Home');
-    }
-    else {
+    if (remapRes.data.success === true && remapRes.data.code === 200) {
+      setText('');
+      setSelectedProduct({id: null, name: null});
+      setSelectedBatch({id: null, name: null});
+      onToggleSnackBar(remapRes.data.message, 200);
+      //navigation.navigate('Home');
+    } else {
       onToggleSnackBar('Fail to remap');
     }
     hideModal();
@@ -314,93 +314,102 @@ function RemapScreen() {
           <Appbar.Content title="Remap" />
         </Appbar.Header>
         <ScrollView>
-        <View style={styles.container}>
-          <View style={styles.dropdownContainer}>
-            {/* <Text variant="titleMedium" style={styles.labelText}>Product</Text> */}
-            <View style={styles.containerDropdownItem}>
-              <Dropdown
-                style={[
-                  styles.dropdown,
-                  {borderColor: 'rgb(80, 189, 160)'},
-                ]}
-                placeholderStyle={styles.placeholderStyle}
-                selectedTextStyle={styles.selectedTextStyle}
-                inputSearchStyle={styles.inputSearchStyle}
-                //iconStyle={styles.iconStyle}
-                data={products}
-                maxHeight={300}
-                labelField="name"
-                valueField="id"
-                placeholder='Select Product'
-                //placeholder={!isFocusProduct ? 'Select Product' : '...'}
-                //searchPlaceholder="Search..."
-                value={selectedProduct.id}
-                onFocus={() => setIsFocusProduct(true)}
-                onBlur={() => setIsFocusProduct(false)}
-                onChange={handleDropdownProductChange}
-                renderLeftIcon={() => (
-                  <AntDesign
-                    style={styles.icon}
-                    color={isFocusProduct ? 'rgb(80, 189, 160)' : 'black'}
-                    //name="Safety"
-                    size={20}
+          <View style={styles.container}>
+            <View style={styles.dropdownContainer}>
+              {/* <Text variant="titleMedium" style={styles.labelText}>Product</Text> */}
+              <View style={styles.containerDropdownItem}>
+                <Dropdown
+                  style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
+                  placeholderStyle={styles.placeholderStyle}
+                  selectedTextStyle={styles.selectedTextStyle}
+                  inputSearchStyle={styles.inputSearchStyle}
+                  //iconStyle={styles.iconStyle}
+                  data={products}
+                  maxHeight={300}
+                  labelField="name"
+                  valueField="id"
+                  placeholder="Select Product"
+                  //placeholder={!isFocusProduct ? 'Select Product' : '...'}
+                  //searchPlaceholder="Search..."
+                  value={selectedProduct.id}
+                  onFocus={() => setIsFocusProduct(true)}
+                  onBlur={() => setIsFocusProduct(false)}
+                  onChange={handleDropdownProductChange}
+                  renderLeftIcon={() => (
+                    <AntDesign
+                      style={styles.icon}
+                      color={isFocusProduct ? 'rgb(80, 189, 160)' : 'black'}
+                      //name="Safety"
+                      size={20}
+                    />
+                  )}
+                />
+              </View>
+            </View>
+
+            <View style={styles.dropdownContainer}>
+              {/* <Text variant="titleMedium" style={styles.labelText}>Batch</Text> */}
+              <View style={styles.containerDropdownItem}>
+                <Dropdown
+                  style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
+                  placeholderStyle={styles.placeholderStyle}
+                  selectedTextStyle={styles.selectedTextStyle}
+                  inputSearchStyle={styles.inputSearchStyle}
+                  //iconStyle={styles.iconStyle}
+                  data={batches}
+                  maxHeight={300}
+                  labelField="name"
+                  valueField="id"
+                  placeholder="Select Batch"
+                  //placeholder={!isFocusBatch ? 'Select Batch' : '...'}
+                  //searchPlaceholder="Search..."
+                  value={selectedBatch.id}
+                  onFocus={() => setIsFocusBatch(true)}
+                  onBlur={() => setIsFocusBatch(false)}
+                  onChange={item => {
+                    setSelectedBatch({id: item.id, name: item.name});
+                    setIsFocusBatch(false);
+                  }}
+                  renderLeftIcon={() => (
+                    <AntDesign
+                      style={styles.icon}
+                      color={isFocusBatch ? 'rgb(80, 189, 160)' : 'black'}
+                      //name="Safety"
+                      size={20}
+                    />
+                  )}
+                />
+              </View>
+            </View>
+
+            <View style={styles.txtInputStyle}>
+              <Text variant="titleMedium" style={styles.labelText}>
+                Scan or write a code
+              </Text>
+              <TextInput
+                label="Enter remap code"
+                value={text}
+                mode="outlined"
+                onChangeText={text => setText(text)}
+                style={styles.textInput}
+                right={
+                  <TextInput.Icon
+                    name="qrcode-scan"
+                    size={10}
+                    color="#000"
+                    style={styles.iconStyleQr}
+                    onPress={() => console.log('QR Code Icon Pressed')} // Optional action
                   />
-                )}
+                }
               />
+              {/* <MaterialCommunityIcons
+                name="qrcode-scan"
+                size={25}
+                color="#000"
+                style={{paddingRight: 0}} // Optional: adjust padding
+              /> */}
             </View>
           </View>
-
-          <View style={styles.dropdownContainer}>
-            {/* <Text variant="titleMedium" style={styles.labelText}>Batch</Text> */}
-            <View style={styles.containerDropdownItem}>
-              <Dropdown
-                style={[
-                  styles.dropdown,
-                  {borderColor: 'rgb(80, 189, 160)'},
-                ]}
-                placeholderStyle={styles.placeholderStyle}
-                selectedTextStyle={styles.selectedTextStyle}
-                inputSearchStyle={styles.inputSearchStyle}
-                //iconStyle={styles.iconStyle}
-                data={batches}
-                maxHeight={300}
-                labelField="name"
-                valueField="id"
-                placeholder='Select Batch'
-                //placeholder={!isFocusBatch ? 'Select Batch' : '...'}
-                //searchPlaceholder="Search..."
-                value={selectedBatch.id}
-                onFocus={() => setIsFocusBatch(true)}
-                onBlur={() => setIsFocusBatch(false)}
-                onChange={item => {
-                  setSelectedBatch({ id: item.id, name: item.name });
-                  setIsFocusBatch(false);
-                }}
-                renderLeftIcon={() => (
-                  <AntDesign
-                    style={styles.icon}
-                    color={isFocusBatch ? 'rgb(80, 189, 160)' : 'black'}
-                    //name="Safety"
-                    size={20}
-                  />
-                )}
-              />
-            </View>
-          </View>
-
-          <View style={styles.txtInputStyle}>
-            <Text variant="titleMedium" style={styles.labelText}>
-              Scan or write a code
-            </Text>
-            <TextInput
-              label="Enter remap code"
-              value={text}
-              mode="outlined"
-              onChangeText={text => setText(text)}
-              style={styles.textInput}
-            />
-          </View>
-        </View>
         </ScrollView>
         <View>
           <TouchableOpacity
@@ -448,7 +457,7 @@ function RemapScreen() {
           visible={snackbarInfo.visible}
           onDismiss={onDismissSnackBar}
           duration={3000}
-          style={styles.snackbar}>
+          style={[styles.snackbar, snackbarInfo.snackbarStyle]}>
           {snackbarInfo.message}
         </Snackbar>
       </KeyboardAvoidingView>
@@ -564,6 +573,13 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 10,
     borderRadius: 2,
-    marginBottom: 10, // Extra space from the bottom if needed
+    marginBottom: 70, // Extra space from the bottom if needed
+  },
+  iconStyleQr: {
+    position:'absolute',
+    top:100,
+    right:100,
+    // paddingRight: 50,
+    justifyContent: 'center',
   },
 });

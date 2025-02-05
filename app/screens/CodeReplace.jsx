@@ -49,12 +49,21 @@ function CodeReplaceScreen() {
     visible: false,
     message: '',
   });
-  const showModal = () => setVisible(true);
-  const hideModal = () => setVisible(false);
-  const onToggleSnackBar = message => setSnackbarInfo({visible: true, message});
+  const onToggleSnackBar = (message, code) => {
+    const backgroundColor =
+      code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
+
+    setSnackbarInfo({
+      visible: true,
+      message,
+      snackbarStyle: {backgroundColor},
+    });
+  };
   const onDismissSnackBar = () =>
     setSnackbarInfo({visible: false, message: ''});
-
+  const showModal = () => setVisible(true);
+  const hideModal = () => setVisible(false);
+  
   const containerStyle = {
     backgroundColor: 'white',
     padding: 0,
@@ -226,18 +235,11 @@ function CodeReplaceScreen() {
   };
 
   const getUniqueCode = (url, format) => {
-    // console.log("country code ", format);
-    // Split the format and input by "/"
     const formatParts = format.split('/');
     const inputParts = url.split('/');
-    // console.log("formatParts ", formatParts)
-    // console.log("inputParts ", inputParts)
 
-    // Find the index of "uniqueCode" in the format
     const uniqueCodeIndex = formatParts.indexOf(' uniqueCode ');
-    // console.log("uniqueCodeIndex ", uniqueCodeIndex)
 
-    // Extract and normalize the unique code
     const uniqueCode = inputParts[uniqueCodeIndex];
     console.log('Unique Code:', uniqueCode);
     return uniqueCode;
@@ -265,9 +267,6 @@ function CodeReplaceScreen() {
 
   if (loading) {
     return (
-      // <View style={styles.loadingContainer}>
-      //   <Text>Loading...</Text>
-      // </View>
       <LoaderComponent />
     );
   }
@@ -290,11 +289,11 @@ function CodeReplaceScreen() {
     );
 
     console.log('Response of codereplace code ', codereplaceRes.data);
-    if (codereplaceRes.data.success) {
+    if (codereplaceRes.data.success === true && codereplaceRes.data.code === 200) {
       setText('');
       setSelectedProduct({id: null, name: null});
       setSelectedBatch({id: null, name: null});
-      onToggleSnackBar('Code replace successfully done.');
+      onToggleSnackBar(codereplaceRes.data.message, 200);
       //   navigation.navigate('Home');
     } else {
       onToggleSnackBar('Fail to code replace');
@@ -455,7 +454,7 @@ function CodeReplaceScreen() {
           visible={snackbarInfo.visible}
           onDismiss={onDismissSnackBar}
           duration={3000}
-          style={styles.snackbar}>
+          style={[styles.snackbar, snackbarInfo.snackbarStyle]}>
           {snackbarInfo.message}
         </Snackbar>
       </KeyboardAvoidingView>

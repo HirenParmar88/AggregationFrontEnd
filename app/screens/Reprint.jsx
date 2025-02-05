@@ -27,6 +27,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import LoaderComponent from '../components/Loader';
+import DeviceInfo from 'react-native-device-info';
 
 function Reprint() {
   const navigation = useNavigation();
@@ -235,8 +236,6 @@ function Reprint() {
   };
 
   const getUniqueCode = (url, format) => {
-    // console.log("country code ", format);
-    // Split the format and input by "/"
     const formatParts = format.split('/');
     const inputParts = url.split('/');
     console.log('formatParts ', formatParts);
@@ -287,6 +286,7 @@ function Reprint() {
         product_id: selectedProduct.id,
         batch_id: selectedBatch.id,
         SsccCode: text,
+        mac_address:await DeviceInfo.getUniqueId()
       },
       {
         headers: {
@@ -301,10 +301,10 @@ function Reprint() {
       setText('');
       setSelectedProduct({id: null, name: null});
       setSelectedBatch({id: null, name: null});
-      onToggleSnackBar(reprintRes.data.message);
+      onToggleSnackBar(reprintRes.data.message, 200);
       //navigation.navigate('Home');
     } else {
-      onToggleSnackBar('Fail to reprint');
+      onToggleSnackBar(reprintRes.data.message, reprintRes.data.code);
     }
     hideModal();
   };
@@ -398,7 +398,7 @@ function Reprint() {
                 Scan or write a code
               </Text>
               <TextInput
-                label="Enter reprint code"
+                label="Enter sscc code for reprint"
                 value={text}
                 mode="outlined"
                 onChangeText={text => setText(text)}
@@ -569,6 +569,6 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 10,
     borderRadius: 2,
-    marginBottom: 10, // Extra space from the bottom if needed
+    marginBottom: 70, // Extra space from the bottom if needed
   },
 });

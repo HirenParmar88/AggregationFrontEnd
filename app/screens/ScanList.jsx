@@ -27,6 +27,7 @@ import {url} from '../../utils/constant';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Feather from 'react-native-vector-icons/Feather';
+import DeviceInfo from 'react-native-device-info';
 
 function ScanList() {
   const navigation = useNavigation();
@@ -132,7 +133,7 @@ function ScanList() {
         productId: productId,
         batchId: batchId,
         uniqueCode: barcodeData,
-        packageLevel: currentPackageLevel,
+        //packageLevel: currentPackageLevel,
       };
       console.log('Payload for scan/validation :', payload);
 
@@ -302,10 +303,11 @@ function ScanList() {
   const handlePrintCode = async (SsccCode, SerialNo) => {
     try {
       const res = await axios.post(
-        `${url}/sscc`,
+        `${url}/print`,
         {
           SsccCode,
           SerialNo,
+          mac_address:await DeviceInfo.getUniqueId()
         },
         {
           headers: {
@@ -314,12 +316,12 @@ function ScanList() {
           },
         },
       );
-
       console.log('Response of handle print ', res.data);
-      if (res.data.success) {
+
+      if (res.data.success === true && res.data.code === 200) {
         setChildModalVisible(true);
       } else {
-        onToggleSnackBar(res.data.data.message, res.data.code);
+        onToggleSnackBar(res.data.message, res.data.code);
       }
     } catch (error) {
       console.log('Error to print code for ', SsccCode);

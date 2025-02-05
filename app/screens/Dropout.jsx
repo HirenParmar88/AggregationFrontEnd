@@ -137,8 +137,6 @@ function DropoutFun() {
   }, [selectedProduct,selectedBatch]);
 
   const getUniqueCode = (url, format) => {
-    // console.log("country code ", format);
-    // Split the format and input by "/"
     const formatParts = format.split('/');
     const inputParts = url.split('/');
     console.log('formatParts ', formatParts);
