@@ -65,7 +65,7 @@ function ProductComponent() {
   }, []);
 
   // Fetch products
-  // console.log("Config :->", config);
+  console.log("Config :->", config);
 
   const fetchProductData = async token => {
     console.log('Product APIs called..');
@@ -155,36 +155,7 @@ function ProductComponent() {
   //     return null;
   // };
 
-  const processApproval = async (user, aggregrateId) => {
-    console.log('aggregate id :', aggregateId);
-    const data = {
-      modelName: 'aggregationTransaction',
-      esignStatus,
-      id: aggregateId.id,
-      audit_log: config.audit_logs
-        ? {
-            user_id: user.userId,
-            user_name: user.userName,
-            performed_action: 'approved',
-            remarks: remarks || `product approved - ${auditLogMark}`,
-          }
-        : {},
-    };
-    const dataRes = await axios.post(
-      `${url}/esign-status`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      },
-      'POST',
-      true,
-    );
-    console.log('data Res :->', dataRes);
-    closeApprovalModal();
-  };
+
 
   const handleAuthResult = async (
     isAuthenticated,
@@ -246,8 +217,8 @@ function ProductComponent() {
       `${url}/aggregationtransaction/addaggregation`,
       {
         audit_log: {
-          audit_log: false,
-          performed_action: 'Add Aggeration ',
+          audit_log: config?.config?.audit_logs,
+          performed_action: `Aggregation added for Product ID: ${valueProduct}, Batch ID: ${valueBatch} by User ID: ${config.userId}`,
           remarks: 'none',
         },
         productId: valueProduct,

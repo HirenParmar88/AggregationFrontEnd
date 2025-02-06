@@ -28,6 +28,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Feather from 'react-native-vector-icons/Feather';
 import DeviceInfo from 'react-native-device-info';
+import { decodeAndSetConfig } from '../../utils/tokenUtils';
 
 function ScanList() {
   const navigation = useNavigation();
@@ -47,6 +48,7 @@ function ScanList() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentPackageLevel, setCurrentPackageLevel] = useState(0);
   const [ssccNumber, setSsccNumber] = useState();
+  const [config, setConfig] = useState(null);
   const [serialNumber, setSerialNumber] = useState();
 
   const [snackbarInfo, setSnackbarInfo] = useState({
@@ -174,11 +176,16 @@ function ScanList() {
 
   //packaging Hierarchy API
   const handleScannedData = async () => {
+    decodeAndSetConfig(setConfig,await AsyncStorage.getItem('authToken'))
     try {
       const productId = await AsyncStorage.getItem('productId');
       const response = await axios.post(
         `${url}/packagingHierarchy`,
         {
+          audit_log: {
+            audit_log: config?.config?.audit_logs,
+            remarks: 'none',
+          },
           productId: productId,
           currentLevel: currentLevel,
         },
@@ -222,8 +229,14 @@ function ScanList() {
         totalProduct: totalProduct,
         currentIndex: currentIndex,
       };
+      if(totalProduct==1){
+        payload['audit_log']={
+         audit_log: config?.config?.audit_logs,
+         performed_action: `Scan transaction completed with Transaction ID: ${transactionId}, Product ID: ${await AsyncStorage.getItem('productId')}, Batch ID: ${await AsyncStorage.getItem('batchId')}, and scanned by User ID: ${config.userId}.`,
+         remarks: 'none',
+       }
+      }
       console.log('Payload for codeScan api req :', payload);
-
       const codeScanResponse = await axios.post(
         `${url}/scan/codeScan`,
         payload,

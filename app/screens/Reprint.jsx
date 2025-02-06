@@ -28,6 +28,7 @@ import axios from 'axios';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import LoaderComponent from '../components/Loader';
 import DeviceInfo from 'react-native-device-info';
+import { decodeAndSetConfig } from '../../utils/tokenUtils';
 
 function Reprint() {
   const navigation = useNavigation();
@@ -35,6 +36,7 @@ function Reprint() {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
+  const [config, setConfig] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState({
     id: null,
     name: null,
@@ -80,6 +82,7 @@ function Reprint() {
         const storedToken = await AsyncStorage.getItem('authToken');
         if (storedToken) {
           setToken(storedToken);
+          decodeAndSetConfig(setConfig, storedToken);
           console.log('JWT token : ', storedToken);
           fetchProductData(storedToken);
         } else {
@@ -282,7 +285,11 @@ function Reprint() {
     console.log('Reprint success.');
     const reprintRes = await axios.post(
       `${url}/reprint`,
-      {
+      { audit_log: {
+        audit_log: config?.config?.audit_logs,
+        performed_action: `Reprint this ${text} sscc code with Product ID: ${selectedProduct?.id}, Batch ID: ${selectedBatch?.id} by User ID: ${config.userId}`,
+        remarks: 'none',
+      },
         product_id: selectedProduct.id,
         batch_id: selectedBatch.id,
         SsccCode: text,

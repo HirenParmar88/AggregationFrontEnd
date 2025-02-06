@@ -25,6 +25,9 @@ import {url} from '../../utils/constant';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import LoaderComponent from '../components/Loader';
 import Feather from 'react-native-vector-icons/Feather';
+import EsignPage from './Esign';
+import { decodeAndSetConfig } from '../../utils/tokenUtils';
+
 
 function DropoutFun() {
   const navigation = useNavigation();
@@ -41,10 +44,16 @@ function DropoutFun() {
   const [visibleCodes, setVisibleCodes] = useState(false);
   const [visibleConfirmBatch, setVisibleConfirmBatch] = useState(false);
   const [visibleConfirmCodes, setVisibleConfirmCodes] = useState(false); // Added for Codes Dropout Confirmation
+  const [config, setConfig] = useState(null);
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
   });
+  const [openModal, setOpenModal] = useState(false);
+  const [approveAPIName, setApproveAPIName] = useState();
+  const [approveAPImethod, setApproveAPImethod] = useState();
+  const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
+
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
       code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
@@ -157,6 +166,7 @@ function DropoutFun() {
         // console.log('JWT token : ', storedToken);
         if (storedToken) {
           setToken(storedToken);
+          decodeAndSetConfig(setConfig, storedToken);
           fetchProductData(storedToken);
         } else {
           throw new Error('Token is missing');
@@ -184,6 +194,59 @@ function DropoutFun() {
 
     return () => {};
   }, [selectedProduct]);
+
+  const handleAuthResult = async (
+      isAuthenticated,
+      user,
+      isApprover,
+      esignStatus,
+      remarks,
+      eSignStatusId,
+    ) => {
+      try {
+        console.log('handleAuthResult');
+        console.log('handleAuthResult', {
+          isAuthenticated,
+          isApprover,
+          esignStatus,
+          user,
+        });
+        console.log(isApprover, isAuthenticated);
+        const closeApprovalModal = () => setOpenModal(false);
+        const resetState = () => {
+          setApproveAPIName('');
+          setApproveAPImethod('');
+          setApproveAPIEndPoint('');
+          setOpenModal(false);
+        };
+        if (!isAuthenticated) {
+          Alert.alert('Authentication failed, Please try again.');
+          resetState();
+          return;
+        }
+  
+        const handleEsignStatus = async () => {
+          if (esignStatus === 'rejected') {
+            closeApprovalModal();
+          }
+        };
+        if (isApprover) {
+          console.log('Approved is ', esignStatus === 'approved');
+          if (esignStatus === 'approved') {
+            handleSubmit()
+  
+            closeApprovalModal();
+          } else {
+            if (esignStatus === 'rejected') closeApprovalModal();
+          }
+        } else {
+          handleEsignStatus();
+        }
+        resetState();
+      } catch (err) {
+        console.log(err);
+      }
+    };
 
   //scan Validation API
   const scanValidation = async (barcodeData) => {
@@ -395,7 +458,11 @@ function DropoutFun() {
     }
     const batchDropRes = await axios.post(
       `${url}/dropout/wholebatch`,
-      {
+      { audit_log: {
+        audit_log: config?.config?.audit_logs,
+        performed_action: `Dropout whole of this Product ID: ${selectedProduct?.id}, Batch ID: ${selectedBatch?.id} by User ID: ${config.userId}`,
+        remarks: 'none',
+      },
         product_id: selectedProduct.id,
         batch_id: selectedBatch.id,
         dropout_reason: dropoutReason,
@@ -435,6 +502,11 @@ function DropoutFun() {
     const codesDropRes = await axios.post(
       `${url}/dropout/codes`,
       {
+        audit_log: {
+          audit_log: config?.config?.audit_logs,
+          performed_action: `Dropped ${scannedCodes.length} codes for Product ID: ${selectedProduct?.id}, Batch ID: ${selectedBatch?.id}, by User ID: ${config.userId}.`,
+          remarks: 'none',
+        },
         product_id: selectedProduct.id,
         batch_id: selectedBatch.id,
         dropout_reason: dropoutReason,
@@ -765,6 +837,18 @@ function DropoutFun() {
           {snackbarInfo.message}
         </Snackbar>
       </KeyboardAvoidingView>
+      {openModal && (
+        <EsignPage
+          config={config}
+          handleAuthResult={handleAuthResult}
+          approveAPIName={approveAPIName}
+          approveAPImethod={approveAPImethod}
+          approveAPIEndPoint={approveAPIEndPoint}
+          openModal={openModal}
+          setOpenModal={setOpenModal}
+          setStatus={setStatus}
+        />
+      )}
     </>
   );
 }
