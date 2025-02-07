@@ -42,13 +42,75 @@ function CodeReplaceScreen() {
   const [isFocusProduct, setIsFocusProduct] = useState(false);
   const [isFocusBatch, setIsFocusBatch] = useState(false);
   const [products, setProducts] = useState([]);
+  const [scannedCodes, setScannedCodes] = useState([]);
   const [batches, setBatches] = useState([]);
   const [countryCode, setCountryCode] = useState(null);
   const [visible, setVisible] = useState(false);
+  const [scanCode, setScanCode] = useState('');
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
   });
+
+
+  const scanValidation = async barcodeData => {
+    console.log(selectedProduct.id,selectedBatch.id)
+    if (!selectedProduct.id || !selectedBatch.id) {
+      Alert.alert('Error', 'Please select both product and batch.');
+      return;
+    }
+    console.log('scan validation API call for dropout ..');
+    try {
+      console.log('Token is scan Validation in Dropout :', token);
+      const payload = {
+        productId: selectedProduct.id,
+        batchId: selectedBatch.id,
+        uniqueCode: barcodeData,
+      };
+      console.log('Payload for scan/validation :', payload);
+      const scanRes = await axios.post(`${url}/scan/validation`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log('scan/validation APIs Res for DropOut :', scanRes.data);
+
+      if (scanRes.data.code === 200 && scanRes.data.success === true) {
+        onToggleSnackBar(scanRes.data.message, 200);
+        console.log(scanRes.data.message, 200);
+        return scanRes.data;
+      } else if (scanRes.data.code === 401) {
+        console.log(scanRes.data.message);
+        onToggleSnackBar(scanRes.data.message, 401);
+        return null;
+      } else if (scanRes.data.code === 500) {
+        console.log(scanRes.data.message);
+        onToggleSnackBar(scanRes.data.message, 500);
+        return null;
+      } else if (scanRes.data.code === 409) {
+        console.log('Invalid scan res :', scanRes.data.message);
+        //Alert.alert(scanRes.data.message);
+        onToggleSnackBar(scanRes.data.message, 409);
+        return null;
+      } else if (scanRes.data.code === 404) {
+        console.log('404 : ', scanRes.data.message);
+        //Alert.alert(scanRes.data.message);
+        onToggleSnackBar(scanRes.data.message, 404);
+        return null;
+      } else if (scanRes.data.code === 400) {
+        console.log('Invalid packege level :  ', scanRes.data.message);
+        //Alert.alert(scanRes.data.message);
+        onToggleSnackBar(scanRes.data.message, 400);
+        return null;
+      } else {
+        console.log('error !');
+      }
+    } catch (error) {
+      console.error('Error to scan validation API call', error);
+    }
+  };
+
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
       code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
@@ -63,7 +125,7 @@ function CodeReplaceScreen() {
     setSnackbarInfo({visible: false, message: ''});
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
-  
+
   const containerStyle = {
     backgroundColor: 'white',
     padding: 0,
@@ -108,11 +170,27 @@ function CodeReplaceScreen() {
       );
     });
 
-    HoneywellBarcodeReader.onBarcodeReadSuccess(event => {
-      console.log('Current Scanned data :', event.data);
-      console.log('Country code is ', countryCode);
-      const uniqueCode = getUniqueCode(event.data, countryCode);
-      setText(uniqueCode);
+    HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
+      const scanRes = await scanValidation(event.data);
+      if (scanRes && scanRes.code === 200) {
+        setScannedCodes(prevData => {
+          const uniqueCode = getUniqueCode(event.data, countryCode);
+          setScanCode(uniqueCode)
+          const alreadyExist = prevData.find(item => item === uniqueCode);
+          if (!alreadyExist) {
+            // onToggleSnackBar("scanned successfully..",200)
+            return [...prevData, uniqueCode];
+          } else {
+            console.log('Already exitst...');
+            Alert.alert('Items Already Exists!');
+            return [...prevData];
+          }
+        });
+      }
+      // console.log('Current Scanned data :', event.data);
+      // console.log('Country code is ', countryCode);
+      // const uniqueCode = getUniqueCode(event.data, countryCode);
+      // setScanCode(uniqueCode);
     });
 
     HoneywellBarcodeReader.onBarcodeReadFail(() => {
@@ -194,6 +272,7 @@ function CodeReplaceScreen() {
             name: batch.batch_no,
           };
         });
+        console.log(fetchedBatches)
         setBatches(fetchedBatches);
         //console.log("Store for select :", batches)
       } else {
@@ -237,10 +316,13 @@ function CodeReplaceScreen() {
   const getUniqueCode = (url, format) => {
     const formatParts = format.split('/');
     const inputParts = url.split('/');
+    console.log('formatParts ', formatParts);
+    console.log('inputParts ', inputParts);
 
-    const uniqueCodeIndex = formatParts.indexOf(' uniqueCode ');
+    const uniqueCodeIndex = formatParts.indexOf('uniqueCode');
+    console.log('uniqueCodeIndex ', uniqueCodeIndex);
 
-    const uniqueCode = inputParts[uniqueCodeIndex];
+    const uniqueCode = inputParts[inputParts.length - 1];
     console.log('Unique Code:', uniqueCode);
     return uniqueCode;
   };
@@ -252,33 +334,32 @@ function CodeReplaceScreen() {
   };
 
   const handleCodeReplace = () => {
-    // if (!selectedProduct.id || !selectedBatch.id) {
-    //   Alert.alert('Error', 'Please select both product and batch.');
-    //   return;
-    // }
-    // if (!text) {
-    //   Alert.alert('Error', 'Please scan or enter unique code');
-    //   return;
-    // }
+    if (!selectedProduct.id || !selectedBatch.id) {
+      Alert.alert('Error', 'Please select both product and batch.');
+      return;
+    }
+    if (!scanCode) {
+      Alert.alert('Error', 'Please scan or enter unique code');
+      return;
+    }
 
     setVisible(true); //modal open
     console.log('Code Replace pressed..');
   };
 
   if (loading) {
-    return (
-      <LoaderComponent />
-    );
+    return <LoaderComponent />;
   }
 
   const print = async () => {
     console.log('Code Replace success.');
     const codereplaceRes = await axios.post(
-      `${url}/codereplace/code`,
+      `${url}/code-replace`,
       {
         product_id: selectedProduct.id,
         batch_id: selectedBatch.id,
-        code: text,
+        code: scanCode,
+        replace_code: text,
       },
       {
         headers: {
@@ -289,14 +370,18 @@ function CodeReplaceScreen() {
     );
 
     console.log('Response of codereplace code ', codereplaceRes.data);
-    if (codereplaceRes.data.success === true && codereplaceRes.data.code === 200) {
+    if (
+      codereplaceRes.data.success === true &&
+      codereplaceRes.data.code === 200
+    ) {
       setText('');
+      setScanCode('');
       setSelectedProduct({id: null, name: null});
       setSelectedBatch({id: null, name: null});
       onToggleSnackBar(codereplaceRes.data.message, 200);
       //   navigation.navigate('Home');
     } else {
-      onToggleSnackBar('Fail to code replace');
+      onToggleSnackBar(codereplaceRes?.data?.message);
     }
     hideModal();
   };
@@ -370,6 +455,7 @@ function CodeReplaceScreen() {
                   onFocus={() => setIsFocusBatch(true)}
                   onBlur={() => setIsFocusBatch(false)}
                   onChange={item => {
+                    console.log(item.id)
                     setSelectedBatch({id: item.id, name: item.name});
                     setIsFocusBatch(false);
                   }}
@@ -391,9 +477,9 @@ function CodeReplaceScreen() {
               </Text>
               <TextInput
                 label="Enter or Scan code"
-                value={text}
+                value={scanCode}
                 mode="outlined"
-                onChangeText={text => setText(text)}
+                onChangeText={text => setScanCode(text)}
                 style={styles.textInput}
               />
             </View>
@@ -464,14 +550,14 @@ function CodeReplaceScreen() {
 export default CodeReplaceScreen;
 
 const styles = StyleSheet.create({
-  container:{
-    flex:1,
+  container: {
+    flex: 1,
   },
   loadingContainer: {
     //flex: 1,
-    textAlign:'center',
-    display:'flex',
-    justifyContent:'center',
+    textAlign: 'center',
+    display: 'flex',
+    justifyContent: 'center',
   },
   dropdownContainer: {
     marginTop: 20,
@@ -578,9 +664,9 @@ const styles = StyleSheet.create({
   codeReplaceModalBtnText: {
     fontSize: 20,
     color: 'white',
-    display:'flex',
-    justifyContent:'center',
-    textAlign:'center',
+    display: 'flex',
+    justifyContent: 'center',
+    textAlign: 'center',
   },
   codeReplaceModalBtn: {
     backgroundColor: 'rgb(80, 189, 160)',
@@ -589,10 +675,9 @@ const styles = StyleSheet.create({
     paddingTop: 15,
     paddingBottom: 15,
     borderRadius: 4,
-    display:'flex',
-    justifyContent:'center',
-    textAlign:'center'
-    
+    display: 'flex',
+    justifyContent: 'center',
+    textAlign: 'center',
   },
   //   cancelbtn: {
   //     backgroundColor: 'gray',

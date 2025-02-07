@@ -64,6 +64,17 @@ function ProductComponent() {
     };
   }, []);
 
+  const onToggleSnackBar = (message, code) => {
+    const backgroundColor =
+      code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
+
+    setSnackbarInfo({
+      visible: true,
+      message,
+      snackbarStyle: {backgroundColor},
+    });
+  };
+
   // Fetch products
   console.log("Config :->", config);
 
@@ -181,7 +192,7 @@ function ProductComponent() {
         setApproveAPIEndPoint('');
         setOpenModal(false);
       };
-      if (!isAuthenticated) {
+      if (!isAuthenticated && config.esignStatus) {
         Alert.alert('Authentication failed, Please try again.');
         resetState();
         return;
@@ -189,16 +200,19 @@ function ProductComponent() {
 
       const handleEsignStatus = async () => {
         if (esignStatus === 'rejected') {
+          nToggleSnackBar("eSign has been rejected for add aggregate")
           closeApprovalModal();
         }
       };
       if (isApprover) {
         console.log('Approved is ', esignStatus === 'approved');
         if (esignStatus === 'approved') {
+          onToggleSnackBar("eSign has been approved for add aggregate",200)
           await addAggregrate('approved');
 
           closeApprovalModal();
         } else {
+          nToggleSnackBar("eSign has been rejected for add aggregate")
           await addAggregrate('rejected');
           if (esignStatus === 'rejected') closeApprovalModal();
         }
@@ -267,6 +281,8 @@ function ProductComponent() {
     console.log(config.config.esign_status, !openModal);
     if (config.config.esign_status && !openModal) {
       setOpenModal(true);
+      setApproveAPIName('aggregate-approve')
+      setApproveAPImethod('POST')
       return;
     }
     addAggregrate('approved');

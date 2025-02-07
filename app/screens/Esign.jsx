@@ -4,11 +4,12 @@ import React, { useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View, Dimensions, Alert } from "react-native";
 import { Modal, Portal, Text, TextInput } from "react-native-paper";
 import Fontisto from 'react-native-vector-icons/Fontisto';
+import { url } from "../../utils/constant";
 
 const { width, height } = Dimensions.get("window");
 //console.log("Widht & heig ", width, height)
 
-function EsignPage({ openModal, setOpenModal, setStatus ,handleAuthResult,config}) {
+function EsignPage({ config,handleAuthResult,approveAPIName,approveAPImethod,approveAPIEndPoint,openModal,setOpenModal,setStatus}) {
     const [userID, setUserID] = useState('');
     const [password, setPassword] = useState('');
     const [remark, setRemark] = useState('');
@@ -24,7 +25,7 @@ function EsignPage({ openModal, setOpenModal, setStatus ,handleAuthResult,config
                 "password": password,
                 "remark": remark,
                 "securityCheck": true,
-                "approveAPIName": "location-create",
+                "approveAPIName": approveAPIName,
                 "approveAPImethod": "POST",
                 "audit_log": {
                     "audit_log": true,

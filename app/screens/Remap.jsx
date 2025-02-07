@@ -44,6 +44,7 @@ function RemapScreen() {
   const [products, setProducts] = useState([]);
   const [batches, setBatches] = useState([]);
   const [countryCode, setCountryCode] = useState(null);
+  const [scanCode,setScanCode]=useState(undefined)
   const [visible, setVisible] = useState(false);
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
@@ -111,8 +112,7 @@ function RemapScreen() {
     HoneywellBarcodeReader.onBarcodeReadSuccess(event => {
       console.log('Current Scanned data :', event.data);
       console.log('Country code is ', countryCode);
-      const uniqueCode = getUniqueCode(event.data, countryCode);
-      setText(uniqueCode);
+      setScanCode(event.data)
     });
 
     HoneywellBarcodeReader.onBarcodeReadFail(() => {
@@ -234,16 +234,6 @@ function RemapScreen() {
     }
   };
 
-  const getUniqueCode = (url, format) => {
-    const formatParts = format.split('/');
-    const inputParts = url.split('/');
-    const uniqueCodeIndex = formatParts.indexOf(' uniqueCode ');
-
-    const uniqueCode = inputParts[uniqueCodeIndex];
-    console.log('Unique Code:', uniqueCode);
-    return uniqueCode;
-  };
-
   const handleDropdownProductChange = async item => {
     setSelectedProduct({id: item.id, name: item.name});
     setIsFocusProduct(false);
@@ -255,7 +245,7 @@ function RemapScreen() {
       Alert.alert('Error', 'Please select both product and batch.');
       return;
     }
-    if (!text) {
+    if (!scanCode) {
       Alert.alert('Error', 'Please scan or enter unique code');
       return;
     }
@@ -271,11 +261,11 @@ function RemapScreen() {
   const print = async () => {
     console.log('Remap success.');
     const remapRes = await axios.post(
-      `${url}/remap/code`,
+      `${url}/code-remap`,
       {
         product_id: selectedProduct.id,
         batch_id: selectedBatch.id,
-        code: text,
+        code: scanCode,
       },
       {
         headers: {
@@ -287,7 +277,7 @@ function RemapScreen() {
 
     console.log('Response of remap code ', remapRes.data);
     if (remapRes.data.success === true && remapRes.data.code === 200) {
-      setText('');
+      setScanCode('');
       setSelectedProduct({id: null, name: null});
       setSelectedBatch({id: null, name: null});
       onToggleSnackBar(remapRes.data.message, 200);
@@ -387,10 +377,10 @@ function RemapScreen() {
                 Scan or write a code
               </Text>
               <TextInput
-                label="Enter remap code"
-                value={text}
+                label="Enter remap  sscc code"
+                value={scanCode?.toString()}
                 mode="outlined"
-                onChangeText={text => setText(text)}
+                onChangeText={text => setScanCode(text)}
                 style={styles.textInput}
                 right={
                   <TextInput.Icon

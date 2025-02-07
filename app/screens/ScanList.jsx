@@ -1,6 +1,7 @@
 'use client';
 import React, {useState, useEffect} from 'react';
 import {
+  AppState,
   ScrollView,
   StyleSheet,
   View,
@@ -28,7 +29,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Feather from 'react-native-vector-icons/Feather';
 import DeviceInfo from 'react-native-device-info';
-import { decodeAndSetConfig } from '../../utils/tokenUtils';
+import {decodeAndSetConfig} from '../../utils/tokenUtils';
 
 function ScanList() {
   const navigation = useNavigation();
@@ -176,7 +177,7 @@ function ScanList() {
 
   //packaging Hierarchy API
   const handleScannedData = async () => {
-    decodeAndSetConfig(setConfig,await AsyncStorage.getItem('authToken'))
+    decodeAndSetConfig(setConfig, await AsyncStorage.getItem('authToken'));
     try {
       const productId = await AsyncStorage.getItem('productId');
       const response = await axios.post(
@@ -206,8 +207,7 @@ function ScanList() {
         setPerPackageProduct(response.data.data.perPackageProduct);
         setTransactionId(response.data.data.transactionId);
       } else {
-        Alert.alert('Authentication failed. Please try again.');
-        return;
+        onToggleSnackBar(response.data.message, 400);
       }
     } catch (err) {
       console.log('Error :', err);
@@ -229,12 +229,16 @@ function ScanList() {
         totalProduct: totalProduct,
         currentIndex: currentIndex,
       };
-      if(totalProduct==1){
-        payload['audit_log']={
-         audit_log: config?.config?.audit_logs,
-         performed_action: `Scan transaction completed with Transaction ID: ${transactionId}, Product ID: ${await AsyncStorage.getItem('productId')}, Batch ID: ${await AsyncStorage.getItem('batchId')}, and scanned by User ID: ${config.userId}.`,
-         remarks: 'none',
-       }
+      if (totalProduct == 1) {
+        payload['audit_log'] = {
+          audit_log: config?.config?.audit_logs,
+          performed_action: `Scan transaction completed with Transaction ID: ${transactionId}, Product ID: ${await AsyncStorage.getItem(
+            'productId',
+          )}, Batch ID: ${await AsyncStorage.getItem(
+            'batchId',
+          )}, and scanned by User ID: ${config.userId}.`,
+          remarks: 'none',
+        };
       }
       console.log('Payload for codeScan api req :', payload);
       const codeScanResponse = await axios.post(
@@ -320,7 +324,7 @@ function ScanList() {
         {
           SsccCode,
           SerialNo,
-          mac_address:await DeviceInfo.getUniqueId()
+          mac_address: await DeviceInfo.getUniqueId(),
         },
         {
           headers: {
@@ -340,6 +344,50 @@ function ScanList() {
       console.log('Error to print code for ', SsccCode);
     }
   };
+
+  AppState.addEventListener('change', async currentState => {
+    console.log(currentState);
+    try {
+      if (state === 'inactive' || state === 'background') {
+        const res = await axios.post(
+          `${url}/aggregationtransaction/handleAggregatedTransactionScanState`,
+          {
+            aggregatedTransactionId: transactionId,
+            packageNo: packageNo,
+            currentPackageLevel: currentPackageLevel,
+            quantity: quantity,
+            perPackageProduct: perPackageProduct,
+            totalLevel: totalLevel,
+            totalProduct: totalProduct,
+            currentIndex: currentIndex,
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${await AsyncStorage.getItem(
+                'authToken',
+              )}`,
+            },
+          },
+        );
+        console.log(
+          'Response for handleAggregatedTransactionScanState ',
+          res.data,
+        );
+
+        if (res.data.success === true && res.data.code === 200) {
+          onToggleSnackBar(res.data.message, res.data.code);
+        } else {
+          onToggleSnackBar(res.data.message, res.data.code);
+        }
+      }
+    } catch (error) {
+      console.log(
+        'Error to Aggregated Transaction Scan State code for ',
+        SsccCode,
+      );
+    }
+  });
 
   return (
     <>
@@ -386,11 +434,7 @@ function ScanList() {
                 key={index}
                 title={item}
                 left={() => (
-                  <Feather
-                    name="package"
-                    size={25}
-                    style={{paddingRight: 0}}
-                  />
+                  <Feather name="package" size={25} style={{paddingRight: 0}} />
                 )}
               />
             ))}

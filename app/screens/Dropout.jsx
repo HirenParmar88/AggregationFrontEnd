@@ -26,8 +26,7 @@ import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import LoaderComponent from '../components/Loader';
 import Feather from 'react-native-vector-icons/Feather';
 import EsignPage from './Esign';
-import { decodeAndSetConfig } from '../../utils/tokenUtils';
-
+import {decodeAndSetConfig} from '../../utils/tokenUtils';
 
 function DropoutFun() {
   const navigation = useNavigation();
@@ -45,6 +44,7 @@ function DropoutFun() {
   const [visibleConfirmBatch, setVisibleConfirmBatch] = useState(false);
   const [visibleConfirmCodes, setVisibleConfirmCodes] = useState(false); // Added for Codes Dropout Confirmation
   const [config, setConfig] = useState(null);
+  const [status, setStatus] = useState(undefined);
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
@@ -110,8 +110,8 @@ function DropoutFun() {
     HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
       console.log('Received data :', event);
       console.log('Current Scanned data :', event.data);
-      console.log("Token inside barcode codes drop :",token);
-      
+      console.log('Token inside barcode codes drop :', token);
+
       console.log('Previous data is :', scannedCodes);
       const scanRes = await scanValidation(event.data);
       if (scanRes && scanRes.code === 200) {
@@ -143,7 +143,7 @@ function DropoutFun() {
     });
 
     return () => {};
-  }, [selectedProduct,selectedBatch]);
+  }, [selectedProduct, selectedBatch]);
 
   const getUniqueCode = (url, format) => {
     const formatParts = format.split('/');
@@ -179,9 +179,7 @@ function DropoutFun() {
     if (isFocused) {
       loadTokenAndData();
     }
-    return () => {
-     
-    };
+    return () => {};
   }, [isFocused]);
 
   useEffect(() => {
@@ -196,68 +194,90 @@ function DropoutFun() {
   }, [selectedProduct]);
 
   const handleAuthResult = async (
-      isAuthenticated,
-      user,
-      isApprover,
-      esignStatus,
-      remarks,
-      eSignStatusId,
-    ) => {
-      try {
-        console.log('handleAuthResult');
-        console.log('handleAuthResult', {
-          isAuthenticated,
-          isApprover,
-          esignStatus,
-          user,
-        });
-        console.log(isApprover, isAuthenticated);
-        const closeApprovalModal = () => setOpenModal(false);
-        const resetState = () => {
-          setApproveAPIName('');
-          setApproveAPImethod('');
-          setApproveAPIEndPoint('');
-          setOpenModal(false);
-        };
-        if (!isAuthenticated) {
-          Alert.alert('Authentication failed, Please try again.');
-          resetState();
-          return;
-        }
-  
-        const handleEsignStatus = async () => {
-          if (esignStatus === 'rejected') {
-            closeApprovalModal();
-          }
-        };
-        if (isApprover) {
-          console.log('Approved is ', esignStatus === 'approved');
-          if (esignStatus === 'approved') {
-            handleSubmit()
-  
-            closeApprovalModal();
-          } else {
-            if (esignStatus === 'rejected') closeApprovalModal();
-          }
-        } else {
-          handleEsignStatus();
-        }
+    isAuthenticated,
+    user,
+    isApprover,
+    esignStatus,
+    remarks,
+    eSignStatusId,
+  ) => {
+    try {
+      console.log('handleAuthResult');
+      console.log('handleAuthResult', {
+        isAuthenticated,
+        isApprover,
+        esignStatus,
+        user,
+      });
+      console.log(isApprover, isAuthenticated);
+      const closeApprovalModal = () => setOpenModal(false);
+      const resetState = () => {
+        setApproveAPIName('');
+        setApproveAPImethod('');
+        setApproveAPIEndPoint('');
+        setOpenModal(false);
+      };
+      if (!isAuthenticated) {
+        Alert.alert('Authentication failed, Please try again.');
         resetState();
-      } catch (err) {
-        console.log(err);
+        return;
       }
-    };
+
+      const handleEsignStatus = async () => {
+        if (esignStatus === 'rejected') {
+          if(wholeBatch){
+            await handleConfirmBatchDropout('rejected')
+          }
+          else{
+            await handleConfirmCodesDropout('rejected');
+          }
+          closeApprovalModal();
+        }
+      };
+      if (isApprover) {
+        console.log('Approved is ', esignStatus === 'approved');
+        if (esignStatus === 'approved') {
+          if(wholeBatch){
+            onToggleSnackBar("eSign has been approved for dropout whole batch",200)
+            await handleConfirmBatchDropout('approved')
+          }
+          else{
+            onToggleSnackBar("eSign has been approved for dropout code scan",200)
+            await handleConfirmCodesDropout('approved');
+          }
+
+          closeApprovalModal();
+        } else {
+          if (esignStatus === 'rejected') {
+            if(wholeBatch){
+              onToggleSnackBar("eSign has been rejected for dropout whole batch");
+              await handleConfirmBatchDropout('rejected')
+            }
+            else{
+              onToggleSnackBar("eSign has been rejected for dropout code scan");
+              await handleConfirmCodesDropout('rejected');
+            }
+            closeApprovalModal();
+          }
+        }
+      } else {
+        handleEsignStatus();
+      }
+      resetState();
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   //scan Validation API
-  const scanValidation = async (barcodeData) => {
+  const scanValidation = async barcodeData => {
     console.log('scan validation API call for dropout ..');
     try {
-      console.log("Token is scan Validation in Dropout :",token)
+      console.log('Token is scan Validation in Dropout :', token);
       const payload = {
-        productId:selectedProduct.id,
-        batchId: selectedBatch.id ,
+        productId: selectedProduct.id,
+        batchId: selectedBatch.id,
         uniqueCode: barcodeData,
-
       };
       console.log('Payload for scan/validation :', payload);
       const scanRes = await axios.post(`${url}/scan/validation`, payload, {
@@ -272,15 +292,15 @@ function DropoutFun() {
         onToggleSnackBar(scanRes.data.message, 200);
         console.log(scanRes.data.message, 200);
         return scanRes.data;
-      }else if (scanRes.data.code === 401) {
+      } else if (scanRes.data.code === 401) {
         console.log(scanRes.data.message);
         onToggleSnackBar(scanRes.data.message, 401);
         return null;
-      }else if (scanRes.data.code === 500) {
+      } else if (scanRes.data.code === 500) {
         console.log(scanRes.data.message);
         onToggleSnackBar(scanRes.data.message, 500);
         return null;
-      }else if (scanRes.data.code === 409) {
+      } else if (scanRes.data.code === 409) {
         console.log('Invalid scan res :', scanRes.data.message);
         //Alert.alert(scanRes.data.message);
         onToggleSnackBar(scanRes.data.message, 409);
@@ -451,18 +471,19 @@ function DropoutFun() {
     setVisibleConfirmBatch(true); // Show Confirm Batch Dropout Modal
   };
 
-  const handleConfirmBatchDropout = async () => {
+  const handleConfirmBatchDropout = async (esign_status) => {
     console.log('Batch dropout confirmed in final step!');
     if (!dropoutReason) {
       onToggleSnackBar('Select dropout reason');
     }
     const batchDropRes = await axios.post(
       `${url}/dropout/wholebatch`,
-      { audit_log: {
-        audit_log: config?.config?.audit_logs,
-        performed_action: `Dropout whole of this Product ID: ${selectedProduct?.id}, Batch ID: ${selectedBatch?.id} by User ID: ${config.userId}`,
-        remarks: 'none',
-      },
+      {
+        audit_log: {
+          audit_log: config?.config?.audit_logs,
+          performed_action: `Dropout whole of this Product ID: ${selectedProduct?.id}, Batch ID: ${selectedBatch?.id} by User ID: ${config.userId}`,
+          remarks: 'none',
+        },
         product_id: selectedProduct.id,
         batch_id: selectedBatch.id,
         dropout_reason: dropoutReason,
@@ -632,7 +653,7 @@ function DropoutFun() {
             Show Results ({scannedCodes.length})
           </Text>
 
-          <ScrollView >
+          <ScrollView>
             {!wholeBatch && (
               <List.Section style={{flexDirection: 'column-reverse'}}>
                 {scannedCodes.map((item, index) => (
@@ -741,7 +762,15 @@ function DropoutFun() {
               <View style={styles.modalFooter}>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.confirmButton]}
-                  onPress={handleConfirmBatchDropout}>
+                  onPress={async () => {
+                    if (config.config.esign_status && !openModal) {
+                      setOpenModal(true);
+                      setApproveAPIName('dropout-approve')
+                      setApproveAPImethod('POST')
+                      return;
+                    }
+                    await handleConfirmBatchDropout('approved');
+                  }}>
                   <Text style={styles.modalButtonText}>Confirm</Text>
                 </TouchableOpacity>
               </View>
@@ -822,7 +851,13 @@ function DropoutFun() {
               <View style={styles.modalFooter}>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.confirmButton]}
-                  onPress={handleConfirmCodesDropout}>
+                  onPress={async () => {
+                    if (config.config.esign_status && !openModal) {
+                      setOpenModal(true);
+                      return;
+                    }
+                    await handleConfirmCodesDropout('approved');
+                  }}>
                   <Text style={styles.modalButtonText}>Confirm</Text>
                 </TouchableOpacity>
               </View>
