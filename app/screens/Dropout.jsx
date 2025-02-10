@@ -79,7 +79,7 @@ function DropoutFun() {
     height: 250,
     width: 250,
     marginLeft: 54,
-    borderRadius: 2,
+    borderRadius: 6,
     display: 'grid',
     alignContent: 'space-between',
     display: 'flex',

@@ -7,15 +7,13 @@ import {
   Alert,
   TouchableOpacity,
   Image,
-  ActivityIndicator,
 } from 'react-native';
-import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 import {Appbar} from 'react-native-paper';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import {Dropdown} from 'react-native-element-dropdown';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useNavigation, useRoute} from '@react-navigation/native';
+import {useIsFocused, useNavigation, useRoute} from '@react-navigation/native';
 import EsignPage from './Esign';
 import {decodeAndSetConfig} from '../../utils/tokenUtils';
 import {url} from '../../utils/constant';
@@ -23,6 +21,7 @@ import LoaderComponent from '../components/Loader';
 
 function ProductComponent() {
   const navigation = useNavigation();
+  const isFocused = useIsFocused();
   const [valueProduct, setValueProduct] = useState(null);
   const [valueBatch, setValueBatch] = useState(null);
   const [isFocusProduct, setIsFocusProduct] = useState(false);
@@ -62,7 +61,7 @@ function ProductComponent() {
       setValueProduct(null);
       setValueBatch(null);
     };
-  }, []);
+  }, [isFocused]);
 
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
@@ -76,7 +75,7 @@ function ProductComponent() {
   };
 
   // Fetch products
-  console.log("Config :->", config);
+  console.log('Config :->', config);
 
   const fetchProductData = async token => {
     console.log('Product APIs called..');
@@ -166,8 +165,6 @@ function ProductComponent() {
   //     return null;
   // };
 
-
-
   const handleAuthResult = async (
     isAuthenticated,
     user,
@@ -200,19 +197,19 @@ function ProductComponent() {
 
       const handleEsignStatus = async () => {
         if (esignStatus === 'rejected') {
-          nToggleSnackBar("eSign has been rejected for add aggregate")
+          nToggleSnackBar('eSign has been rejected for add aggregate');
           closeApprovalModal();
         }
       };
       if (isApprover) {
         console.log('Approved is ', esignStatus === 'approved');
         if (esignStatus === 'approved') {
-          onToggleSnackBar("eSign has been approved for add aggregate",200)
+          onToggleSnackBar('eSign has been approved for add aggregate', 200);
           await addAggregrate('approved');
 
           closeApprovalModal();
         } else {
-          nToggleSnackBar("eSign has been rejected for add aggregate")
+          nToggleSnackBar('eSign has been rejected for add aggregate');
           await addAggregrate('rejected');
           if (esignStatus === 'rejected') closeApprovalModal();
         }
@@ -281,8 +278,8 @@ function ProductComponent() {
     console.log(config.config.esign_status, !openModal);
     if (config.config.esign_status && !openModal) {
       setOpenModal(true);
-      setApproveAPIName('product-approve')
-      setApproveAPImethod('POST')
+      setApproveAPIName('product-approve');
+      setApproveAPImethod('POST');
       return;
     }
     addAggregrate('approved');
@@ -300,12 +297,7 @@ function ProductComponent() {
   };
 
   if (loading) {
-    return (
-      // <View style={styles.LoadingContainer}>
-      //   <ActivityIndicator size="large" />
-      // </View>
-      <LoaderComponent />
-    );
+    return <LoaderComponent />;
   }
   const handleDropdownProductChange = async item => {
     await fetchBatchData(token, item.value);

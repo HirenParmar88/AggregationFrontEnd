@@ -264,7 +264,7 @@ function Reprint() {
       return;
     }
     if (!text) {
-      Alert.alert('Error', 'Please scan or enter unique code');
+      Alert.alert('Error', 'Please scan or enter sscc code');
       return;
     }
 

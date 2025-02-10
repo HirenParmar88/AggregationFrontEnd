@@ -109,6 +109,7 @@ function ScanList() {
     totalLevel,
     totalProduct,
     currentPackageLevel,
+    isFocused
   ]);
 
   const onToggleSnackBar = (message, code) => {
@@ -198,6 +199,7 @@ function ScanList() {
         },
       );
       console.log('Packaging Hierarchy API Res :', response.data);
+      AsyncStorage.setItem('quantity',response.data.data.quantity)
       if (response.data.success) {
         setQuantity(response.data.data.quantity);
         setPackageNo(response.data.data.packageNo);
@@ -239,6 +241,10 @@ function ScanList() {
           )}, and scanned by User ID: ${config.userId}.`,
           remarks: 'none',
         };
+      }
+
+      if(currentLevel>0){
+        payload['totalQuantity']=await AsyncStorage.getItem('quantity')
       }
       console.log('Payload for codeScan api req :', payload);
       const codeScanResponse = await axios.post(
@@ -348,7 +354,7 @@ function ScanList() {
   AppState.addEventListener('change', async currentState => {
     console.log(currentState);
     try {
-      if (state === 'inactive' || state === 'background') {
+      // if (state === 'inactive' || state === 'background') {
         const res = await axios.post(
           `${url}/aggregationtransaction/handleAggregatedTransactionScanState`,
           {
@@ -380,7 +386,7 @@ function ScanList() {
         } else {
           onToggleSnackBar(res.data.message, res.data.code);
         }
-      }
+      // }
     } catch (error) {
       console.log(
         'Error to Aggregated Transaction Scan State code for ',

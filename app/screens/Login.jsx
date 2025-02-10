@@ -87,7 +87,8 @@ const Login = ({route}) => {
     try {
       console.log('api calling....');
       //console.log("BACKEND DYNAMIC URLs :", config.API_URL);
-
+      console.log("aufvdsfhudsvfhdsbfgdjsifbsd", `${backendUrl}/auth/login`);
+      
       const res = await axios.post(
         `${backendUrl}/auth/login`,
         {
@@ -131,6 +132,7 @@ const Login = ({route}) => {
         onToggleSnackBar('Invalid username or password.');
       }
     } catch (error) {
+
       console.error('Error while user login :', error);
       onToggleSnackBar('An error occurred. Please try again later.');
     }

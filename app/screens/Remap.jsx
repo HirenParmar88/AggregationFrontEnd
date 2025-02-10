@@ -68,9 +68,9 @@ function RemapScreen() {
   const containerStyle = {
     backgroundColor: 'white',
     padding: 20,
-    height: 350,
-    width: 320,
-    marginLeft: 20,
+    height: 250,
+    width: 250,
+    marginLeft: 55,
     borderRadius: 6,
   };
 
@@ -423,7 +423,7 @@ function RemapScreen() {
               <Divider />
               <View style={styles.modalBody}>
                 <Text style={styles.bodyTxt}>
-                  Are you sure you want to print '{text}' code details.
+                   remap '{scanCode}' code details.
                 </Text>
               </View>
               <View style={styles.footer}>
@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgb(80, 189, 160)',
   },
   remapText: {
-    fontSize: 20,
+    fontSize: 15,
     textAlign: 'center',
     color: '#fff',
   },
@@ -524,21 +524,27 @@ const styles = StyleSheet.create({
   },
   modalHeader: {
     textAlign: 'center',
-    fontSize: 30,
+    fontSize: 22,
+    fontWeight:'bold'
   },
   modalBody: {
-    height: 220,
+    //height: 20,
+    //backgroundColor:'yellow'
   },
   bodyTxt: {
-    fontSize: 20,
-    textAlign: 'center',
-    paddingTop: 50,
+    fontSize: 18,
+    //textAlign: 'center',
+    paddingTop: 10,
+    fontWeight:'bold'
+    //backgroundColor:'red'
   },
   footer: {
+    //backgroundColor:'orange',
     bottom: 0,
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'space-evenly',
+    marginTop:50
   },
   btnText: {
     fontSize: 20,

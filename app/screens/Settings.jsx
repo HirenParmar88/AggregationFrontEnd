@@ -107,7 +107,7 @@ function SettingScreen() {
       `${url}/printerallocation/`,
       {
         printer_ip: printerIP,
-        printer_port: printer_port,
+        printer_port: printerPort,
         mac_address: deviceUniqueId,
       },
       {

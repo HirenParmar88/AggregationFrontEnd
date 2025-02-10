@@ -1,21 +1,28 @@
-import React, { useState } from 'react';
-import {StyleSheet, Text, View, TouchableOpacity, Alert} from 'react-native';
+import React, {useState} from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+} from 'react-native';
 import {TextInput, Button} from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
 
 function UrlScreen() {
-  const navigation=useNavigation();
+  const navigation = useNavigation();
   const [text, setText] = useState('');
-  
-  const handleNextBtn=async()=>{
+
+  const handleNextBtn = async () => {
     console.log('Next btn pressed..');
-    if(!text){
-      console.log("Empty !!");
-      Alert.alert("Please Enter URL !!");
+    if (!text) {
+      console.log('Empty !!');
+      Alert.alert('Please Enter URL !!');
       return;
     }
-    if(isValidUrl(text)){
+    if (isValidUrl(text)) {
       try {
         await AsyncStorage.setItem('BackendUrl', text);
         console.log('URL successfully saved to AsyncStorage:', text);
@@ -23,44 +30,47 @@ function UrlScreen() {
         navigation.navigate('Login');
         //Alert.alert('success');
       } catch (error) {
-        console.error('Error to store Url :',error);
+        console.error('Error to store Url :', error);
         Alert.alert('Error', 'Failed to save URL. Please try again.');
       }
-    }else{
+    } else {
       console.log('Please enter a valid URL');
       Alert.alert('Invalid URL', 'The URL you entered is not valid.');
     }
-  }
+  };
 
-  const isValidUrl=(url)=>{
+  const isValidUrl = url => {
     try {
       new URL(url);
       return true;
     } catch (error) {
       return false;
     }
-  }
+  };
 
   return (
     <>
-      <View style={styles.container}>
-        <View style={styles.textbox}>
-          <TextInput
-            label="Back-End URL"
-            style={styles.input}
-            placeholder="Enter Back-End URL"
-            value={text}
-            onChangeText={setText}
-          />
+      <ScrollView>
+        <View style={styles.container}>
+          <View style={styles.textbox}>
+            <TextInput
+              label="Back-End URL"
+              style={styles.input}
+              placeholder="Enter Back-End URL"
+              value={text}
+              onChangeText={setText}
+            />
+          </View>
         </View>
-      </View>
-      <View><Text>{setText}</Text></View>
+        <View>
+          <Text>{setText}</Text>
+        </View>
+      </ScrollView>
       <TouchableOpacity
         style={styles.TouchableBtn}
         labelStyle={{fontSize: 15}}
         mode="contained"
-        onPress={handleNextBtn}
-      >
+        onPress={handleNextBtn}>
         <Text style={styles.btnGroupsText}>Next</Text>
       </TouchableOpacity>
     </>
@@ -81,7 +91,7 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   input: {
-    height: 60,
+    //height: 60,
     borderColor: '#ccc',
     borderWidth: 1,
     paddingLeft: 10,
@@ -89,13 +99,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     fontSize: 16,
   },
-  btnContainer: {
-    backgroundColor: 'red',
-    margin: 100,
-  },
+  // btnContainer: {
+  //   backgroundColor: 'red',
+  //   margin: 100,
+  // },
   btn: {
     borderRadius: 4,
     padding: 5,
+    backgroundColor: 'rgb(80, 189, 160)',
   },
   TouchableBtn: {
     backgroundColor: 'rgb(80, 189, 160)',

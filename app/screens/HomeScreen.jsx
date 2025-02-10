@@ -200,11 +200,11 @@ const styles = StyleSheet.create({
   },
   btn: {
     padding: 8,
-    marginBottom: 10,
+    //marginBottom: 10,
     borderRadius: 2,
   },
   btnGroups: {
-    marginTop: 20,
+    marginTop: 2,
     marginRight: 55,
     marginLeft: 55,
     borderRadius: 0,
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   },
   textGroups: {
     //marginTop: 258,
-    marginTop: 10,
+    marginTop: 5,
     //backgroundColor:'red',
   },
   headerTxt: {
