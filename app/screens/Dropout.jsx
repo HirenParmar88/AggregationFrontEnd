@@ -765,7 +765,7 @@ function DropoutFun() {
                   onPress={async () => {
                     if (config.config.esign_status && !openModal) {
                       setOpenModal(true);
-                      setApproveAPIName('dropout-approve')
+                      setApproveAPIName('product-approve')
                       setApproveAPImethod('POST')
                       return;
                     }

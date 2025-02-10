@@ -281,7 +281,7 @@ function ProductComponent() {
     console.log(config.config.esign_status, !openModal);
     if (config.config.esign_status && !openModal) {
       setOpenModal(true);
-      setApproveAPIName('aggregate-approve')
+      setApproveAPIName('product-approve')
       setApproveAPImethod('POST')
       return;
     }
