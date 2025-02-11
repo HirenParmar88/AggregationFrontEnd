@@ -2,6 +2,7 @@
 import React, {useState, useEffect} from 'react';
 import {
   AppState,
+  AppRegistry,
   ScrollView,
   StyleSheet,
   View,
@@ -51,6 +52,8 @@ function ScanList() {
   const [ssccNumber, setSsccNumber] = useState();
   const [config, setConfig] = useState(null);
   const [serialNumber, setSerialNumber] = useState();
+  const [previousChildLevel,setPreviousChildLevel]=useState(-1)
+  const [totalQuantity,setTotalQuantity]=useState(0)
 
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
@@ -62,7 +65,10 @@ function ScanList() {
       handleScannedData();
     }
     //scanValidation();
-    return () => {};
+    return () => {
+      
+
+    };
   }, [isFocused]);
 
   useEffect(() => {
@@ -98,7 +104,8 @@ function ScanList() {
       //console.log('barcodeReaderClaimed', details);
     });
 
-    return () => {};
+    return async() => {
+    };
   }, [
     transactionId,
     quantity,
@@ -199,8 +206,12 @@ function ScanList() {
         },
       );
       console.log('Packaging Hierarchy API Res :', response.data);
-      AsyncStorage.setItem('quantity',response.data.data.quantity)
+      setTotalQuantity(response.data.data.quantity)
       if (response.data.success) {
+        if(response?.data?.data?.scannedCodes?.length>0){
+          setData(response?.data?.data?.scannedCodes)
+        }
+
         setQuantity(response.data.data.quantity);
         setPackageNo(response.data.data.packageNo);
         setCurrentLevel(response.data.data.currentLevel);
@@ -215,7 +226,7 @@ function ScanList() {
       console.log('Error :', err);
     }
   };
-
+  console.log("Total Quantity :",totalQuantity)
   //codescan API
   const codeScan = async barcodeData => {
     console.log('code scan Api called......');
@@ -231,7 +242,7 @@ function ScanList() {
         totalProduct: totalProduct,
         currentIndex: currentIndex,
       };
-      if (totalProduct == 1) {
+      if (quantity == 1) {
         payload['audit_log'] = {
           audit_log: config?.config?.audit_logs,
           performed_action: `Scan transaction completed with Transaction ID: ${transactionId}, Product ID: ${await AsyncStorage.getItem(
@@ -243,8 +254,9 @@ function ScanList() {
         };
       }
 
-      if(currentLevel>0){
-        payload['totalQuantity']=await AsyncStorage.getItem('quantity')
+      if(quantity==1){
+        payload['totalQuantity']=await totalQuantity
+        payload['previousChildLevel']=currentLevel;
       }
       console.log('Payload for codeScan api req :', payload);
       const codeScanResponse = await axios.post(
@@ -260,6 +272,9 @@ function ScanList() {
       console.log('codeScan APIs Response :', codeScanResponse.data);
 
       if (codeScanResponse.data.success && codeScanResponse.data.code === 200) {
+        if(codeScanResponse.data.data.currentLevel>0){
+          setPreviousChildLevel(currentLevel)
+        }
         setData(prevData => {
           const alreadyExist = prevData.find(item => item === barcodeData);
           if (!alreadyExist) {
@@ -288,11 +303,9 @@ function ScanList() {
           handleScannedData();
           setData([]);
         }
-      } else if (codeScanResponse.data.code === 400) {
-        onToggleSnackBar(codeScanResponse.data.message);
-      } else if (codeScanResponse.data.code === 500) {
-        onToggleSnackBar(codeScanResponse.data.message);
-      }
+      } else {
+        onToggleSnackBar(codeScanResponse.data.message, codeScanResponse.data.code);
+      } 
     } catch (error) {
       console.error('Error to code scan API call..', error);
     }
@@ -351,49 +364,59 @@ function ScanList() {
     }
   };
 
-  AppState.addEventListener('change', async currentState => {
+  const handleAggregateState=async currentState => {
     console.log(currentState);
+    
+    const payload={
+      aggregatedTransactionId: transactionId,
+      packageNo: packageNo,
+      currentPackageLevel: currentPackageLevel,
+      quantity: quantity,
+      perPackageProduct: perPackageProduct,
+      totalLevel: totalLevel,
+      totalProduct: totalProduct,
+      currentIndex: currentIndex,
+      scannedCodes:data
+    }
+    console.log(payload)
     try {
       // if (state === 'inactive' || state === 'background') {
         const res = await axios.post(
           `${url}/aggregationtransaction/handleAggregatedTransactionScanState`,
           {
-            aggregatedTransactionId: transactionId,
-            packageNo: packageNo,
-            currentPackageLevel: currentPackageLevel,
-            quantity: quantity,
-            perPackageProduct: perPackageProduct,
-            totalLevel: totalLevel,
-            totalProduct: totalProduct,
-            currentIndex: currentIndex,
+            ...payload
           },
           {
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${await AsyncStorage.getItem(
                 'authToken',
-              )}`,
+                )}`,
+              },
             },
-          },
-        );
-        console.log(
-          'Response for handleAggregatedTransactionScanState ',
-          res.data,
-        );
-
-        if (res.data.success === true && res.data.code === 200) {
-          onToggleSnackBar(res.data.message, res.data.code);
-        } else {
-          onToggleSnackBar(res.data.message, res.data.code);
-        }
-      // }
-    } catch (error) {
+          );
+          console.log(
+            'Response for handleAggregatedTransactionScanState ',
+            res.data,
+          );
+          
+          if (res.data.success === true && res.data.code === 200) {
+            onToggleSnackBar(res.data.message, res.data.code);
+          } else {
+            onToggleSnackBar(res.data.message, res.data.code);
+          }
+          // }
+          
+        
+        } catch (error) {
       console.log(
         'Error to Aggregated Transaction Scan State code for ',
         SsccCode,
       );
     }
-  });
+  }
+
+  AppState.addEventListener('change', async ()=>await handleAggregateState());
 
   return (
     <>

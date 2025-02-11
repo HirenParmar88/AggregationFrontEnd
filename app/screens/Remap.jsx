@@ -128,7 +128,7 @@ function RemapScreen() {
     });
 
     return () => {};
-  }, [countryCode]);
+  }, [countryCode,isFocused]);
 
   useEffect(() => {
     if (selectedProduct.id) {
@@ -138,7 +138,7 @@ function RemapScreen() {
       })();
     }
     return () => {};
-  }, [selectedProduct.id]);
+  }, [selectedProduct.id, isFocused]);
 
   const fetchProductData = async token => {
     try {
@@ -207,6 +207,8 @@ function RemapScreen() {
   };
 
   const fetchCountryCode = async () => {
+    console.log("Remap Api called..");
+    
     try {
       setLoading(true);
       console.log('token in c ', token);
@@ -383,7 +385,7 @@ function RemapScreen() {
                 onChangeText={text => setScanCode(text)}
                 style={styles.textInput}
                 right={
-                  <TextInput.Icon
+                  <MaterialCommunityIcons
                     name="qrcode-scan"
                     size={10}
                     color="#000"
@@ -423,7 +425,7 @@ function RemapScreen() {
               <Divider />
               <View style={styles.modalBody}>
                 <Text style={styles.bodyTxt}>
-                   remap '{scanCode}' code details.
+                   Are you sure want to remap this sscc code : {scanCode}
                 </Text>
               </View>
               <View style={styles.footer}>
@@ -431,7 +433,7 @@ function RemapScreen() {
                   style={styles.printbtn}
                   mode="contained"
                   onPress={print}>
-                  <Text style={styles.btnText}>Print</Text>
+                  <Text style={styles.btnText}>Remap</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.cancelbtn}
@@ -514,7 +516,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgb(80, 189, 160)',
   },
   remapText: {
-    fontSize: 15,
+    fontSize: 20,
     textAlign: 'center',
     color: '#fff',
   },
@@ -534,7 +536,7 @@ const styles = StyleSheet.create({
   bodyTxt: {
     fontSize: 18,
     //textAlign: 'center',
-    paddingTop: 10,
+    //paddingTop: 10,
     fontWeight:'bold'
     //backgroundColor:'red'
   },
@@ -551,8 +553,8 @@ const styles = StyleSheet.create({
   },
   printbtn: {
     backgroundColor: 'rgb(80, 189, 160)',
-    paddingLeft: 26,
-    paddingRight: 26,
+    paddingLeft: 18,
+    paddingRight: 18,
     paddingTop: 15,
     paddingBottom: 15,
     borderRadius: 4,

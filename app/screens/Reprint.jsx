@@ -70,9 +70,9 @@ function Reprint() {
   const containerStyle = {
     backgroundColor: 'white',
     padding: 20,
-    height: 350,
-    width: 320,
-    marginLeft: 20,
+    height: 250,
+    width: 250,
+    marginLeft: 55,
     borderRadius: 6,
   };
 
@@ -311,6 +311,8 @@ function Reprint() {
       onToggleSnackBar(reprintRes.data.message, 200);
       //navigation.navigate('Home');
     } else {
+      setSelectedProduct({id: null, name: null});
+      setSelectedBatch({id: null, name: null});
       onToggleSnackBar(reprintRes.data.message, reprintRes.data.code);
     }
     hideModal();
@@ -436,7 +438,7 @@ function Reprint() {
               <Divider />
               <View style={styles.modalBody}>
                 <Text style={styles.bodyTxt}>
-                  Are you sure you want to print '{text}' code details.
+                  Are you sure you want to reprint this code : {text}
                 </Text>
               </View>
               <View style={styles.footer}>
@@ -444,7 +446,7 @@ function Reprint() {
                   style={styles.printbtn}
                   mode="contained"
                   onPress={print}>
-                  <Text style={styles.btnText}>Print</Text>
+                  <Text style={styles.btnText}>Reprint</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.cancelbtn}
@@ -534,18 +536,19 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     position: 'relative',
+    //backgroundColor:'red',
   },
   modalHeader: {
     textAlign: 'center',
-    fontSize: 30,
+    fontSize: 22,
+    fontWeight:'bold'
   },
   modalBody: {
-    height: 220,
+    height: 130,
   },
   bodyTxt: {
-    fontSize: 20,
-    textAlign: 'center',
-    paddingTop: 50,
+    fontSize: 18,
+    //textAlign: 'center',
   },
   footer: {
     bottom: 0,
@@ -558,8 +561,8 @@ const styles = StyleSheet.create({
   },
   printbtn: {
     backgroundColor: 'rgb(80, 189, 160)',
-    paddingLeft: 26,
-    paddingRight: 26,
+    paddingLeft: 16,
+    paddingRight: 16,
     paddingTop: 15,
     paddingBottom: 15,
     borderRadius: 4,

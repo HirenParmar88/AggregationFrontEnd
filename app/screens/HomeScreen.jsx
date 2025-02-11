@@ -173,12 +173,10 @@ export default HomeScreen;
 
 const styles = StyleSheet.create({
   container: {
-    //backgroundColor: 'lightblue',
     flex: 1,
-    paddingBottom: 0,
-    // position: 'relative',
-    // display: 'flex',
-    // justifyContent: 'space-between',
+    //backgroundColor: 'lightblue',
+    // borderColor:'red',
+    // borderWidth:2,
   },
   imageView: {
     marginLeft: 20,
@@ -212,7 +210,7 @@ const styles = StyleSheet.create({
   },
   textGroups: {
     //marginTop: 258,
-    marginTop: 5,
+    marginTop: 3,
     //backgroundColor:'red',
   },
   headerTxt: {

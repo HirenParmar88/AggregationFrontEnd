@@ -396,6 +396,7 @@ function DropoutFun() {
   const fetchCountryCode = async () => {
     try {
       setLoading(true);
+      console.log(selectedProduct)
       const response = await axios.get(
         `${url}/product/countrycode/${selectedProduct.id}`,
         {
@@ -563,9 +564,6 @@ function DropoutFun() {
 
   if (loading) {
     return (
-      // <View style={styles.container}>
-      //   <Text>Loading...</Text>
-      // </View>
       <LoaderComponent />
     );
   }
@@ -998,7 +996,7 @@ const styles = StyleSheet.create({
   modalConfirmBatchTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: 'red',
+    //color: 'red',
   },
   modalBatchContent: {
     fontSize: 20,

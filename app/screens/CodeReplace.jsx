@@ -53,64 +53,6 @@ function CodeReplaceScreen() {
   });
 
 
-  const scanValidation = async barcodeData => {
-    console.log(selectedProduct.id,selectedBatch.id)
-    if (!selectedProduct.id || !selectedBatch.id) {
-      Alert.alert('Error', 'Please select both product and batch.');
-      return;
-    }
-    console.log('scan validation API call for dropout ..');
-    try {
-      console.log('Token is scan Validation in Dropout :', token);
-      const payload = {
-        productId: selectedProduct.id,
-        batchId: selectedBatch.id,
-        uniqueCode: barcodeData,
-      };
-      console.log('Payload for scan/validation :', payload);
-      const scanRes = await axios.post(`${url}/scan/validation`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      console.log('scan/validation APIs Res for DropOut :', scanRes.data);
-
-      if (scanRes.data.code === 200 && scanRes.data.success === true) {
-        onToggleSnackBar(scanRes.data.message, 200);
-        console.log(scanRes.data.message, 200);
-        return scanRes.data;
-      } else if (scanRes.data.code === 401) {
-        console.log(scanRes.data.message);
-        onToggleSnackBar(scanRes.data.message, 401);
-        return null;
-      } else if (scanRes.data.code === 500) {
-        console.log(scanRes.data.message);
-        onToggleSnackBar(scanRes.data.message, 500);
-        return null;
-      } else if (scanRes.data.code === 409) {
-        console.log('Invalid scan res :', scanRes.data.message);
-        //Alert.alert(scanRes.data.message);
-        onToggleSnackBar(scanRes.data.message, 409);
-        return null;
-      } else if (scanRes.data.code === 404) {
-        console.log('404 : ', scanRes.data.message);
-        //Alert.alert(scanRes.data.message);
-        onToggleSnackBar(scanRes.data.message, 404);
-        return null;
-      } else if (scanRes.data.code === 400) {
-        console.log('Invalid packege level :  ', scanRes.data.message);
-        //Alert.alert(scanRes.data.message);
-        onToggleSnackBar(scanRes.data.message, 400);
-        return null;
-      } else {
-        console.log('error !');
-      }
-    } catch (error) {
-      console.error('Error to scan validation API call', error);
-    }
-  };
-
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
       code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
@@ -171,26 +113,12 @@ function CodeReplaceScreen() {
     });
 
     HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
-      const scanRes = await scanValidation(event.data);
-      if (scanRes && scanRes.code === 200) {
-        setScannedCodes(prevData => {
-          const uniqueCode = getUniqueCode(event.data, countryCode);
-          setScanCode(uniqueCode)
-          const alreadyExist = prevData.find(item => item === uniqueCode);
-          if (!alreadyExist) {
-            // onToggleSnackBar("scanned successfully..",200)
-            return [...prevData, uniqueCode];
-          } else {
-            console.log('Already exitst...');
-            Alert.alert('Items Already Exists!');
-            return [...prevData];
-          }
-        });
-      }
-      // console.log('Current Scanned data :', event.data);
-      // console.log('Country code is ', countryCode);
-      // const uniqueCode = getUniqueCode(event.data, countryCode);
-      // setScanCode(uniqueCode);
+      
+  
+      console.log('Current Scanned data :', event.data);
+      console.log('Country code is ', countryCode);
+      const uniqueCode = getUniqueCode(event.data, countryCode);
+      setScanCode(uniqueCode);
     });
 
     HoneywellBarcodeReader.onBarcodeReadFail(() => {
@@ -212,7 +140,7 @@ function CodeReplaceScreen() {
     if (selectedProduct.id) {
       (async () => {
         await fetchCountryCode();
-        await fetchBatchData();
+        
       })();
     }
     return () => {};
@@ -228,6 +156,7 @@ function CodeReplaceScreen() {
         },
       });
       const {products} = productResponse.data.data; //destructuring objects
+      console.log("products ",products)
       //console.log('This is products Data :', products)
       //console.log("ProductID :-", products[0].product_id);
 
@@ -249,12 +178,12 @@ function CodeReplaceScreen() {
       setLoading(false);
     }
   };
-
-  const fetchBatchData = async () => {
+  console.log(selectedBatch)
+  const fetchBatchData = async (product_id) => {
     try {
       setLoading(true);
       const batchResponse = await axios.get(
-        `${url}/batch/${selectedProduct.id}`,
+        `${url}/batch/${product_id}`,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -273,7 +202,7 @@ function CodeReplaceScreen() {
           };
         });
         console.log(fetchedBatches)
-        setBatches(fetchedBatches);
+        setBatches(fetchedBatches)  ;
         //console.log("Store for select :", batches)
       } else {
         console.error('No batches data available');
@@ -330,7 +259,8 @@ function CodeReplaceScreen() {
   const handleDropdownProductChange = async item => {
     setSelectedProduct({id: item.id, name: item.name});
     setIsFocusProduct(false);
-    setBatches([]);
+    await fetchBatchData(item.id)
+   
   };
 
   const handleCodeReplace = () => {
@@ -451,11 +381,11 @@ function CodeReplaceScreen() {
                   placeholder="Select Batch"
                   //placeholder={!isFocusBatch ? 'Select Batch' : '...'}
                   //searchPlaceholder="Search..."
-                  value={selectedBatch.id}
+                  value={(selectedBatch.id)}
                   onFocus={() => setIsFocusBatch(true)}
                   onBlur={() => setIsFocusBatch(false)}
                   onChange={item => {
-                    console.log(item.id)
+                    console.log(item)
                     setSelectedBatch({id: item.id, name: item.name});
                     setIsFocusBatch(false);
                   }}
@@ -477,7 +407,7 @@ function CodeReplaceScreen() {
               </Text>
               <TextInput
                 label="Enter or Scan code"
-                value={scanCode}
+                value={scanCode||''}
                 mode="outlined"
                 onChangeText={text => setScanCode(text)}
                 style={styles.textInput}
@@ -686,7 +616,7 @@ const styles = StyleSheet.create({
   //   },
   snackbar: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 70,
     left: 0,
     right: 0,
     paddingHorizontal: 10,
