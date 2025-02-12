@@ -1,5 +1,4 @@
 //app/components/screens/Remap.jsx
-
 import React, {useState, useEffect} from 'react';
 import {
   StyleSheet,
@@ -276,16 +275,14 @@ function RemapScreen() {
         },
       },
     );
-
     console.log('Response of remap code ', remapRes.data);
     if (remapRes.data.success === true && remapRes.data.code === 200) {
       setScanCode('');
       setSelectedProduct({id: null, name: null});
       setSelectedBatch({id: null, name: null});
       onToggleSnackBar(remapRes.data.message, 200);
-      //navigation.navigate('Home');
     } else {
-      onToggleSnackBar('Fail to remap');
+      onToggleSnackBar(remapRes.data.message, remapRes.data.code);
     }
     hideModal();
   };

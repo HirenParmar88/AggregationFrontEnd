@@ -225,10 +225,9 @@ function DropoutFun() {
 
       const handleEsignStatus = async () => {
         if (esignStatus === 'rejected') {
-          if(wholeBatch){
-            await handleConfirmBatchDropout('rejected')
-          }
-          else{
+          if (wholeBatch) {
+            await handleConfirmBatchDropout('rejected');
+          } else {
             await handleConfirmCodesDropout('rejected');
           }
           closeApprovalModal();
@@ -237,24 +236,30 @@ function DropoutFun() {
       if (isApprover) {
         console.log('Approved is ', esignStatus === 'approved');
         if (esignStatus === 'approved') {
-          if(wholeBatch){
-            onToggleSnackBar("eSign has been approved for dropout whole batch",200)
-            await handleConfirmBatchDropout('approved')
-          }
-          else{
-            onToggleSnackBar("eSign has been approved for dropout code scan",200)
+          if (wholeBatch) {
+            onToggleSnackBar(
+              'eSign has been approved for dropout whole batch',
+              200,
+            );
+            await handleConfirmBatchDropout('approved');
+          } else {
+            onToggleSnackBar(
+              'eSign has been approved for dropout code scan',
+              200,
+            );
             await handleConfirmCodesDropout('approved');
           }
 
           closeApprovalModal();
         } else {
           if (esignStatus === 'rejected') {
-            if(wholeBatch){
-              onToggleSnackBar("eSign has been rejected for dropout whole batch");
-              await handleConfirmBatchDropout('rejected')
-            }
-            else{
-              onToggleSnackBar("eSign has been rejected for dropout code scan");
+            if (wholeBatch) {
+              onToggleSnackBar(
+                'eSign has been rejected for dropout whole batch',
+              );
+              await handleConfirmBatchDropout('rejected');
+            } else {
+              onToggleSnackBar('eSign has been rejected for dropout code scan');
               await handleConfirmCodesDropout('rejected');
             }
             closeApprovalModal();
@@ -396,7 +401,7 @@ function DropoutFun() {
   const fetchCountryCode = async () => {
     try {
       setLoading(true);
-      console.log(selectedProduct)
+      console.log(selectedProduct);
       const response = await axios.get(
         `${url}/product/countrycode/${selectedProduct.id}`,
         {
@@ -472,7 +477,7 @@ function DropoutFun() {
     setVisibleConfirmBatch(true); // Show Confirm Batch Dropout Modal
   };
 
-  const handleConfirmBatchDropout = async (esign_status) => {
+  const handleConfirmBatchDropout = async esign_status => {
     console.log('Batch dropout confirmed in final step!');
     if (!dropoutReason) {
       onToggleSnackBar('Select dropout reason');
@@ -563,9 +568,7 @@ function DropoutFun() {
   //const onToggleSnackBar = message => setSnackbarInfo({visible: true, message});
 
   if (loading) {
-    return (
-      <LoaderComponent />
-    );
+    return <LoaderComponent />;
   }
 
   return (
@@ -741,7 +744,7 @@ function DropoutFun() {
                     maxHeight={300}
                     labelField="label"
                     valueField="value"
-                    placeholder={!isFocusP ? 'Select Batch for Dropout' : '...'}
+                    placeholder={!isFocusP ? 'Select Batch for Dropout' : 'select reason'}
                     value={dropoutReason}
                     onFocus={() => setIsFocusP(true)}
                     onBlur={() => setIsFocusP(false)}
@@ -763,8 +766,8 @@ function DropoutFun() {
                   onPress={async () => {
                     if (config.config.esign_status && !openModal) {
                       setOpenModal(true);
-                      setApproveAPIName('product-approve')
-                      setApproveAPImethod('POST')
+                      setApproveAPIName('dropout-approve');
+                      setApproveAPImethod('POST');
                       return;
                     }
                     await handleConfirmBatchDropout('approved');

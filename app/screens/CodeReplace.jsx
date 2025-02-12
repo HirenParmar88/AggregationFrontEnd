@@ -1,5 +1,4 @@
 //app/components/screens/CodeReplace.jsx
-
 import React, {useState, useEffect} from 'react';
 import {
   StyleSheet,
@@ -66,7 +65,7 @@ function CodeReplaceScreen() {
   const onDismissSnackBar = () =>
     setSnackbarInfo({visible: false, message: ''});
   const showModal = () => setVisible(true);
-  const hideModal = () => setVisible(false);
+  const hideModal = () => {setText('');setVisible(false);}
 
   const containerStyle = {
     backgroundColor: 'white',
@@ -93,19 +92,16 @@ function CodeReplaceScreen() {
         setLoading(false);
       }
     };
-
     loadTokenAndData();
-
     return () => {
-      setSelectedProduct({id: null, name: null});
-      setSelectedBatch({id: null, name: null});
+      setSelectedProduct(null);
+      setSelectedBatch(null);
       setText('');
     };
   }, [isFocused]);
 
   useEffect(() => {
     console.log('Is compatible:', HoneywellBarcodeReader.isCompatible);
-
     HoneywellBarcodeReader.register().then(claimed => {
       console.log(
         claimed ? 'Barcode reader is claimed' : 'Barcode reader is busy',
@@ -113,12 +109,15 @@ function CodeReplaceScreen() {
     });
 
     HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
-      
-  
       console.log('Current Scanned data :', event.data);
       console.log('Country code is ', countryCode);
       const uniqueCode = getUniqueCode(event.data, countryCode);
-      setScanCode(uniqueCode);
+      if(scanCode==''){
+        setScanCode(uniqueCode);
+      }
+      else{
+        setText(uniqueCode)
+      }
     });
 
     HoneywellBarcodeReader.onBarcodeReadFail(() => {
@@ -134,17 +133,16 @@ function CodeReplaceScreen() {
     });
 
     return () => {};
-  }, [countryCode]);
+  }, [countryCode,text,scanCode]);
 
   useEffect(() => {
-    if (selectedProduct.id) {
+    if (selectedProduct?.id) {
       (async () => {
         await fetchCountryCode();
-        
       })();
     }
     return () => {};
-  }, [selectedProduct.id]);
+  }, [selectedProduct?.id,text]);
 
   const fetchProductData = async token => {
     try {
@@ -167,7 +165,6 @@ function CodeReplaceScreen() {
           id: product.id,
         }));
         // console.log("value :",value);
-
         setProducts(fetchedProducts);
       } else {
         console.error('No products data available');
@@ -178,6 +175,7 @@ function CodeReplaceScreen() {
       setLoading(false);
     }
   };
+  
   console.log(selectedBatch)
   const fetchBatchData = async (product_id) => {
     try {
@@ -264,7 +262,7 @@ function CodeReplaceScreen() {
   };
 
   const handleCodeReplace = () => {
-    if (!selectedProduct.id || !selectedBatch.id) {
+    if (!selectedProduct.id || !selectedBatch?.id) {
       Alert.alert('Error', 'Please select both product and batch.');
       return;
     }
@@ -283,6 +281,12 @@ function CodeReplaceScreen() {
 
   const print = async () => {
     console.log('Code Replace success.');
+    console.log({
+      product_id: selectedProduct.id,
+      batch_id: selectedBatch.id,
+      code: scanCode,
+      replace_code: text,
+    })
     const codereplaceRes = await axios.post(
       `${url}/code-replace`,
       {
@@ -349,7 +353,7 @@ function CodeReplaceScreen() {
                   placeholder="Select Product"
                   //placeholder={!isFocusProduct ? 'Select Product' : '...'}
                   //searchPlaceholder="Search..."
-                  value={selectedProduct.id}
+                  value={selectedProduct?.id}
                   onFocus={() => setIsFocusProduct(true)}
                   onBlur={() => setIsFocusProduct(false)}
                   onChange={handleDropdownProductChange}
@@ -381,7 +385,7 @@ function CodeReplaceScreen() {
                   placeholder="Select Batch"
                   //placeholder={!isFocusBatch ? 'Select Batch' : '...'}
                   //searchPlaceholder="Search..."
-                  value={(selectedBatch.id)}
+                  value={(selectedBatch?.id)}
                   onFocus={() => setIsFocusBatch(true)}
                   onBlur={() => setIsFocusBatch(false)}
                   onChange={item => {
@@ -442,7 +446,7 @@ function CodeReplaceScreen() {
                   </Text> */}
                   <TextInput
                     label="Scan Replace Code"
-                    value={text}
+                    value={text||''}
                     mode="outlined"
                     onChangeText={text => setText(text)}
                     style={styles.textInput}

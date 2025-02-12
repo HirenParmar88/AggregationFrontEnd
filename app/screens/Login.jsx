@@ -196,19 +196,19 @@ const Login = ({route}) => {
           <View style={{flex: 1}}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                You are already login please confirm to relogin
+                You are already loggedin please confirm to relogin
               </Text>
             </View>
             <View style={styles.modalFooter}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowReLogin(false)}>
-                <Text style={styles.modalButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
                 style={[styles.modalButton, styles.confirmButton]}
                 onPress={() => handleLogin(true)}>
                 <Text style={styles.modalButtonText}>Submit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setShowReLogin(false)}>
+                <Text style={styles.modalButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -233,12 +233,12 @@ const styles = StyleSheet.create({
   },
   reloginContainer: {
     backgroundColor: 'white',
-    height: 200,
-    width: 300,
-    marginLeft: 35,
-    borderRadius: 2,
-    display: 'grid',
-    alignContent: 'space-between',
+    height: 155,
+    width: 260,
+    marginLeft: 50,
+    borderRadius: 4,
+    // display: 'grid',
+    // alignContent: 'space-between',
   },
   card: {
     width: '100%',
@@ -293,19 +293,21 @@ const styles = StyleSheet.create({
     marginBottom: 10, // Extra space from the bottom if needed
   },
   modalHeader: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    // borderBottomWidth: 1,
+    // borderBottomColor: '#ddd',
     paddingBottom: 10,
     marginBottom: 10,
-    marginTop: 10,
     alignItems: 'center',
+    //backgroundColor:'red',
+    paddingLeft:10,
+    paddingTop:5,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
   },
   modalFooter: {
-    marginTop: 24,
+    marginTop: 14,
     flexDirection: 'row',
     justifyContent: 'space-around',
   },

@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import {Appbar} from 'react-native-paper';
+import {Snackbar} from 'react-native-paper';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import {Dropdown} from 'react-native-element-dropdown';
 import axios from 'axios';
@@ -37,6 +37,10 @@ function ProductComponent() {
   const [approveAPIName, setApproveAPIName] = useState();
   const [approveAPImethod, setApproveAPImethod] = useState();
   const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
+  const [snackbarInfo, setSnackbarInfo] = useState({
+    visible: false,
+    message: '',
+  });
 
   useEffect(() => {
     const loadTokenAndData = async () => {
@@ -55,13 +59,14 @@ function ProductComponent() {
         setLoading(false);
       }
     };
-
     loadTokenAndData();
     return () => {
       setValueProduct(null);
       setValueBatch(null);
     };
   }, [isFocused]);
+  const onDismissSnackBar = () =>
+    setSnackbarInfo({visible: false, message: ''});
 
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
@@ -190,14 +195,13 @@ function ProductComponent() {
         setOpenModal(false);
       };
       if (!isAuthenticated && config.esignStatus) {
-        Alert.alert('Authentication failed, Please try again.');
         resetState();
         return;
       }
 
       const handleEsignStatus = async () => {
         if (esignStatus === 'rejected') {
-          nToggleSnackBar('eSign has been rejected for add aggregate');
+          onToggleSnackBar('eSign has been rejected for add aggregate');
           closeApprovalModal();
         }
       };
@@ -209,7 +213,7 @@ function ProductComponent() {
 
           closeApprovalModal();
         } else {
-          nToggleSnackBar('eSign has been rejected for add aggregate');
+          onToggleSnackBar('eSign has been rejected for add aggregate');
           await addAggregrate('rejected');
           if (esignStatus === 'rejected') closeApprovalModal();
         }
@@ -275,10 +279,11 @@ function ProductComponent() {
 
   const handleSubmit = async () => {
     console.log('Submit Product and Batch Id');
+
     console.log(config.config.esign_status, !openModal);
     if (config.config.esign_status && !openModal) {
       setOpenModal(true);
-      setApproveAPIName('product-approve');
+      setApproveAPIName('aggregated-transaction-create');
       setApproveAPImethod('POST');
       return;
     }
@@ -393,7 +398,13 @@ function ProductComponent() {
       <TouchableOpacity
         mode="contained"
         style={styles.btn}
-        onPress={handleSubmit}>
+        onPress={async() => {
+          if (!valueBatch || !valueProduct) {
+            Alert.alert('Error', 'Please select both product and batch.');
+            return;
+          }
+          await handleSubmit();
+        }}>
         <Text style={styles.submitBtnText}>Submit</Text>
       </TouchableOpacity>
 
@@ -409,6 +420,14 @@ function ProductComponent() {
           setStatus={setStatus}
         />
       )}
+      <Snackbar
+        visible={snackbarInfo.visible}
+        onDismiss={onDismissSnackBar}
+        duration={3000}
+        //style={styles.snackbar}>
+        style={[styles.snackbar, snackbarInfo.snackbarStyle]}>
+        {snackbarInfo.message}
+      </Snackbar>
     </>
   );
 }
@@ -502,5 +521,15 @@ const styles = StyleSheet.create({
     fontSize: 20,
     textAlign: 'center',
     color: '#fff',
+  },
+  snackbar: {
+    //backgroundColor: "red",
+    position: 'absolute',
+    bottom: 70,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 10,
+    borderRadius: 2,
+    marginBottom: 10, // Extra space from the bottom if needed
   },
 });

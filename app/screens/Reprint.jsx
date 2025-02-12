@@ -267,9 +267,8 @@ function Reprint() {
       Alert.alert('Error', 'Please scan or enter sscc code');
       return;
     }
-
     setVisible(true); //modal open
-    console.log('Reprint pressed..');
+    //console.log('Reprint pressed..');
   };
 
   if (loading) {
@@ -282,7 +281,7 @@ function Reprint() {
   }
 
   const print = async () => {
-    console.log('Reprint success.');
+    //console.log('Reprint success.');
     const reprintRes = await axios.post(
       `${url}/reprint`,
       { audit_log: {
@@ -321,7 +320,7 @@ function Reprint() {
   const cancel = () => {
     console.log('reprint cancel btn press ');
     setVisible(false);
-    navigation.navigate('Home');
+    //navigation.navigate('Home');
   };
 
   return (

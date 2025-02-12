@@ -52,8 +52,8 @@ function ScanList() {
   const [ssccNumber, setSsccNumber] = useState();
   const [config, setConfig] = useState(null);
   const [serialNumber, setSerialNumber] = useState();
-  const [previousChildLevel,setPreviousChildLevel]=useState(-1)
-  const [totalQuantity,setTotalQuantity]=useState(0)
+  const [previousChildLevel, setPreviousChildLevel] = useState(-1);
+  const [totalQuantity, setTotalQuantity] = useState(0);
 
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
@@ -65,15 +65,11 @@ function ScanList() {
       handleScannedData();
     }
     //scanValidation();
-    return () => {
-      
-
-    };
+    return () => {};
   }, [isFocused]);
 
   useEffect(() => {
     //console.log('Is compatible:', HoneywellBarcodeReader.isCompatible);
-
     HoneywellBarcodeReader.register().then(claimed => {
       console.log(
         claimed ? 'Barcode reader is claimed' : 'Barcode reader is busy',
@@ -81,14 +77,18 @@ function ScanList() {
     });
 
     HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
-      console.log('Received data :', event);
-      console.log('Current Scanned data :', event.data);
-      console.log('Previous data is :', data);
-
-      const scanRes = await scanValidation(event.data);
-      //console.log('Inside BarcodeRead Callback ', scanRes);
-      if (scanRes && scanRes.code === 200) {
-        await codeScan(event.data); //codeScan API call
+      if(quantity>0){
+        console.log('Received data :', event);
+        console.log('Current Scanned data :', event.data);
+        console.log('Previous data is :', data);
+  
+        const scanRes = await scanValidation(event.data);
+        //console.log('Inside BarcodeRead Callback ', scanRes);
+        if (scanRes && scanRes.code === 200) {
+          await codeScan(event.data); //codeScan API call
+        }
+      }else{
+        onToggleSnackBar("All codes have been scanned. You may now complete the transaction.",400)
       }
     });
 
@@ -104,8 +104,7 @@ function ScanList() {
       //console.log('barcodeReaderClaimed', details);
     });
 
-    return async() => {
-    };
+    return async () => {};
   }, [
     transactionId,
     quantity,
@@ -116,7 +115,7 @@ function ScanList() {
     totalLevel,
     totalProduct,
     currentPackageLevel,
-    isFocused
+    isFocused,
   ]);
 
   const onToggleSnackBar = (message, code) => {
@@ -144,7 +143,6 @@ function ScanList() {
         productId: productId,
         batchId: batchId,
         uniqueCode: barcodeData,
-        //packageLevel: currentPackageLevel,
       };
       console.log('Payload for scan/validation :', payload);
 
@@ -162,18 +160,19 @@ function ScanList() {
         return scanRes.data;
       } else if (scanRes.data.code === 409) {
         console.log('Invalid scan res :', scanRes.data.message);
-        //Alert.alert(scanRes.data.message);
         onToggleSnackBar(scanRes.data.message, 409);
         return null;
       } else if (scanRes.data.code === 404) {
         console.log('404 : ', scanRes.data.message);
-        //Alert.alert(scanRes.data.message);
         onToggleSnackBar(scanRes.data.message, 404);
         return null;
       } else if (scanRes.data.code === 400) {
-        console.log('Invalid packege level :  ', scanRes.data.message);
-        //Alert.alert(scanRes.data.message);
+        console.log('404 :  ', scanRes.data.message);
         onToggleSnackBar(scanRes.data.message, 400);
+        return null;
+      } else if (scanRes.data.code === 401) {
+        console.log('401 :  ', scanRes.data.message);
+        onToggleSnackBar(scanRes.data.message, 401);
         return null;
       } else {
         console.log('error !');
@@ -206,12 +205,11 @@ function ScanList() {
         },
       );
       console.log('Packaging Hierarchy API Res :', response.data);
-      setTotalQuantity(response.data.data.quantity)
+      setTotalQuantity(response.data.data.quantity);
       if (response.data.success) {
-        if(response?.data?.data?.scannedCodes?.length>0){
-          setData(response?.data?.data?.scannedCodes)
+        if (response?.data?.data?.scannedCodes?.length > 0) {
+          setData(response?.data?.data?.scannedCodes);
         }
-
         setQuantity(response.data.data.quantity);
         setPackageNo(response.data.data.packageNo);
         setCurrentLevel(response.data.data.currentLevel);
@@ -226,7 +224,8 @@ function ScanList() {
       console.log('Error :', err);
     }
   };
-  console.log("Total Quantity :",totalQuantity)
+  //console.log('Total Quantity :', totalQuantity);
+
   //codescan API
   const codeScan = async barcodeData => {
     console.log('code scan Api called......');
@@ -254,9 +253,9 @@ function ScanList() {
         };
       }
 
-      if(quantity==1){
-        payload['totalQuantity']=await totalQuantity
-        payload['previousChildLevel']=currentLevel;
+      if (quantity == 1) {
+        payload['totalQuantity'] = totalQuantity;
+        payload['previousChildLevel'] = currentLevel;
       }
       console.log('Payload for codeScan api req :', payload);
       const codeScanResponse = await axios.post(
@@ -272,8 +271,8 @@ function ScanList() {
       console.log('codeScan APIs Response :', codeScanResponse.data);
 
       if (codeScanResponse.data.success && codeScanResponse.data.code === 200) {
-        if(codeScanResponse.data.data.currentLevel>0){
-          setPreviousChildLevel(currentLevel)
+        if (codeScanResponse.data.data.currentLevel > 0) {
+          setPreviousChildLevel(currentLevel);
         }
         setData(prevData => {
           const alreadyExist = prevData.find(item => item === barcodeData);
@@ -290,22 +289,21 @@ function ScanList() {
         setPerPackageProduct(codeScanResponse.data.data.perPackageProduct);
         setQuantity(codeScanResponse.data.data.quantity);
         setCurrentIndex(codeScanResponse.data.data.currentIndex);
-
         setTotalLevel(codeScanResponse.data.data.totalLevel);
         setTotalProduct(codeScanResponse.data.data.totalProduct);
         setCurrentPackageLevel(codeScanResponse.data.data.currentPackageLevel); //set current level value
         console.log('Updated..');
-
         if (codeScanResponse.data.data.quantity === 0) {
           setCurrentPackageLevel(0);
           setSerialNumber(codeScanResponse.data.data.serialNo);
           setSsccNumber(codeScanResponse.data.data.sscc_code);
-          handleScannedData();
-          setData([]);
         }
       } else {
-        onToggleSnackBar(codeScanResponse.data.message, codeScanResponse.data.code);
-      } 
+        onToggleSnackBar(
+          codeScanResponse.data.message,
+          codeScanResponse.data.code,
+        );
+      }
     } catch (error) {
       console.error('Error to code scan API call..', error);
     }
@@ -313,12 +311,12 @@ function ScanList() {
 
   const handleEndTransaction = () => {
     console.log('End transaction button pressed..');
-    setParentModalVisible(true); // Show parent modal asking for confirmation
+    setParentModalVisible(true); 
   };
 
   const handleParentModalDismiss = async confirmed => {
-    setParentModalVisible(false); // Close the parent modal
-    setTransactionStatus(confirmed ? 'completed' : 'failed'); // Set status for child modal
+    setParentModalVisible(false); 
+    setTransactionStatus(confirmed ? 'completed' : 'failed'); 
     console.log(confirmed);
     if (
       confirmed &&
@@ -328,11 +326,10 @@ function ScanList() {
     ) {
       await handlePrintCode(ssccNumber, parseInt(serialNumber));
     }
-    // Show the corresponding child modal (completed or failed)
   };
 
   const handleChildModalDismiss = () => {
-    setChildModalVisible(false); // Close the child modal
+    setChildModalVisible(false); 
   };
 
   //Print SSCC codes API
@@ -355,6 +352,8 @@ function ScanList() {
       console.log('Response of handle print ', res.data);
 
       if (res.data.success === true && res.data.code === 200) {
+        setData([]);
+        handleScannedData();
         setChildModalVisible(true);
       } else {
         onToggleSnackBar(res.data.message, res.data.code);
@@ -364,10 +363,10 @@ function ScanList() {
     }
   };
 
-  const handleAggregateState=async currentState => {
+  const handleAggregateState = async currentState => {
     console.log(currentState);
-    
-    const payload={
+
+    const payload = {
       aggregatedTransactionId: transactionId,
       packageNo: packageNo,
       currentPackageLevel: currentPackageLevel,
@@ -376,48 +375,45 @@ function ScanList() {
       totalLevel: totalLevel,
       totalProduct: totalProduct,
       currentIndex: currentIndex,
-      scannedCodes:data
-    }
-    console.log(payload)
+      scannedCodes: data,
+    };
+    console.log(payload);
     try {
       // if (state === 'inactive' || state === 'background') {
-        const res = await axios.post(
-          `${url}/aggregationtransaction/handleAggregatedTransactionScanState`,
-          {
-            ...payload
+      const res = await axios.post(
+        `${url}/aggregationtransaction/handleAggregatedTransactionScanState`,
+        {
+          ...payload,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${await AsyncStorage.getItem('authToken')}`,
           },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${await AsyncStorage.getItem(
-                'authToken',
-                )}`,
-              },
-            },
-          );
-          console.log(
-            'Response for handleAggregatedTransactionScanState ',
-            res.data,
-          );
-          
-          if (res.data.success === true && res.data.code === 200) {
-            onToggleSnackBar(res.data.message, res.data.code);
-          } else {
-            onToggleSnackBar(res.data.message, res.data.code);
-          }
-          // }
-          
-        
-        } catch (error) {
+        },
+      );
+      console.log(
+        'Response for handleAggregatedTransactionScanState ',
+        res.data,
+      );
+
+      if (res.data.success === true && res.data.code === 200) {
+        onToggleSnackBar(res.data.message, res.data.code);
+      } else {
+        onToggleSnackBar(res.data.message, res.data.code);
+      }
+      // }
+    } catch (error) {
       console.log(
         'Error to Aggregated Transaction Scan State code for ',
         SsccCode,
       );
     }
-  }
+  };
 
-  AppState.addEventListener('change', async ()=>await handleAggregateState());
-
+  AppState.addEventListener('change', async () => await handleAggregateState());
+  console.log(totalProduct);
+  
   return (
     <>
       <KeyboardAvoidingView
@@ -454,7 +450,6 @@ function ScanList() {
           <Text style={styles.ListSubheader}>{data.length} Scanned Codes</Text>
         </View>
         {/* <Divider /> */}
-        {/* <View> */}
 
         <ScrollView contentContainerStyle={styles.container}>
           <List.Section style={{flexDirection: 'column-reverse'}}>
@@ -470,22 +465,19 @@ function ScanList() {
           </List.Section>
         </ScrollView>
 
-        {/* </View> */}
-
         <Divider />
 
         <Snackbar
           visible={snackbarInfo.visible}
           onDismiss={onDismissSnackBar}
           duration={3000}
-          //style={styles.snackbar}>
           style={[styles.snackbar, snackbarInfo.snackbarStyle]}>
           {snackbarInfo.message}
         </Snackbar>
 
         <TouchableOpacity
           mode="contained"
-          //labelStyle={{ fontSize: 20 }}
+          disabled={totalProduct!=1}
           style={styles.submitButton}
           onPress={handleEndTransaction}>
           <Text style={styles.endTranTxt}>End Transaction</Text>
@@ -557,7 +549,7 @@ function ScanList() {
             <View style={styles.childModalFooter}>
               <Button
                 mode="contained"
-                onPress={handleChildModalDismiss} // OK button action to close the modal
+                onPress={handleChildModalDismiss} 
                 style={styles.modalOKButton}>
                 OK
               </Button>
@@ -591,7 +583,7 @@ function ScanList() {
             <View style={styles.childModalFooter}>
               <Button
                 mode="contained"
-                onPress={handleChildModalDismiss} // OK button action to close the modal
+                onPress={handleChildModalDismiss} 
                 style={styles.modelRetryButton}>
                 Retry
               </Button>
