@@ -77,6 +77,12 @@ function CodeReplaceScreen() {
   };
 
   useEffect(() => {
+    const resetValues=navigation.addListener('blur',()=>{
+      setScanCode('')
+      setText('')
+      setSelectedProduct(null);
+      setSelectedBatch(null);
+    })
     const loadTokenAndData = async () => {
       try {
         const storedToken = await AsyncStorage.getItem('authToken');
@@ -94,9 +100,7 @@ function CodeReplaceScreen() {
     };
     loadTokenAndData();
     return () => {
-      setSelectedProduct(null);
-      setSelectedBatch(null);
-      setText('');
+      resetValues()
     };
   }, [isFocused]);
 
@@ -133,7 +137,7 @@ function CodeReplaceScreen() {
     });
 
     return () => {};
-  }, [countryCode,text,scanCode]);
+  }, [countryCode,scanCode,text]);
 
   useEffect(() => {
     if (selectedProduct?.id) {
@@ -141,7 +145,8 @@ function CodeReplaceScreen() {
         await fetchCountryCode();
       })();
     }
-    return () => {};
+    return () => {
+    };
   }, [selectedProduct?.id,text]);
 
   const fetchProductData = async token => {
@@ -262,7 +267,7 @@ function CodeReplaceScreen() {
   };
 
   const handleCodeReplace = () => {
-    if (!selectedProduct.id || !selectedBatch?.id) {
+    if (!selectedProduct?.id || !selectedBatch?.id) {
       Alert.alert('Error', 'Please select both product and batch.');
       return;
     }
@@ -308,12 +313,11 @@ function CodeReplaceScreen() {
       codereplaceRes.data.success === true &&
       codereplaceRes.data.code === 200
     ) {
-      setText('');
-      setScanCode('');
+      
       setSelectedProduct({id: null, name: null});
       setSelectedBatch({id: null, name: null});
       onToggleSnackBar(codereplaceRes.data.message, 200);
-      //   navigation.navigate('Home');
+      //navigation.navigate('Home');
     } else {
       onToggleSnackBar(codereplaceRes?.data?.message);
     }
@@ -410,6 +414,7 @@ function CodeReplaceScreen() {
                 Enter or Scan code to replace
               </Text>
               <TextInput
+                disabled={!selectedProduct?.id || !selectedBatch?.id}
                 label="Enter or Scan code"
                 value={scanCode||''}
                 mode="outlined"
@@ -417,6 +422,7 @@ function CodeReplaceScreen() {
                 style={styles.textInput}
               />
             </View>
+
           </View>
         </ScrollView>
         <View>

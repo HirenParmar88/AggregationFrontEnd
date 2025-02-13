@@ -376,6 +376,7 @@ function RemapScreen() {
                 Scan or write a code
               </Text>
               <TextInput
+              disabled={!selectedProduct?.id || !selectedBatch?.id}
                 label="Enter remap  sscc code"
                 value={scanCode?.toString()}
                 mode="outlined"

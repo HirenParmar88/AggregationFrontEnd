@@ -132,9 +132,7 @@ const Login = ({route}) => {
         onToggleSnackBar('Invalid username or password.');
       }
     } catch (error) {
-
-      console.error('Error while user login :', error);
-      onToggleSnackBar('An error occurred. Please try again later.');
+      onToggleSnackBar(error.message);
     }
   };
 

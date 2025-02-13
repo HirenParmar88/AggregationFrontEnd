@@ -37,12 +37,12 @@ function App() {
   useEffect(() => {
     (async () => {
       const token = await AsyncStorage.getItem('authToken');
+      console.log(await AsyncStorage.getItem('hasSeenUrlScreen'))
       const seenUrlScreen = await AsyncStorage.getItem('hasSeenUrlScreen');
-      
-      if (seenUrlScreen === 'true') {
-        setHasSeenUrlScreen(true);
+      console.log("Seen URL Screen",seenUrlScreen)
+      if(seenUrlScreen){
+        setHasSeenUrlScreen(seenUrlScreen)
       }
-
       if (token) {
         const decoded = jwtDecode(token);
         const currentTime = Math.floor(Date.now() / 1000);
@@ -58,7 +58,7 @@ function App() {
 
       setLoading(false);
     })();
-  }, []);
+  }, [hasSeenUrlScreen]);
   if (loading) {
     return(
      <View>
