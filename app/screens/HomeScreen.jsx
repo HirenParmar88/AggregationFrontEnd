@@ -15,11 +15,40 @@ import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useBackendurlContext} from '../../context/backendUrlContext';
 
 function HomeScreen() {
+  const navigation = useNavigation();
+  const {isBackendUrl} = useBackendurlContext();
+  const [backendUrl, setBackendUrl] = useState(null);
   const {width, height} = Dimensions.get('window');
   const screenDimensions = Dimensions.get('screen');
   console.log(width, height, 'height and weight');
+  console.log('screenDimensions', screenDimensions);
+
+  useEffect(() => {
+    console.log('Context backendurl home :', isBackendUrl);
+    console.log('user entered backendUrl :', backendUrl);
+  }, []);
+
+  //Back End URL get this page using Async Storage
+  useEffect(() => {
+    const loadURL = async () => {
+      try {
+        const storedUrl = await AsyncStorage.getItem('BackendUrl');
+        console.log('Backend URL get for home Page :', storedUrl);
+        if (storedUrl) {
+          setBackendUrl(storedUrl); // Set the URL to state
+        } else {
+          setBackendUrl('No URL found !'); // Default message if no URL is found
+        }
+      } catch (error) {
+        console.error('Error fetching backend url :', error);
+      }
+    };
+    loadURL();
+  }, []);
+  console.log('Home Page URL :', backendUrl);
 
   const imageView = {
     marginLeft: width * 0.05, // 5% of screen width
@@ -31,9 +60,10 @@ function HomeScreen() {
     marginTop: height * 0.01,
   };
   const btnGroups = {
+    // marginBottom: height * 0.05,
     marginTop: height * 0.02,
     marginRight: width * 0.15, // 15% margin on the right
-    marginLeft: width * 0.15, // 15% margin on the leftw 
+    marginLeft: width * 0.15, // 15% margin on the leftw
     borderRadius: 0,
     // backgroundColor:'yellow',
   };
@@ -44,6 +74,8 @@ function HomeScreen() {
   };
   const container = {
     flex: 1,
+    // display:'grid',
+    // alignitems:'end',
   };
   const TouchableBtn = {
     padding: width * 0.02, // Padding based on width
@@ -74,59 +106,29 @@ function HomeScreen() {
     marginTop: height * 0.02, // Adjusting margin top based on height
     // backgroundColor:'red',
   };
-
-  const navigation = useNavigation();
-  const [backendUrl, setBackendUrl] = useState(null);
-
   const handleAggregationBtn = () => {
     //console.log("Aggregation Btn Called..");
     navigation.navigate('Aggregation');
   };
-
   const handleDropoutBtn = () => {
     console.log('Dropout Btn Called..');
     navigation.navigate('Dropout');
   };
-
   const handleReprintBtn = () => {
     console.log('Reprint Btn Called..');
     navigation.navigate('Reprint');
   };
-
   const handleRemapBtn = () => {
     console.log('Remap Called..');
     navigation.navigate('Remap');
   };
-
   const handleCodeReplaceBtn = () => {
     console.log('Code Replace Called..');
     navigation.navigate('Code Replace');
   };
-
-  //Back End URL get this page using Async Storage
-  useEffect(() => {
-    const loadURL = async () => {
-      try {
-        const storedUrl = await AsyncStorage.getItem('BackendUrl');
-        console.log('Backend URL get for home Page :', storedUrl);
-        if (storedUrl) {
-          setBackendUrl(storedUrl); // Set the URL to state
-        } else {
-          setBackendUrl('No URL found !'); // Default message if no URL is found
-        }
-      } catch (error) {
-        console.error('Error fetching backend url :', error);
-      }
-    };
-    loadURL();
-  }, []);
-  console.log('URL :', backendUrl);
-
   return (
     <>
-      <ScrollView
-        contentContainerStyle={container}
-        keyboardShouldPersistTaps="handled">
+      <View style={container}>
         {/* <View>
           <Text>Back-End URL : {backendUrl}</Text>
         </View> */}
@@ -222,7 +224,7 @@ function HomeScreen() {
             <Text style={btnGroupsText}>Code Replace</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+      </View>
     </>
   );
 }

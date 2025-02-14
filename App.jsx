@@ -3,12 +3,12 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createDrawerNavigator} from '@react-navigation/drawer';
 import Login from './app/screens/Login'; // Import your Login screen
-import HomeScreen from './app/screens/HomeScreen'; // Import your HomeScreen
+import HomeScreen from './app/screens/HomeScreen'; 
 import ProductComponent from './app/screens/Product';
 import Reprint from './app/screens/Reprint';
 import RemapScreen from './app/screens/Remap';
 import CodeReplaceScreen from './app/screens/CodeReplace';
-import Logout from './app/screens/Logout'; // Import Logout with modal
+import Logout from './app/screens/Logout'; 
 import ScanList from './app/screens/ScanList';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -23,7 +23,8 @@ import {jwtDecode} from 'jwt-decode';
 import SettingScreen from './app/screens/Settings';
 import LoaderComponent from './app/components/Loader';
 import UrlScreen from './app/screens/UrlScreens';
-import { Text, View } from 'react-native';
+import {Text, View} from 'react-native';
+import { useBackendurlContext } from './context/backendUrlContext';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -31,17 +32,20 @@ const Drawer = createDrawerNavigator();
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [hasSeenUrlScreen, setHasSeenUrlScreen] = useState(false); 
-  console.log("Auth ",isAuthenticated)
-  
+  const [hasSeenUrlScreen, setHasSeenUrlScreen] = useState(false);
+  const {isBackendUrl}=useBackendurlContext()
+  console.log("Context backend ",isBackendUrl)
+  console.log('Auth ', isAuthenticated);
   useEffect(() => {
     (async () => {
       const token = await AsyncStorage.getItem('authToken');
-      console.log(await AsyncStorage.getItem('hasSeenUrlScreen'))
+      console.log('App screen Token :', token);
+
       const seenUrlScreen = await AsyncStorage.getItem('hasSeenUrlScreen');
-      console.log("Seen URL Screen",seenUrlScreen)
-      if(seenUrlScreen){
-        setHasSeenUrlScreen(seenUrlScreen)
+      console.log('seenUrlScreen :', seenUrlScreen);
+
+      if (seenUrlScreen) {
+        setHasSeenUrlScreen(seenUrlScreen);
       }
       if (token) {
         const decoded = jwtDecode(token);
@@ -49,54 +53,23 @@ function App() {
         if (currentTime < decoded.exp) {
           setIsAuthenticated(true);
         } else {
-          await AsyncStorage.removeItem('authToken'); 
+          await AsyncStorage.removeItem('authToken');
           setIsAuthenticated(false);
         }
       } else {
         setIsAuthenticated(false);
       }
-
       setLoading(false);
     })();
   }, [hasSeenUrlScreen]);
   if (loading) {
-    return(
-     <View>
+    return (
+      <View>
         <Text>Loading..</Text>
-     </View>
-    ) 
+      </View>
+    );
   }
-
-  // useEffect(() => {
-  //   (async () => {
-  //     await checkUserAuth();
-  //   })();
-
-  //   return () => {};
-  // }, []);
-
-  // const checkUserAuth = async () => {
-  //   try {
-  //     const token = await AsyncStorage.getItem('authToken');
-  //     console.log("Auth TOKEN :", token);
-      
-  //     const decoded = jwtDecode(token);
-  //     //console.log("decode toekn ", decoded)
-  //     const currentTime = Math.floor(Date.now() / 1000);
-
-  //     // Check if the token is expired
-  //     if (currentTime > decoded.exp) {
-  //       //console.log("Token is expired.");
-  //       setIsAuthenticated(false);
-  //     } else {
-  //       console.log('Token is still valid.');
-  //       setIsAuthenticated(true);
-  //     }
-  //   } catch (error) {
-  //     console.log('Error in token get ', error);
-  //   }
-  // };
-  console.log('Auth ',isAuthenticated)
+  console.log('Auth ', isAuthenticated);
 
   return (
     <NavigationContainer>
@@ -107,8 +80,12 @@ function App() {
             name="Home"
             component={HomeScreen}
             options={{
-              drawerIcon: ({ focused, size }) => (
-                <AntDesign name="home" size={size} color={focused ? '#000000' : '#000000'} />
+              drawerIcon: ({focused, size}) => (
+                <AntDesign
+                  name="home"
+                  size={size}
+                  color={focused ? '#000000' : '#000000'}
+                />
               ),
             }}
           />
@@ -147,7 +124,7 @@ function App() {
             name="ScanList"
             component={ScanList}
             options={{
-              drawerItemStyle: { display: 'none' }, //to hide the drawer Item
+              drawerItemStyle: {display: 'none'}, //to hide the drawer Item
               headerShown: false,
               drawerIcon: ({focused, size}) => (
                 <MaterialCommunityIcons
@@ -201,12 +178,12 @@ function App() {
             }}
           />
           <Drawer.Screen
-            name='Esign'
+            name="Esign"
             component={EsignPage}
             options={{
-              drawerItemStyle:{ display:'none'},
+              drawerItemStyle: {display: 'none'},
               headerShown: true,
-              drawerIcon: ({ focused, size }) => (
+              drawerIcon: ({focused, size}) => (
                 <MaterialCommunityIcons
                   name="barcode-scan"
                   size={size}
@@ -261,16 +238,16 @@ function App() {
               ),
             }} // You can customize the label here
           /> */}
-         
         </Drawer.Navigator>
       ) : (
-        <Stack.Navigator initialRouteName={hasSeenUrlScreen ? "Login" : "UrlScreen"}>
-          <Stack.Screen 
+        <Stack.Navigator
+          initialRouteName={isBackendUrl ? 'Login' : 'UrlScreen'}>
+          <Stack.Screen
             name="UrlScreen"
             component={UrlScreen}
             options={{headerShown: false}}
           />
-        
+
           <Stack.Screen
             name="Login"
             component={Login}

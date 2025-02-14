@@ -16,7 +16,7 @@ import {
 } from 'react-native-paper';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {url} from '../../utils/constant';
+//import {url} from '../../utils/constant';
 import {useNavigation} from '@react-navigation/native';
 //import config from '../../config';
 
@@ -49,27 +49,26 @@ const Login = ({route}) => {
 
   //const onToggleSnackBar = message => setSnackbarInfo({visible: true, message});
   useEffect(() => {
+    const loadURL = async () => {
+      try {
+        const storedUrl = await AsyncStorage.getItem('BackendUrl');
+        console.log('Backend URL get for Login Page :', storedUrl);
+        if (storedUrl) {
+          setBackendUrl(storedUrl); // Set the URL to state
+        } else {
+          setBackendUrl('No URL found !'); // Default message if no URL is found
+        }
+      } catch (error) {
+        console.error('Error fetching backend url :', error);
+      }
+    };
     loadURL();
     return () => {
       
     }
   }, [])
-  
   //console.log('process env :', url);
-  const loadURL = async () => {
-    try {
-      const storedUrl = await AsyncStorage.getItem('BackendUrl');
-      console.log('Backend URL get for Login Page :', storedUrl);
-      if (storedUrl) {
-        setBackendUrl(storedUrl); // Set the URL to state
-      } else {
-        setBackendUrl('No URL found !'); // Default message if no URL is found
-      }
-    } catch (error) {
-      console.error('Error fetching backend url :', error);
-    }
-  };
-  //console.log('Back-End Dynamic URL Use for Login Page:', backendUrl);
+  console.log('Back-End Dynamic URL Use for Login Page:', backendUrl);
 
   const handleLogin = async (forceFully = false) => {
     console.log('Force fully :', forceFully);
@@ -87,8 +86,7 @@ const Login = ({route}) => {
     try {
       console.log('api calling....');
       //console.log("BACKEND DYNAMIC URLs :", config.API_URL);
-      console.log("aufvdsfhudsvfhdsbfgdjsifbsd", `${backendUrl}/auth/login`);
-      
+      console.log("Login URL :", `${backendUrl}/auth/login`);
       const res = await axios.post(
         `${backendUrl}/auth/login`,
         {
