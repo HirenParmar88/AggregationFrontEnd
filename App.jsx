@@ -64,9 +64,7 @@ function App() {
   }, [hasSeenUrlScreen]);
   if (loading) {
     return (
-      <View>
-        <Text>Loading..</Text>
-      </View>
+      <LoaderComponent />
     );
   }
   console.log('Auth ', isAuthenticated);

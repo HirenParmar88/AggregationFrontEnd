@@ -1,12 +1,9 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {ActivityIndicator, StyleSheet} from 'react-native';
 import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
-import {Appbar} from 'react-native-paper';
-import {useNavigation} from '@react-navigation/native';
+
 
 function LoaderComponent() {
-  const navigation= useNavigation();
-
   return (
     <>
       {/* <Appbar.Header>
