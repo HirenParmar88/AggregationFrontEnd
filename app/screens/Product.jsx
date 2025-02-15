@@ -269,8 +269,17 @@ function ProductComponent() {
       console.log('BID :-', valueBatch);
       await AsyncStorage.setItem('productId', valueProduct);
       await AsyncStorage.setItem('batchId', valueBatch);
-
-      navigation.navigate('ScanList');
+      console.log("aggregationtransactionResponse :",aggregationtransactionResponse.data)
+      console.log(aggregationtransactionResponse.data.code!=200)
+      if(aggregationtransactionResponse.data.code!=200&&aggregationtransactionResponse.data.code!=409){
+        onToggleSnackBar(aggregationtransactionResponse.data.message)
+      }else{
+        onToggleSnackBar(aggregationtransactionResponse.data.message,200)
+        setTimeout(()=>{
+          navigation.navigate('ScanList');
+        },2000)
+      }
+      console.log(aggregationtransactionResponse)
     } else {
       Alert.alert('Error', 'Please select both product and batch.');
     }
@@ -288,7 +297,7 @@ function ProductComponent() {
       return;
     }
     addAggregrate('approved');
-    navigation.navigate('ScanList', {id: valueProduct, bid: valueBatch});
+    // navigation.navigate('ScanList', {id: valueProduct, bid: valueBatch});
 
     setValueProduct(null);
     setValueBatch(null);
@@ -400,7 +409,8 @@ function ProductComponent() {
         style={styles.btn}
         onPress={async() => {
           if (!valueBatch || !valueProduct) {
-            Alert.alert('Error', 'Please select both product and batch.');
+            onToggleSnackBar("Please select both product and batch.",400)
+            //Alert.alert('Error', 'Please select both product and batch.');
             return;
           }
           await handleSubmit();

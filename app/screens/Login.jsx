@@ -16,9 +16,7 @@ import {
 } from 'react-native-paper';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-//import {url} from '../../utils/constant';
 import {useNavigation} from '@react-navigation/native';
-//import config from '../../config';
 
 const Login = ({route}) => {
   const navigation = useNavigation();
@@ -47,7 +45,6 @@ const Login = ({route}) => {
   const onDismissSnackBar = () =>
     setSnackbarInfo({visible: false, message: ''});
 
-  //const onToggleSnackBar = message => setSnackbarInfo({visible: true, message});
   useEffect(() => {
     const loadURL = async () => {
       try {

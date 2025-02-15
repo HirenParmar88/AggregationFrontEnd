@@ -243,14 +243,15 @@ function RemapScreen() {
 
   const handleRemap = () => {
     if (!selectedProduct.id || !selectedBatch.id) {
-      Alert.alert('Error', 'Please select both product and batch.');
+      onToggleSnackBar('Please select both product and batch.',400)
+      //Alert.alert('Error', 'Please select both product and batch.');
       return;
     }
     if (!scanCode) {
-      Alert.alert('Error', 'Please scan or enter unique code');
+      onToggleSnackBar('Please scan or enter sscc code')
+      //Alert.alert('Error', 'Please scan or enter unique code');
       return;
     }
-
     setVisible(true); //modal open
     console.log('Remap pressed..');
   };
@@ -376,7 +377,7 @@ function RemapScreen() {
                 Scan or write a code
               </Text>
               <TextInput
-              disabled={!selectedProduct?.id || !selectedBatch?.id}
+                disabled={!selectedProduct?.id || !selectedBatch?.id}
                 label="Enter remap  sscc code"
                 value={scanCode?.toString()}
                 mode="outlined"

@@ -260,11 +260,13 @@ function Reprint() {
 
   const handleReprint = () => {
     if (!selectedProduct.id || !selectedBatch.id) {
-      Alert.alert('Error', 'Please select both product and batch.');
+      onToggleSnackBar('Please select both product and batch.')
+      //Alert.alert('Error', 'Please select both product and batch.');
       return;
     }
     if (!text) {
-      Alert.alert('Error', 'Please scan or enter sscc code');
+      onToggleSnackBar('Please scan or enter sscc code')
+      //Alert.alert('Error', 'Please scan or enter sscc code');
       return;
     }
     setVisible(true); //modal open
@@ -406,6 +408,7 @@ function Reprint() {
                 Scan or write a code
               </Text>
               <TextInput
+                disabled={!selectedProduct?.id || !selectedBatch?.id}
                 label="Enter sscc code for reprint"
                 value={text}
                 mode="outlined"
@@ -437,8 +440,9 @@ function Reprint() {
               <Divider />
               <View style={styles.modalBody}>
                 <Text style={styles.bodyTxt}>
-                  Are you sure you want to reprint this code : {text}
+                  Are you sure you want to reprint this code ?
                 </Text>
+                <Text style={styles.bodyTxt}> {text}</Text>
               </View>
               <View style={styles.footer}>
                 <TouchableOpacity
@@ -547,6 +551,8 @@ const styles = StyleSheet.create({
   },
   bodyTxt: {
     fontSize: 18,
+    fontWeight:'bold',
+    marginTop:10,
     //textAlign: 'center',
   },
   footer: {
@@ -564,12 +570,12 @@ const styles = StyleSheet.create({
     paddingRight: 16,
     paddingTop: 15,
     paddingBottom: 15,
-    borderRadius: 4,
+    borderRadius: 2,
   },
   cancelbtn: {
     backgroundColor: 'gray',
     padding: 15,
-    borderRadius: 4,
+    borderRadius: 2,
   },
   snackbar: {
     position: 'absolute',

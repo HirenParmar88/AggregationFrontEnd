@@ -113,13 +113,14 @@ function CodeReplaceScreen() {
     });
 
     HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
-      console.log('Current Scanned data :', event.data);
-      console.log('Country code is ', countryCode);
+      // console.log('Current Scanned data :', event.data);
+      // console.log('Country code is ', countryCode);
       const uniqueCode = getUniqueCode(event.data, countryCode);
-      if(scanCode==''){
+      console.log("Current Modal is visible ",visible)
+      if(!visible){
         setScanCode(uniqueCode);
       }
-      else{
+      else if(visible){
         setText(uniqueCode)
       }
     });
@@ -137,7 +138,7 @@ function CodeReplaceScreen() {
     });
 
     return () => {};
-  }, [countryCode,scanCode,text]);
+  }, [countryCode,visible,scanCode,text]);
 
   useEffect(() => {
     if (selectedProduct?.id) {
@@ -268,11 +269,13 @@ function CodeReplaceScreen() {
 
   const handleCodeReplace = () => {
     if (!selectedProduct?.id || !selectedBatch?.id) {
-      Alert.alert('Error', 'Please select both product and batch.');
+      onToggleSnackBar('Please select both product and batch.',400)
+      //Alert.alert('Error', 'Please select both product and batch.');
       return;
     }
     if (!scanCode) {
-      Alert.alert('Error', 'Please scan or enter unique code');
+      onToggleSnackBar('Please scan or enter unique code')
+      //Alert.alert('Error', 'Please scan or enter unique code');
       return;
     }
 
@@ -313,7 +316,7 @@ function CodeReplaceScreen() {
       codereplaceRes.data.success === true &&
       codereplaceRes.data.code === 200
     ) {
-      
+      setScanCode('')
       setSelectedProduct({id: null, name: null});
       setSelectedBatch({id: null, name: null});
       onToggleSnackBar(codereplaceRes.data.message, 200);
@@ -420,6 +423,7 @@ function CodeReplaceScreen() {
                 mode="outlined"
                 onChangeText={text => setScanCode(text)}
                 style={styles.textInput}
+                onFocus={()=>setScannedCodes('')}
               />
             </View>
 

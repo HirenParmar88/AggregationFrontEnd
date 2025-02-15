@@ -123,7 +123,8 @@ function DropoutFun() {
             return [...prevData, uniqueCode];
           } else {
             console.log('Already exitst...');
-            Alert.alert('Items Already Exists!');
+            onToggleSnackBar('Items Already Exists!', 400);
+            //Alert.alert('Items Already Exists!');
             return [...prevData];
           }
         });
@@ -218,7 +219,8 @@ function DropoutFun() {
         setOpenModal(false);
       };
       if (!isAuthenticated) {
-        Alert.alert('Authentication failed, Please try again.');
+        onToggleSnackBar('Authentication failed, Please try again.', 400);
+        //Alert.alert('Authentication failed, Please try again.');
         resetState();
         return;
       }
@@ -451,7 +453,8 @@ function DropoutFun() {
 
   const handleSubmit = () => {
     if (!selectedProduct.id || !selectedBatch.id) {
-      Alert.alert('Error', 'Please select both product and batch.');
+      onToggleSnackBar('Please select both product and batch.', 400);
+      //Alert.alert('Error', 'Please select both product and batch.');
       return;
     }
     // Alert.alert(
@@ -744,7 +747,9 @@ function DropoutFun() {
                     maxHeight={300}
                     labelField="label"
                     valueField="value"
-                    placeholder={!isFocusP ? 'Select Batch for Dropout' : 'select reason'}
+                    placeholder={
+                      !isFocusP ? 'Select Batch for Dropout' : 'select reason'
+                    }
                     value={dropoutReason}
                     onFocus={() => setIsFocusP(true)}
                     onBlur={() => setIsFocusP(false)}
@@ -788,24 +793,28 @@ function DropoutFun() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Codes Dropout</Text>
             </View>
-            <Text style={styles.modalCodesContent}>
-              Are you sure you want to dropout?
-            </Text>
-            <View style={{paddingTop: 25}}>
-              <Text style={{fontSize: 16, fontWeight: 'bold'}}>
-                Batch: {selectedBatch.name}
+
+            <View style={styles.coderDropoutModalBody}>
+              <Text style={styles.modalCodesContent}>
+                Are you sure you want to dropout?
               </Text>
-              <Text style={{fontSize: 16, fontWeight: 'bold'}}>
-                Product: {selectedProduct.name}
-              </Text>
+              <View style={{paddingTop: 25}}>
+                <Text style={{fontSize: 16, fontWeight: 'bold'}}>
+                  Batch: {selectedBatch.name}
+                </Text>
+                <Text style={{fontSize: 16, fontWeight: 'bold'}}>
+                  Product: {selectedProduct.name}
+                </Text>
+              </View>
             </View>
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.confirmButton]}
-                onPress={handleCodesDropout}>
-                <Text style={styles.modalButtonText}>Submit</Text>
-              </TouchableOpacity>
-            </View>
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.confirmButton]}
+                  onPress={handleCodesDropout}>
+                  <Text style={styles.modalButtonText}>Submit</Text>
+                </TouchableOpacity>
+              </View>
           </Modal>
         </Portal>
 
@@ -833,7 +842,7 @@ function DropoutFun() {
                     maxHeight={300}
                     labelField="label"
                     valueField="value"
-                    placeholder={!isFocusP ? 'Select Batch for Dropout' : '...'}
+                    placeholder={!isFocusP ? 'Select Batch for Dropout' : 'Select Reason'}
                     value={dropoutReason}
                     onFocus={() => setIsFocusP(true)}
                     onBlur={() => setIsFocusP(false)}
@@ -957,6 +966,10 @@ const styles = StyleSheet.create({
     //width:270,
     flex: 1,
   },
+  coderDropoutModalBody:{
+    //backgroundColor:'yellow',
+    paddingLeft:20,
+  },
   modalHeader: {
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
@@ -1002,20 +1015,24 @@ const styles = StyleSheet.create({
     //color: 'red',
   },
   modalBatchContent: {
-    fontSize: 20,
-    textAlign: 'center',
-    marginVertical: 20,
+    fontSize: 18,
+    fontWeight:'bold',
+    //textAlign: 'center',
+    marginVertical: 10,
+    paddingLeft:10,
     //color:'red'
   },
   modalFooter: {
-    marginTop: 20,
+    marginTop: 25,
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
   modalBatchFooter: {
-    marginTop: 0,
+    marginTop: 10,
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'center',
+    gap:5,
+    //backgroundColor:'red'
   },
   modalButton: {
     paddingVertical: 10,
@@ -1064,8 +1081,9 @@ const styles = StyleSheet.create({
     //backgroundColor:'yellow'
   },
   modalCodesContent: {
-    //backgroundColor:'red',
+    //backgroundColor: 'red',
     fontSize: 16,
+    fontWeight:'bold',
   },
 });
 
