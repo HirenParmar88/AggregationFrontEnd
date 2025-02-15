@@ -15,11 +15,9 @@ import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useBackendurlContext} from '../../context/backendUrlContext';
 
 function HomeScreen() {
   const navigation = useNavigation();
-  const {isBackendUrl} = useBackendurlContext();
   const [backendUrl, setBackendUrl] = useState(null);
   const {width, height} = Dimensions.get('window');
   const screenDimensions = Dimensions.get('screen');
@@ -27,7 +25,6 @@ function HomeScreen() {
   console.log('screenDimensions', screenDimensions);
 
   useEffect(() => {
-    console.log('Context backendurl home :', isBackendUrl);
     console.log('user entered backendUrl :', backendUrl);
   }, []);
 

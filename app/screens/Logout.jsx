@@ -5,15 +5,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage'; // To hand
 import axios from 'axios';
 import {useNavigation, useFocusEffect} from '@react-navigation/native'; // Import useNavigation to navigate
 import {Dialog, Portal, Button as PaperButton} from 'react-native-paper';
-//import { url } from "../../utils/constant";
-import {useBackendurlContext} from '../../context/backendUrlContext';
 
 function Logout({route}) {
-  const navigation = useNavigation(); // Get navigation object using the hook
+  const navigation = useNavigation(); 
   const [backendUrl, setBackendUrl] = useState(null);
-  const [visible, setVisible] = useState(false); // Modal visibility state
-  const {setIsAuthenticated} = route.params; // Retrieve setIsAuthenticated from params
-  const {setIsBackendUrl} = useBackendurlContext();
+  const [visible, setVisible] = useState(false); 
+  const {setIsAuthenticated} = route.params; 
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
 
@@ -23,9 +20,9 @@ function Logout({route}) {
         const storedUrl = await AsyncStorage.getItem('BackendUrl');
         console.log('Backend URL get for LogOut Page :', storedUrl);
         if (storedUrl) {
-          setBackendUrl(storedUrl); // Set the URL to state
+          setBackendUrl(storedUrl); 
         } else {
-          setBackendUrl('No URL found !'); // Default message if no URL is found
+          setBackendUrl('No URL found !'); 
         }
       } catch (error) {
         console.error('Error fetching backend url :', error);
@@ -36,7 +33,7 @@ function Logout({route}) {
 
   useEffect(() => {
     if (backendUrl) {
-      showModal(); // Show the modal only after URL is loaded
+      showModal(); 
     }
   }, [backendUrl]);
   console.log('Back-End URL Use for LogOut Screens:', backendUrl);
@@ -66,7 +63,6 @@ function Logout({route}) {
       // Handle successful logout
       if (response.data.success && response.data.code === 200) {
         await AsyncStorage.removeItem('authToken');
-        setIsBackendUrl(true);
         setIsAuthenticated(false);
         hideModal();
         navigation.navigate('Login');
@@ -93,7 +89,7 @@ function Logout({route}) {
   useFocusEffect(
     React.useCallback(() => {
       if (backendUrl) {
-        showModal(); // Show the modal when the screen is focused
+        showModal(); 
       }
     }, [backendUrl]),
   );

@@ -24,7 +24,6 @@ import SettingScreen from './app/screens/Settings';
 import LoaderComponent from './app/components/Loader';
 import UrlScreen from './app/screens/UrlScreens';
 import {Text, View} from 'react-native';
-import { useBackendurlContext } from './context/backendUrlContext';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -33,13 +32,14 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasSeenUrlScreen, setHasSeenUrlScreen] = useState(false);
-  const {isBackendUrl}=useBackendurlContext()
-  console.log("Context backend ",isBackendUrl)
+  const [backendURL,setBackendUrl]=useState('')
   console.log('Auth ', isAuthenticated);
+  
   useEffect(() => {
     (async () => {
       const token = await AsyncStorage.getItem('authToken');
       console.log('App screen Token :', token);
+      setBackendUrl(await AsyncStorage.getItem('BackendUrl'))
 
       const seenUrlScreen = await AsyncStorage.getItem('hasSeenUrlScreen');
       console.log('seenUrlScreen :', seenUrlScreen);
@@ -67,6 +67,7 @@ function App() {
       <LoaderComponent />
     );
   }
+  console.log(backendURL)
   console.log('Auth ', isAuthenticated);
 
   return (
@@ -239,7 +240,7 @@ function App() {
         </Drawer.Navigator>
       ) : (
         <Stack.Navigator
-          initialRouteName={isBackendUrl ? 'Login' : 'UrlScreen'}>
+          initialRouteName={backendURL!=null ? 'Login' : 'UrlScreen'}>
           <Stack.Screen
             name="UrlScreen"
             component={UrlScreen}

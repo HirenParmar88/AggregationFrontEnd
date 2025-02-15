@@ -21,7 +21,7 @@ import {useNavigation} from '@react-navigation/native';
 //import config from '../../config';
 
 const Login = ({route}) => {
-  const navigation = useNavigation(); 
+  const navigation = useNavigation();
   const {setIsAuthenticated} = route.params;
   const [backendUrl, setBackendUrl] = useState(null);
   const [userId, setUserId] = useState('');
@@ -63,17 +63,15 @@ const Login = ({route}) => {
       }
     };
     loadURL();
-    return () => {
-      
-    }
-  }, [])
+    return () => {};
+  }, []);
   //console.log('process env :', url);
   console.log('Back-End Dynamic URL Use for Login Page:', backendUrl);
 
   const handleLogin = async (forceFully = false) => {
     console.log('Force fully :', forceFully);
     console.log(backendUrl);
-    
+
     if (!userId) {
       onToggleSnackBar('Username cannot be Empty!');
       return;
@@ -86,7 +84,7 @@ const Login = ({route}) => {
     try {
       console.log('api calling....');
       //console.log("BACKEND DYNAMIC URLs :", config.API_URL);
-      console.log("Login URL :", `${backendUrl}/auth/login`);
+      console.log('Login URL :', `${backendUrl}/auth/login`);
       const res = await axios.post(
         `${backendUrl}/auth/login`,
         {
@@ -106,7 +104,7 @@ const Login = ({route}) => {
       if (res.data.success === true && res.data.code === 200) {
         const token = res.data.data.token; //store token
         await AsyncStorage.setItem('authToken', token);
-        onToggleSnackBar(res.data.message,200);
+        onToggleSnackBar(res.data.message, 200);
         //return res.data;
         setTimeout(() => {
           setIsAuthenticated(true);
@@ -152,7 +150,8 @@ const Login = ({route}) => {
             <View style={styles.inputs}>
               <TextInput
                 label="Username"
-                style={styles.input}
+                mode="outlined"
+                style={styles.usernameInput}
                 placeholder="Enter Username"
                 value={userId}
                 onChangeText={setUserId}
@@ -160,30 +159,37 @@ const Login = ({route}) => {
 
               <TextInput
                 label="Password"
+                mode="outlined"
                 right={
                   <TextInput.Icon
                     icon={!passwordShow ? 'eye' : 'eye-off'}
                     onPress={() => setPasswordShow(!passwordShow)}
                   />
                 }
-                style={styles.input}
+                style={styles.passwordInput}
                 placeholder="Enter Password"
                 secureTextEntry={!passwordShow}
                 value={password}
                 onChangeText={setPassword}
               />
             </View>
-            <Button
+            {/* <Button
               mode="contained"
               onPress={() => handleLogin(false)}
               style={styles.btn}>
               LOGIN
-            </Button>
+            </Button> */}
+            <TouchableOpacity
+              mode="contained"
+              style={styles.touchableBtn}
+              onPress={() => handleLogin(false)}>
+              <Text style={styles.submitBtnText}>LOGIN</Text>
+            </TouchableOpacity>
             {/* <Text>{config.API_URL}</Text> */}
           </View>
         </View>
       </ScrollView>
-      {/* Modal for Confirm Batch Dropout */}
+
       <Portal>
         <Modal
           visible={showReLogin}
@@ -210,6 +216,7 @@ const Login = ({route}) => {
           </View>
         </Modal>
       </Portal>
+
       <Snackbar
         visible={snackbarInfo.visible}
         onDismiss={onDismissSnackBar}
@@ -253,31 +260,58 @@ const styles = StyleSheet.create({
     padding: 30,
   },
   title: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 16,
     textAlign: 'center',
   },
   inputs: {
-    marginVertical: 16,
-    marginTop: '10%',
+    marginVertical: 20,
+    padding: 0,
+    //marginTop: '10%',
+    //backgroundColor:'red',
+    //height:'30%'
   },
-  input: {
-    height: 60,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    marginBottom: 18,
-    paddingLeft: 10,
-    borderRadius: 5,
-    backgroundColor: '#fff',
-    fontSize: 16,
+  // input: {
+  //   height: 60,
+  //   borderColor: '#ccc',
+  //   borderWidth: 1,
+  //   marginBottom: 18,
+  //   paddingLeft: 10,
+  //   borderRadius: 5,
+  //   backgroundColor: '#fff',
+  //   fontSize: 16,
+  // },
+  usernameInput: {
+    //backgroundColor:'yellow',
+    marginBottom: '10',
+    //padding:10,
+  },
+  passwordInput: {
+    //backgroundColor:'lightblue',
+    marginBottom: '10',
+    //padding:10,
   },
   btn: {
-    borderRadius: 4,
-    padding: 5,
+    borderRadius: 2,
+    padding: 7,
+    //backgroundColor:'primary',
+  },
+  touchableBtn:{
+    borderRadius: 2,
+    padding: 15,
+    backgroundColor: 'rgb(80, 189, 160)',
+  },
+  submitBtnText: {
+    fontSize: 18,
+    fontWeight:'bold',
+    textAlign: 'center',
+    letterSpacing:0,
+    color: '#fff',
+    //backgroundColor:'red',
   },
   snackbar: {
     position: 'absolute',
@@ -295,8 +329,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     alignItems: 'center',
     //backgroundColor:'red',
-    paddingLeft:10,
-    paddingTop:5,
+    paddingLeft: 10,
+    paddingTop: 5,
   },
   modalTitle: {
     fontSize: 20,
