@@ -1,0 +1,85 @@
+import { StyleSheet } from "react-native";
+const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      // backgroundColor: 'lightblue',
+      // borderColor:'red',
+      // borderWidth:2,
+    },
+    imageView: {
+      marginLeft: 20,
+    },
+    img: {
+      //backgroundColor: 'lightblue',
+      height: 250,
+      width: 250,
+      marginLeft: '15%',
+      marginTop: 0,
+      marginLeft: 35,
+    },
+    card: {
+      marginLeft: 22,
+      borderRadius: 0,
+      //elevation:5,
+      height: 0,
+      //backgroundColor:'blue',
+    },
+    btn: {
+      padding: 8,
+      //marginBottom: 10,
+      borderRadius: 2,
+    },
+    btnGroups: {
+      marginTop: 2,
+      marginRight: 55,
+      marginLeft: 55,
+      borderRadius: 0,
+      //backgroundColor:'yellow',
+    },
+    textGroups: {
+      //marginTop: 258,
+      marginTop: 3,
+      //backgroundColor:'red',
+    },
+    headerTxt: {
+      textAlign: 'center',
+      fontSize: 20,
+      fontWeight: 'bold',
+    },
+    subHeaderTxt: {
+      textAlign: 'center',
+      fontSize: 15,
+    },
+    TouchableBtn: {
+      padding: 8,
+      flexDirection: 'row',
+      backgroundColor: 'rgb(80, 189, 160)',
+      marginBottom: 6,
+      borderRadius: 4,
+    },
+    BtnIconStyle: {
+      //paddingRight:30,
+      paddingLeft: 25,
+      color: 'white',
+      paddingTop: 1,
+      //display:'flex',
+      justifyContent: 'center',
+      //backgroundColor:'red',
+      flexDirection: 'row',
+    },
+    btnGroupsText: {
+      color: 'white',
+      fontSize: 16,
+      //paddingLeft: 24,
+      textTransform: 'uppercase',
+      paddingTop: 3,
+      //justifyContent:'flex-end',
+      justifyContent: 'flex-start',
+      textAlign: 'center',
+      //textAlign:'left',
+      //textAlign:'right',
+      //textAlign:'justify',
+      flex: 1,
+    },
+  });
+  export default styles;
