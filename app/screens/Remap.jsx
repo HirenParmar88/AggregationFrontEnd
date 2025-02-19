@@ -27,7 +27,8 @@ import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import LoaderComponent from '../components/Loader';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import styles from '../../styles/remap';
-
+import { decodeAndSetConfig } from '../../utils/tokenUtils';
+import EsignPage from './Esign';
 function RemapScreen() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
@@ -44,8 +45,14 @@ function RemapScreen() {
   const [products, setProducts] = useState([]);
   const [batches, setBatches] = useState([]);
   const [countryCode, setCountryCode] = useState(null);
-  const [scanCode,setScanCode]=useState(undefined)
+  const [scanCode, setScanCode] = useState(undefined);
   const [visible, setVisible] = useState(false);
+  const [config, setConfig] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [status, setStatus] = useState(undefined);
+  const [approveAPIName, setApproveAPIName] = useState();
+  const [approveAPImethod, setApproveAPImethod] = useState();
+  const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
@@ -79,6 +86,7 @@ function RemapScreen() {
       try {
         const storedToken = await AsyncStorage.getItem('authToken');
         if (storedToken) {
+          decodeAndSetConfig(setConfig, storedToken);
           setToken(storedToken);
           console.log('JWT token : ', storedToken);
           fetchProductData(storedToken);
@@ -90,16 +98,20 @@ function RemapScreen() {
         setLoading(false);
       }
     };
-
+    
     loadTokenAndData();
-
-    return () => {
+    
+    const unsubscribe=navigation.addListener('blur',()=>{
       setSelectedProduct({id: null, name: null});
       setSelectedBatch({id: null, name: null});
+      setScanCode('')
       setText('');
-    };
+    })
+    return unsubscribe
   }, [isFocused]);
 
+  console.log('Config Remap:->', config);
+  
   useEffect(() => {
     console.log('Is compatible:', HoneywellBarcodeReader.isCompatible);
 
@@ -112,7 +124,7 @@ function RemapScreen() {
     HoneywellBarcodeReader.onBarcodeReadSuccess(event => {
       console.log('Current Scanned data :', event.data);
       console.log('Country code is ', countryCode);
-      setScanCode(event.data)
+      setScanCode(event.data);
     });
 
     HoneywellBarcodeReader.onBarcodeReadFail(() => {
@@ -128,7 +140,7 @@ function RemapScreen() {
     });
 
     return () => {};
-  }, [countryCode,isFocused]);
+  }, [countryCode, isFocused]);
 
   useEffect(() => {
     if (selectedProduct.id) {
@@ -207,8 +219,8 @@ function RemapScreen() {
   };
 
   const fetchCountryCode = async () => {
-    console.log("Remap Api called..");
-    
+    console.log('Remap Api called..');
+
     try {
       setLoading(true);
       console.log('token in c ', token);
@@ -244,17 +256,28 @@ function RemapScreen() {
 
   const handleRemap = () => {
     if (!selectedProduct.id || !selectedBatch.id) {
-      onToggleSnackBar('Please select both product and batch.',400)
+      onToggleSnackBar('Please select both product and batch.', 400);
       //Alert.alert('Error', 'Please select both product and batch.');
       return;
     }
     if (!scanCode) {
-      onToggleSnackBar('Please scan or enter sscc code')
+      onToggleSnackBar('Please scan or enter sscc code');
       //Alert.alert('Error', 'Please scan or enter unique code');
       return;
     }
-    setVisible(true); //modal open
-    console.log('Remap pressed..');
+    console.log(config.config.esign_status, !openModal);
+    if (config.config.esign_status && !openModal) {
+      setOpenModal(true);
+      setApproveAPIName('codeRemap-approve');
+      setApproveAPImethod('POST');
+      return;
+    }
+    else{
+
+      setVisible(true); //modal open
+      console.log('Remap pressed..');
+    }
+
   };
 
   if (loading) {
@@ -293,6 +316,67 @@ function RemapScreen() {
     console.log('remap cancel btn press ');
     setVisible(false);
     navigation.navigate('Home');
+  };
+
+  //for E-sign
+  const handleAuthResult = async (
+    isAuthenticated,
+    user,
+    isApprover,
+    esignStatus,
+    remarks,
+    eSignStatusId,
+  ) => {
+    try {
+      console.log('handleAuthResult');
+      console.log('handleAuthResult', {
+        isAuthenticated,
+        isApprover,
+        esignStatus,
+        user,
+      });
+      console.log(isApprover, isAuthenticated);
+      const closeApprovalModal = () => setOpenModal(false);
+      const resetState = () => {
+        setApproveAPIName('');
+        setApproveAPImethod('');
+        setApproveAPIEndPoint('');
+        setOpenModal(false);
+      };
+      if (!isAuthenticated && config.esignStatus) {
+        resetState();
+        return;
+      }
+
+      const handleEsignStatus = async () => {
+        if (esignStatus === 'rejected') {
+          onToggleSnackBar('eSign has been rejected for code remap');
+          closeApprovalModal();
+        }
+        else{
+
+          onToggleSnackBar("You do not have permission to access e-sign. Please request approval from a user with e-sign permissions.",401);
+        }
+      };
+      if (isApprover) {
+        console.log('Approved is ', esignStatus === 'approved');
+        if (esignStatus === 'approved') {
+          onToggleSnackBar('eSign has been approved for code remap', 200);
+          setVisible(true);
+
+          closeApprovalModal();
+        } else {
+          onToggleSnackBar('eSign has been rejected for code remap');
+          if (esignStatus === 'rejected') closeApprovalModal();
+        }
+      } else {
+        console.log("dfdfdsffxddf")
+        handleEsignStatus();
+      }
+      resetState();
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   return (
@@ -425,7 +509,7 @@ function RemapScreen() {
               <Divider />
               <View style={styles.modalBody}>
                 <Text style={styles.bodyTxt}>
-                   Are you sure want to remap this sscc code : {scanCode}
+                  Are you sure want to remap this sscc code : {scanCode}
                 </Text>
               </View>
               <View style={styles.footer}>
@@ -445,6 +529,18 @@ function RemapScreen() {
             </View>
           </Modal>
         </Portal>
+        {openModal && (
+          <EsignPage
+            config={config}
+            handleAuthResult={handleAuthResult}
+            approveAPIName={approveAPIName}
+            approveAPImethod={approveAPImethod}
+            approveAPIEndPoint={approveAPIEndPoint}
+            openModal={openModal}
+            setOpenModal={setOpenModal}
+            setStatus={setStatus}
+          />
+        )}
         <Snackbar
           visible={snackbarInfo.visible}
           onDismiss={onDismissSnackBar}
@@ -457,4 +553,3 @@ function RemapScreen() {
   );
 }
 export default RemapScreen;
-

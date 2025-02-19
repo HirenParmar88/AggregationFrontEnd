@@ -76,12 +76,11 @@ const styles = StyleSheet.create({
       flex: 1,
     },
     snackbar: {
-      //backgroundColor: "red",
-      position: 'absolute',
+      //position: 'absolute',
       bottom: 50,
-      left: 20,
+      left: 10,
       right: 0,
-      paddingHorizontal: 10,
+      //paddingHorizontal: 10,
       borderRadius: 2,
     },
   });

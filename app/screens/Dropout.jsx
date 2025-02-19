@@ -769,6 +769,7 @@ function DropoutFun() {
                 <TouchableOpacity
                   style={[styles.modalButton, styles.confirmButton]}
                   onPress={async () => {
+                      setVisibleConfirmBatch(false)
                     if (config.config.esign_status && !openModal) {
                       setOpenModal(true);
                       setApproveAPIName('dropout-approve');
@@ -862,8 +863,11 @@ function DropoutFun() {
                 <TouchableOpacity
                   style={[styles.modalButton, styles.confirmButton]}
                   onPress={async () => {
+                    setVisibleConfirmCodes(false)
                     if (config.config.esign_status && !openModal) {
                       setOpenModal(true);
+                      setApproveAPIName('dropout-approve');
+                      setApproveAPImethod('POST');
                       return;
                     }
                     await handleConfirmCodesDropout('approved');
@@ -874,14 +878,6 @@ function DropoutFun() {
             </View>
           </Modal>
         </Portal>
-        <Snackbar
-          visible={snackbarInfo.visible}
-          onDismiss={onDismissSnackBar}
-          duration={3000}
-          style={[styles.snackbar, snackbarInfo.snackbarStyle]}>
-          {snackbarInfo.message}
-        </Snackbar>
-      </KeyboardAvoidingView>
       {openModal && (
         <EsignPage
           config={config}
@@ -894,6 +890,14 @@ function DropoutFun() {
           setStatus={setStatus}
         />
       )}
+        <Snackbar
+          visible={snackbarInfo.visible}
+          onDismiss={onDismissSnackBar}
+          duration={3000}
+          style={[styles.snackbar, snackbarInfo.snackbarStyle]}>
+          {snackbarInfo.message}
+        </Snackbar>
+      </KeyboardAvoidingView>
     </>
   );
 }

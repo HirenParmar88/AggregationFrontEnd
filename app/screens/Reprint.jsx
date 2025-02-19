@@ -27,8 +27,9 @@ import axios from 'axios';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import LoaderComponent from '../components/Loader';
 import DeviceInfo from 'react-native-device-info';
-import { decodeAndSetConfig } from '../../utils/tokenUtils';
+import {decodeAndSetConfig} from '../../utils/tokenUtils';
 import styles from '../../styles/reprint';
+import EsignPage from './Esign';
 
 function Reprint() {
   const navigation = useNavigation();
@@ -48,6 +49,11 @@ function Reprint() {
   const [batches, setBatches] = useState([]);
   const [countryCode, setCountryCode] = useState(null);
   const [visible, setVisible] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
+  const [status, setStatus] = useState(undefined);
+  const [approveAPIName, setApproveAPIName] = useState();
+  const [approveAPImethod, setApproveAPImethod] = useState();
+  const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
@@ -260,13 +266,19 @@ function Reprint() {
 
   const handleReprint = () => {
     if (!selectedProduct.id || !selectedBatch.id) {
-      onToggleSnackBar('Please select both product and batch.')
+      onToggleSnackBar('Please select both product and batch.');
       //Alert.alert('Error', 'Please select both product and batch.');
       return;
     }
     if (!text) {
-      onToggleSnackBar('Please scan or enter sscc code')
+      onToggleSnackBar('Please scan or enter sscc code');
       //Alert.alert('Error', 'Please scan or enter sscc code');
+      return;
+    }
+    if (config.config.esign_status && !openModal) {
+      setOpenModal(true);
+      setApproveAPIName('codeReplace-approve');
+      setApproveAPImethod('POST');
       return;
     }
     setVisible(true); //modal open
@@ -286,15 +298,16 @@ function Reprint() {
     //console.log('Reprint success.');
     const reprintRes = await axios.post(
       `${url}/reprint`,
-      { audit_log: {
-        audit_log: config?.config?.audit_logs,
-        performed_action: `Reprint this ${text} sscc code with Product ID: ${selectedProduct?.id}, Batch ID: ${selectedBatch?.id} by User ID: ${config.userId}`,
-        remarks: 'none',
-      },
+      {
+        audit_log: {
+          audit_log: config?.config?.audit_logs,
+          performed_action: `Reprint this ${text} sscc code with Product ID: ${selectedProduct?.id}, Batch ID: ${selectedBatch?.id} by User ID: ${config.userId}`,
+          remarks: 'none',
+        },
         product_id: selectedProduct.id,
         batch_id: selectedBatch.id,
         SsccCode: text,
-        mac_address:await DeviceInfo.getUniqueId()
+        mac_address: await DeviceInfo.getUniqueId(),
       },
       {
         headers: {
@@ -324,6 +337,67 @@ function Reprint() {
     setVisible(false);
     //navigation.navigate('Home');
   };
+
+  const handleAuthResult = async (
+    isAuthenticated,
+    user,
+    isApprover,
+    esignStatus,
+    remarks,
+    eSignStatusId,
+  ) => {
+    try {
+      console.log('handleAuthResult');
+      console.log('handleAuthResult', {
+        isAuthenticated,
+        isApprover,
+        esignStatus,
+        user,
+      });
+      console.log(isApprover, isAuthenticated);
+      const closeApprovalModal = () => setOpenModal(false);
+      const resetState = () => {
+        setApproveAPIName('');
+        setApproveAPImethod('');
+        setApproveAPIEndPoint('');
+        setOpenModal(false);
+      };
+      if (!isAuthenticated && config.esignStatus) {
+        resetState();
+        return;
+      }
+
+      const handleEsignStatus = async () => {
+        if (esignStatus === 'rejected') {
+          onToggleSnackBar('eSign has been rejected in reprint');
+          closeApprovalModal();
+        } else {
+          onToggleSnackBar(
+            'You do not have permission to access e-sign. Please request approval from a user with e-sign permissions.',
+            401,
+          );
+        }
+      };
+      if (isApprover) {
+        console.log('Approved is ', esignStatus === 'approved');
+        if (esignStatus === 'approved') {
+          onToggleSnackBar('eSign has been approved in reprint', 200);
+          setVisible(true);
+
+          closeApprovalModal();
+        } else {
+          onToggleSnackBar('eSign has been rejected in reprint');
+          if (esignStatus === 'rejected') closeApprovalModal();
+        }
+      } else {
+        handleEsignStatus();
+      }
+      resetState();
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
 
   return (
     <>
@@ -461,6 +535,18 @@ function Reprint() {
             </View>
           </Modal>
         </Portal>
+        {openModal && (
+        <EsignPage
+          config={config}
+          handleAuthResult={handleAuthResult}
+          approveAPIName={approveAPIName}
+          approveAPImethod={approveAPImethod}
+          approveAPIEndPoint={approveAPIEndPoint}
+          openModal={openModal}
+          setOpenModal={setOpenModal}
+          setStatus={setStatus}
+        />
+      )}
         <Snackbar
           visible={snackbarInfo.visible}
           onDismiss={onDismissSnackBar}

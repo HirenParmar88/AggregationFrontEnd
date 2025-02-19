@@ -63,6 +63,7 @@ function Logout({route}) {
       // Handle successful logout
       if (response.data.success && response.data.code === 200) {
         await AsyncStorage.removeItem('authToken');
+        await AsyncStorage.removeItem('screens');
         setIsAuthenticated(false);
         hideModal();
         navigation.navigate('Login');

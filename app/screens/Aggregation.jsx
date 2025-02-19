@@ -19,7 +19,7 @@ import {url} from '../../utils/constant';
 import LoaderComponent from '../components/Loader';
 import styles from '../../styles/aggregation';
 
-function ProductComponent() {
+function AggregationComponent() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [valueProduct, setValueProduct] = useState(null);
@@ -84,7 +84,6 @@ function ProductComponent() {
 
   const fetchProductData = async token => {
     console.log('Product APIs called..');
-
     try {
       setLoading(true);
       const productResponse = await axios.get(`${url}/product/`, {
@@ -94,11 +93,9 @@ function ProductComponent() {
         },
       });
       //console.log("Product API Response :->",productResponse);
-
       const {products} = productResponse.data.data; //destructuring objects
       //console.log('This is products Data :', products);
       //console.log('product_id :-', products[0].product_id);
-
       if (products) {
         //console.log("Dropdown Products :", products)
         const fetchedProducts = products.map(product => ({
@@ -118,7 +115,6 @@ function ProductComponent() {
   //Fetch batch
   const fetchBatchData = async (token, product_id) => {
     console.log('Batch APIs called..');
-
     try {
       setLoading(true);
       const batchResponse = await axios.get(`${url}/batch/${product_id}`, {
@@ -147,28 +143,6 @@ function ProductComponent() {
       setLoading(false);
     }
   };
-
-  // const renderLabelProduct = () => {
-  //     if (valueProduct || isFocusProduct) {
-  //         return (
-  //             <Text style={[styles.label, isFocusProduct && { color: 'primary' }]}>
-  //                 Select Product
-  //             </Text>
-  //         );
-  //     }
-  //     return null;
-  // };
-
-  // const renderLabelBatch = () => {
-  //     if (valueBatch || isFocusBatch) {
-  //         return (
-  //             <Text style={[styles.label, isFocusBatch && { color: 'primary' }]}>
-  //                 Select Batch
-  //             </Text>
-  //         );
-  //     }
-  //     return null;
-  // };
 
   const handleAuthResult = async (
     isAuthenticated,
@@ -430,6 +404,7 @@ function ProductComponent() {
           setStatus={setStatus}
         />
       )}
+      
       <Snackbar
         visible={snackbarInfo.visible}
         onDismiss={onDismissSnackBar}
@@ -442,4 +417,4 @@ function ProductComponent() {
   );
 }
 
-export default ProductComponent;
+export default AggregationComponent;

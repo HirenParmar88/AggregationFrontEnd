@@ -85,7 +85,7 @@ function EsignPage({
           isAuthenticated,
           user,
           isApprover,
-          'approved',
+          status,
           remark,
           user_id,
         );
@@ -219,14 +219,7 @@ function ModalContainer({close, handleVerification,setSnackbarInfo,onToggleSnack
               mode="contained"
               style={styles.bottomBtn}
               onPress={async () => {
-                if (!userID || !password) {
-                  // Alert.alert(
-                  //   'Validation Error',
-                  //   'User id and password is required',
-                  // );
-                  onToggleSnackBar('User id and password is required');
-                  return;
-                }
+              
                 await handleVerification('rejected',userID,password,remark);
               }}>
               <Text style={styles.btnfonts}>Reject</Text>

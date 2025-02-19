@@ -1,10 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import {
-  ScrollView,
-  Text,
-  View,
-  TouchableOpacity,
-} from 'react-native';
+import {ScrollView, Text, View, TouchableOpacity} from 'react-native';
 import {Appbar, TextInput, Snackbar} from 'react-native-paper';
 import {useNavigation, useIsFocused} from '@react-navigation/native';
 import DeviceInfo from 'react-native-device-info';
@@ -12,6 +7,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {url} from '../../utils/constant';
 import styles from '../../styles/settings';
+import {decodeAndSetConfig} from '../../utils/tokenUtils';
+import EsignPage from './Esign';
 
 function SettingScreen() {
   const navigation = useNavigation();
@@ -21,6 +18,13 @@ function SettingScreen() {
   const [printerPort, setPrinterPort] = useState(0);
   const [variables, setVariables] = useState('');
 
+  const [config, setConfig] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [status, setStatus] = useState(undefined);
+  const [approveAPIName, setApproveAPIName] = useState();
+  const [approveAPImethod, setApproveAPImethod] = useState();
+  const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
+
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
@@ -28,22 +32,84 @@ function SettingScreen() {
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
       code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
-
     setSnackbarInfo({
       visible: true,
       message,
       snackbarStyle: {backgroundColor},
     });
   };
-
   const onDismissSnackBar = () =>
     setSnackbarInfo({visible: false, message: ''});
 
   useEffect(() => {
     //getData();
     getApiSettings();
+    (async () =>
+      await decodeAndSetConfig(
+        setConfig,
+        await AsyncStorage.getItem('authToken'),
+      ))();
     return () => {};
   }, [isFocused]);
+  const handleAuthResult = async (
+    isAuthenticated,
+    user,
+    isApprover,
+    esignStatus,
+    remarks,
+    eSignStatusId,
+  ) => {
+    try {
+      console.log('handleAuthResult');
+      console.log('handleAuthResult', {
+        isAuthenticated,
+        isApprover,
+        esignStatus,
+        user,
+      });
+      console.log(isApprover, isAuthenticated);
+      const closeApprovalModal = () => setOpenModal(false);
+      const resetState = () => {
+        setApproveAPIName('');
+        setApproveAPImethod('');
+        setApproveAPIEndPoint('');
+        setOpenModal(false);
+      };
+      if (!isAuthenticated && config.esignStatus) {
+        resetState();
+        return;
+      }
+
+      const handleEsignStatus = async () => {
+        if (esignStatus === 'rejected') {
+          onToggleSnackBar('eSign has been rejected for settings');
+          closeApprovalModal();
+        } else {
+          onToggleSnackBar(
+            'You do not have permission to access e-sign. Please request approval from a user with e-sign permissions.',
+            401,
+          );
+        }
+      };
+      if (isApprover) {
+        console.log('Approved is ', esignStatus === 'approved');
+        if (esignStatus === 'approved') {
+          onToggleSnackBar('eSign has been approved for settings', 200);
+          setVisible(true);
+
+          closeApprovalModal();
+        } else {
+          onToggleSnackBar('eSign has been rejected for settings');
+          if (esignStatus === 'rejected') closeApprovalModal();
+        }
+      } else {
+        handleEsignStatus();
+      }
+      resetState();
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   //Get Device Info
   const getData = async () => {
@@ -83,9 +149,9 @@ function SettingScreen() {
       settingGetRes.data.code === 200
     ) {
       onToggleSnackBar(settingGetRes.data.message, 200);
-      setPrinterIP(settingGetRes.data.data.printer_ip)
-      setPrinterPort(settingGetRes.data.data.printer_port)
-      console.log(printerPort)
+      setPrinterIP(settingGetRes.data.data.printer_ip);
+      setPrinterPort(settingGetRes.data.data.printer_port);
+      console.log(printerPort);
       //navigation.navigate('Home');
     } else {
       onToggleSnackBar(settingGetRes.data.message, settingGetRes.data.code);
@@ -166,11 +232,33 @@ function SettingScreen() {
             mode="contained"
             //labelStyle={{ fontSize: 20 }}
             style={styles.submitButton}
-            onPress={async () => await settings()}>
+            onPress={async () => {
+              console.log(config.config.esign_status, !openModal);
+              if (config.config.esign_status && !openModal) {
+                setOpenModal(true);
+                setApproveAPIName('printerAllocation-approve');
+                setApproveAPImethod('POST');
+                return;
+              }
+              await settings();
+            }}>
             <Text style={styles.submitText}>Submit</Text>
           </TouchableOpacity>
         </View>
       </View>
+
+      {openModal && (
+        <EsignPage
+          config={config}
+          handleAuthResult={handleAuthResult}
+          approveAPIName={approveAPIName}
+          approveAPImethod={approveAPImethod}
+          approveAPIEndPoint={approveAPIEndPoint}
+          openModal={openModal}
+          setOpenModal={setOpenModal}
+          setStatus={setStatus}
+        />
+      )}
 
       <Snackbar
         visible={snackbarInfo.visible}

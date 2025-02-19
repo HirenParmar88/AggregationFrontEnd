@@ -77,7 +77,6 @@ const Login = ({route}) => {
       onToggleSnackBar('Password cannot be Empty!');
       return;
     }
-
     try {
       console.log('api calling....');
       //console.log("BACKEND DYNAMIC URLs :", config.API_URL);
@@ -97,34 +96,23 @@ const Login = ({route}) => {
       );
       console.log('api called...');
       console.log('Login :', res.data);
-
       if (res.data.success === true && res.data.code === 200) {
         const token = res.data.data.token; //store token
         await AsyncStorage.setItem('authToken', token);
+        console.log("AAAA",res.data.data.screens);
+        await AsyncStorage.setItem('screens', JSON.stringify(res.data.data.screens))
         onToggleSnackBar(res.data.message, 200);
         //return res.data;
         setTimeout(() => {
           setIsAuthenticated(true);
           navigation.navigate('Home');
         }, 3000); // Wait for 3 seconds before navigating to Home
-      } else if (res.data.code === 2004) {
-        setShowReLogin(true);
-      } else if (res.data.code === 2012) {
-        onToggleSnackBar(res.data.message, 2012);
-        console.log('User Already Logged in..');
-      } else if (res.data.code === 429) {
-        onToggleSnackBar(res.data.message, 429);
-        console.log('Too many failed login attempts. Please try again later.');
-      } else if (res.data.code === 418) {
-        onToggleSnackBar(res.data.message, 418);
-        console.log('users blocked :', res.data.message);
-      } else if (res.data.code === 401) {
-        onToggleSnackBar(res.data.message, 401);
-        console.log('users password are expired !!');
-      } else {
-        onToggleSnackBar('Invalid username or password.');
+      }  else {
+        onToggleSnackBar(res.data.message,res.data.code);
       }
     } catch (error) {
+      console.log(error);
+      
       onToggleSnackBar(error.message);
     }
   };

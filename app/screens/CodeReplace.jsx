@@ -26,6 +26,8 @@ import axios from 'axios';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import LoaderComponent from '../components/Loader';
 import styles from '../../styles/codereplace';
+import {decodeAndSetConfig} from '../../utils/tokenUtils';
+import EsignPage from './Esign';
 
 function CodeReplaceScreen() {
   const navigation = useNavigation();
@@ -46,11 +48,18 @@ function CodeReplaceScreen() {
   const [countryCode, setCountryCode] = useState(null);
   const [visible, setVisible] = useState(false);
   const [scanCode, setScanCode] = useState('');
+
+  const [config, setConfig] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [status, setStatus] = useState(undefined);
+  const [approveAPIName, setApproveAPIName] = useState();
+  const [approveAPImethod, setApproveAPImethod] = useState();
+  const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
+
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
   });
-
 
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
@@ -65,7 +74,10 @@ function CodeReplaceScreen() {
   const onDismissSnackBar = () =>
     setSnackbarInfo({visible: false, message: ''});
   const showModal = () => setVisible(true);
-  const hideModal = () => {setText('');setVisible(false);}
+  const hideModal = () => {
+    // setText('');
+    setVisible(false);
+  };
 
   const containerStyle = {
     backgroundColor: 'white',
@@ -77,18 +89,19 @@ function CodeReplaceScreen() {
   };
 
   useEffect(() => {
-    const resetValues=navigation.addListener('blur',()=>{
-      setScanCode('')
-      setText('')
+    const resetValues = navigation.addListener('blur', () => {
+      setScanCode('');
+      setText('');
       setSelectedProduct(null);
       setSelectedBatch(null);
-    })
+    });
     const loadTokenAndData = async () => {
       try {
         const storedToken = await AsyncStorage.getItem('authToken');
         if (storedToken) {
           setToken(storedToken);
           console.log('JWT token : ', storedToken);
+          await decodeAndSetConfig(setConfig, token);
           fetchProductData(storedToken);
         } else {
           throw new Error('Token is missing');
@@ -100,7 +113,7 @@ function CodeReplaceScreen() {
     };
     loadTokenAndData();
     return () => {
-      resetValues()
+      resetValues();
     };
   }, [isFocused]);
 
@@ -116,12 +129,11 @@ function CodeReplaceScreen() {
       // console.log('Current Scanned data :', event.data);
       // console.log('Country code is ', countryCode);
       const uniqueCode = getUniqueCode(event.data, countryCode);
-      console.log("Current Modal is visible ",visible)
-      if(!visible){
+      console.log('Current Modal is visible ', visible);
+      if (!visible) {
         setScanCode(uniqueCode);
-      }
-      else if(visible){
-        setText(uniqueCode)
+      } else if (visible) {
+        setText(uniqueCode);
       }
     });
 
@@ -138,7 +150,7 @@ function CodeReplaceScreen() {
     });
 
     return () => {};
-  }, [countryCode,visible,scanCode,text]);
+  }, [countryCode, visible, scanCode, text]);
 
   useEffect(() => {
     if (selectedProduct?.id) {
@@ -146,9 +158,8 @@ function CodeReplaceScreen() {
         await fetchCountryCode();
       })();
     }
-    return () => {
-    };
-  }, [selectedProduct?.id,text]);
+    return () => {};
+  }, [selectedProduct?.id, text]);
 
   const fetchProductData = async token => {
     try {
@@ -160,7 +171,7 @@ function CodeReplaceScreen() {
         },
       });
       const {products} = productResponse.data.data; //destructuring objects
-      console.log("products ",products)
+      console.log('products ', products);
       //console.log('This is products Data :', products)
       //console.log("ProductID :-", products[0].product_id);
 
@@ -181,20 +192,17 @@ function CodeReplaceScreen() {
       setLoading(false);
     }
   };
-  
-  console.log(selectedBatch)
-  const fetchBatchData = async (product_id) => {
+
+  console.log(selectedBatch);
+  const fetchBatchData = async product_id => {
     try {
       setLoading(true);
-      const batchResponse = await axios.get(
-        `${url}/batch/${product_id}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+      const batchResponse = await axios.get(`${url}/batch/${product_id}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
       console.log('Batch Response :', batchResponse.data);
 
       if (batchResponse?.data?.success) {
@@ -205,8 +213,8 @@ function CodeReplaceScreen() {
             name: batch.batch_no,
           };
         });
-        console.log(fetchedBatches)
-        setBatches(fetchedBatches)  ;
+        console.log(fetchedBatches);
+        setBatches(fetchedBatches);
         //console.log("Store for select :", batches)
       } else {
         console.error('No batches data available');
@@ -263,18 +271,17 @@ function CodeReplaceScreen() {
   const handleDropdownProductChange = async item => {
     setSelectedProduct({id: item.id, name: item.name});
     setIsFocusProduct(false);
-    await fetchBatchData(item.id)
-   
+    await fetchBatchData(item.id);
   };
 
   const handleCodeReplace = () => {
     if (!selectedProduct?.id || !selectedBatch?.id) {
-      onToggleSnackBar('Please select both product and batch.',400)
+      onToggleSnackBar('Please select both product and batch.', 400);
       //Alert.alert('Error', 'Please select both product and batch.');
       return;
     }
     if (!scanCode) {
-      onToggleSnackBar('Please scan or enter unique code')
+      onToggleSnackBar('Please scan or enter unique code');
       //Alert.alert('Error', 'Please scan or enter unique code');
       return;
     }
@@ -294,7 +301,7 @@ function CodeReplaceScreen() {
       batch_id: selectedBatch.id,
       code: scanCode,
       replace_code: text,
-    })
+    });
     const codereplaceRes = await axios.post(
       `${url}/code-replace`,
       {
@@ -316,7 +323,7 @@ function CodeReplaceScreen() {
       codereplaceRes.data.success === true &&
       codereplaceRes.data.code === 200
     ) {
-      setScanCode('')
+      setScanCode('');
       setSelectedProduct({id: null, name: null});
       setSelectedBatch({id: null, name: null});
       onToggleSnackBar(codereplaceRes.data.message, 200);
@@ -324,13 +331,74 @@ function CodeReplaceScreen() {
     } else {
       onToggleSnackBar(codereplaceRes?.data?.message);
     }
-    hideModal();
+    setText('')
+    
   };
 
   const cancel = () => {
     console.log('code replace cancel btn press ');
     setVisible(false);
     navigation.navigate('Home');
+  };
+
+  const handleAuthResult = async (
+    isAuthenticated,
+    user,
+    isApprover,
+    esignStatus,
+    remarks,
+    eSignStatusId,
+  ) => {
+    try {
+      console.log('handleAuthResult');
+      console.log('handleAuthResult', {
+        isAuthenticated,
+        isApprover,
+        esignStatus,
+        user,
+      });
+      console.log(isApprover, isAuthenticated);
+      const closeApprovalModal = () => setOpenModal(false);
+      const resetState = () => {
+        setApproveAPIName('');
+        setApproveAPImethod('');
+        setApproveAPIEndPoint('');
+        setOpenModal(false);
+      };
+      if (!isAuthenticated && config.esignStatus) {
+        resetState();
+        return;
+      }
+
+      const handleEsignStatus = async () => {
+        if (esignStatus === 'rejected') {
+          onToggleSnackBar('eSign has been rejected for code replace');
+          closeApprovalModal();
+        } else {
+          onToggleSnackBar(
+            'You do not have permission to access e-sign. Please request approval from a user with e-sign permissions.',
+            401,
+          );
+        }
+      };
+      if (isApprover) {
+        console.log('Approved is ', esignStatus === 'approved');
+        if (esignStatus === 'approved') {
+          onToggleSnackBar('eSign has been approved for code replace', 200);
+          await print();
+
+          closeApprovalModal();
+        } else {
+          onToggleSnackBar('eSign has been rejected for code replace');
+          if (esignStatus === 'rejected') closeApprovalModal();
+        }
+      } else {
+        handleEsignStatus();
+      }
+      resetState();
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   return (
@@ -392,11 +460,11 @@ function CodeReplaceScreen() {
                   placeholder="Select Batch"
                   //placeholder={!isFocusBatch ? 'Select Batch' : '...'}
                   //searchPlaceholder="Search..."
-                  value={(selectedBatch?.id)}
+                  value={selectedBatch?.id}
                   onFocus={() => setIsFocusBatch(true)}
                   onBlur={() => setIsFocusBatch(false)}
                   onChange={item => {
-                    console.log(item)
+                    console.log(item);
                     setSelectedBatch({id: item.id, name: item.name});
                     setIsFocusBatch(false);
                   }}
@@ -419,14 +487,13 @@ function CodeReplaceScreen() {
               <TextInput
                 disabled={!selectedProduct?.id || !selectedBatch?.id}
                 label="Enter or Scan code"
-                value={scanCode||''}
+                value={scanCode || ''}
                 mode="outlined"
                 onChangeText={text => setScanCode(text)}
                 style={styles.textInput}
-                onFocus={()=>setScannedCodes('')}
+                onFocus={() => setScannedCodes('')}
               />
             </View>
-
           </View>
         </ScrollView>
         <View>
@@ -456,7 +523,7 @@ function CodeReplaceScreen() {
                   </Text> */}
                   <TextInput
                     label="Scan Replace Code"
-                    value={text||''}
+                    value={text || ''}
                     mode="outlined"
                     onChangeText={text => setText(text)}
                     style={styles.textInput}
@@ -467,7 +534,17 @@ function CodeReplaceScreen() {
                 <TouchableOpacity
                   style={styles.codeReplaceModalBtn}
                   mode="contained"
-                  onPress={print}>
+                  onPress={async () => {
+                    console.log(config.config.esign_status, !openModal);
+                    hideModal();
+                    if (config.config.esign_status && !openModal) {
+                      setOpenModal(true);
+                      setApproveAPIName('codeReplace-approve');
+                      setApproveAPImethod('POST');
+                      return;
+                    }
+                    await print();
+                  }}>
                   <Text style={styles.codeReplaceModalBtnText}>Submit</Text>
                 </TouchableOpacity>
                 {/* <TouchableOpacity
@@ -480,6 +557,18 @@ function CodeReplaceScreen() {
             </View>
           </Modal>
         </Portal>
+        {openModal && (
+        <EsignPage
+          config={config}
+          handleAuthResult={handleAuthResult}
+          approveAPIName={approveAPIName}
+          approveAPImethod={approveAPImethod}
+          approveAPIEndPoint={approveAPIEndPoint}
+          openModal={openModal}
+          setOpenModal={setOpenModal}
+          setStatus={setStatus}
+        />
+      )}
         <Snackbar
           visible={snackbarInfo.visible}
           onDismiss={onDismissSnackBar}
@@ -492,5 +581,3 @@ function CodeReplaceScreen() {
   );
 }
 export default CodeReplaceScreen;
-
-
