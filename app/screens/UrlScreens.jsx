@@ -71,6 +71,7 @@ function UrlScreen() {
         <View style={styles.container}>
           <View style={styles.textbox}>
             <TextInput
+              mode='outlined'
               label="Back-End URL"
               style={styles.input}
               placeholder="Enter Back-End URL"

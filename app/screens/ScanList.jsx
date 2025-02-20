@@ -187,6 +187,8 @@ function ScanList() {
     decodeAndSetConfig(setConfig, await AsyncStorage.getItem('authToken'));
     try {
       const productId = await AsyncStorage.getItem('productId');
+      console.log("productId :-",productId);
+      
       const response = await axios.post(
         `${url}/packagingHierarchy`,
         {
@@ -206,7 +208,8 @@ function ScanList() {
       );
       console.log('Packaging Hierarchy API Res :', response.data);
       setTotalQuantity(response.data.data.quantity);
-      if (response.data.success) {
+      if (response.data.success === true && response.data.code===200) {
+        onToggleSnackBar(response.data.message, response.data.code);
         if (response?.data?.data?.scannedCodes?.length > 0) {
           setData(response?.data?.data?.scannedCodes);
         }
@@ -412,7 +415,7 @@ function ScanList() {
   };
 
   AppState.addEventListener('change', async () => await handleAggregateState());
-  console.log(totalProduct);
+  console.log("totalProduct :",totalProduct);
   
   return (
     <>

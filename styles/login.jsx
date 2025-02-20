@@ -5,6 +5,7 @@ const styles = StyleSheet.create({
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
+      //backgroundColor:'yellow'
     },
     reloginContainer: {
       backgroundColor: 'white',
@@ -58,11 +59,13 @@ const styles = StyleSheet.create({
     //   fontSize: 16,
     // },
     usernameInput: {
+      backgroundColor: '#fff',
       //backgroundColor:'yellow',
       marginBottom: '10',
       //padding:10,
     },
     passwordInput: {
+      backgroundColor: '#fff',
       //backgroundColor:'lightblue',
       marginBottom: '10',
       //padding:10,

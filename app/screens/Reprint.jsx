@@ -30,6 +30,7 @@ import DeviceInfo from 'react-native-device-info';
 import {decodeAndSetConfig} from '../../utils/tokenUtils';
 import styles from '../../styles/reprint';
 import EsignPage from './Esign';
+import {fetchProductData, fetchBatchData, fetchCountryCode} from '../components/fetchDetails';
 
 function Reprint() {
   const navigation = useNavigation();
@@ -39,14 +40,19 @@ function Reprint() {
   const [token, setToken] = useState(null);
   const [config, setConfig] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState({
-    id: null,
-    name: null,
+    value: null,
+    label: null,
   });
-  const [selectedBatch, setSelectedBatch] = useState({id: null, name: null});
+  const [selectedBatch, setSelectedBatch] = useState({
+    value: null,
+    label: null,
+  });
   const [isFocusProduct, setIsFocusProduct] = useState(false);
   const [isFocusBatch, setIsFocusBatch] = useState(false);
   const [products, setProducts] = useState([]);
   const [batches, setBatches] = useState([]);
+  const [valueProduct, setValueProduct] = useState('');
+  const [valueBatch, setValueBatch] = useState('');
   const [countryCode, setCountryCode] = useState(null);
   const [visible, setVisible] = useState(false);
   const [openModal, setOpenModal] = useState(false);
@@ -90,7 +96,8 @@ function Reprint() {
           setToken(storedToken);
           decodeAndSetConfig(setConfig, storedToken);
           console.log('JWT token : ', storedToken);
-          fetchProductData(storedToken);
+          fetchProductData(storedToken, setProducts, setLoading);
+          console.log('product get in Reprint Page :-', products);
         } else {
           throw new Error('Token is missing');
         }
@@ -103,8 +110,8 @@ function Reprint() {
     loadTokenAndData();
 
     return () => {
-      setSelectedProduct({id: null, name: null});
-      setSelectedBatch({id: null, name: null});
+      setSelectedProduct({value: null, label: null});
+      setSelectedBatch({value: null, label: null});
       setText('');
     };
   }, [isFocused]);
@@ -141,108 +148,19 @@ function Reprint() {
   }, [countryCode]);
 
   useEffect(() => {
-    if (selectedProduct.id) {
+    if (selectedProduct.value) {
       (async () => {
-        await fetchCountryCode();
-        await fetchBatchData();
+        await fetchCountryCode(
+          setCountryCode,
+          selectedProduct,
+          setLoading,
+          token,
+        );
+        await fetchBatchData(setBatches, setLoading, token, selectedProduct.value);
       })();
     }
     return () => {};
-  }, [selectedProduct.id]);
-
-  const fetchProductData = async token => {
-    try {
-      setLoading(true);
-      const productResponse = await axios.get(`${url}/product/`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const {products} = productResponse.data.data; //destructuring objects
-      //console.log('This is products Data :', products)
-      //console.log("ProductID :-", products[0].product_id);
-
-      if (products) {
-        //console.log("Dropdown Products :", products)
-        const fetchedProducts = products.map(product => ({
-          name: product.product_name,
-          id: product.id,
-        }));
-        // console.log("value :",value);
-
-        setProducts(fetchedProducts);
-      } else {
-        console.error('No products data available');
-      }
-    } catch (error) {
-      console.error('Error fetching Product data for Reprint :', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchBatchData = async () => {
-    try {
-      setLoading(true);
-      const batchResponse = await axios.get(
-        `${url}/batch/${selectedProduct.id}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-      console.log('Batch Response :', batchResponse.data);
-
-      if (batchResponse?.data?.success) {
-        const fetchedBatches = batchResponse.data.data?.batches?.map(batch => {
-          console.log('batch id ', batch.id);
-          return {
-            id: batch.id,
-            name: batch.batch_no,
-          };
-        });
-        setBatches(fetchedBatches);
-        //console.log("Store for select :", batches)
-      } else {
-        console.error('No batches data available');
-      }
-    } catch (error) {
-      console.error('Error Fetching batch data for Reprint ', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCountryCode = async () => {
-    try {
-      setLoading(true);
-      console.log('token in c ', token);
-      const response = await axios.get(
-        `${url}/product/countrycode/${selectedProduct.id}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-      console.log('Get country code Response :', response.data);
-
-      if (response.data?.success) {
-        console.log('settting country code ', response.data.data.country_code);
-        setCountryCode(response.data.data.country_code.toString());
-      } else {
-        console.error('No coutryt code data available');
-      }
-    } catch (error) {
-      console.error('Error Fetching country code ', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [selectedProduct.value]);
 
   const getUniqueCode = (url, format) => {
     const formatParts = format.split('/');
@@ -259,13 +177,18 @@ function Reprint() {
   };
 
   const handleDropdownProductChange = async item => {
-    setSelectedProduct({id: item.id, name: item.name});
+    setSelectedProduct({value: item.value, label: item.label});
     setIsFocusProduct(false);
-    setBatches([]);
+    //setBatches([]);
+    console.log('selected Product Item in reprint:-', item);
+    console.log('item.value Product', item.value);
+    await fetchBatchData(setBatches, setLoading, token, item.value);
+    console.log(item.value);
+    console.log(item.label);
   };
 
   const handleReprint = () => {
-    if (!selectedProduct.id || !selectedBatch.id) {
+    if (!selectedProduct.value || !selectedBatch.value) {
       onToggleSnackBar('Please select both product and batch.');
       //Alert.alert('Error', 'Please select both product and batch.');
       return;
@@ -304,8 +227,8 @@ function Reprint() {
           performed_action: `Reprint this ${text} sscc code with Product ID: ${selectedProduct?.id}, Batch ID: ${selectedBatch?.id} by User ID: ${config.userId}`,
           remarks: 'none',
         },
-        product_id: selectedProduct.id,
-        batch_id: selectedBatch.id,
+        product_id: selectedProduct.value,
+        batch_id: selectedBatch.value,
         SsccCode: text,
         mac_address: await DeviceInfo.getUniqueId(),
       },
@@ -320,13 +243,13 @@ function Reprint() {
     console.log('Response of reprint code ', reprintRes.data);
     if (reprintRes.data.success === true && reprintRes.data.code === 200) {
       setText('');
-      setSelectedProduct({id: null, name: null});
-      setSelectedBatch({id: null, name: null});
+      setSelectedProduct({value: null, label: null});
+      setSelectedBatch({value: null, label: null});
       onToggleSnackBar(reprintRes.data.message, 200);
       //navigation.navigate('Home');
     } else {
-      setSelectedProduct({id: null, name: null});
-      setSelectedBatch({id: null, name: null});
+      setSelectedProduct({value: null, label: null});
+      setSelectedBatch({value: null, label: null});
       onToggleSnackBar(reprintRes.data.message, reprintRes.data.code);
     }
     hideModal();
@@ -398,7 +321,6 @@ function Reprint() {
     }
   };
 
-
   return (
     <>
       <KeyboardAvoidingView
@@ -421,12 +343,12 @@ function Reprint() {
                   //iconStyle={styles.iconStyle}
                   data={products}
                   maxHeight={300}
-                  labelField="name"
-                  valueField="id"
+                  labelField="label"
+                  valueField="value"
                   placeholder="Select Product"
                   //placeholder={!isFocusProduct ? 'Select Product' : '...'}
                   //searchPlaceholder="Search..."
-                  value={selectedProduct.id}
+                  value={selectedProduct.value}
                   onFocus={() => setIsFocusProduct(true)}
                   onBlur={() => setIsFocusProduct(false)}
                   onChange={handleDropdownProductChange}
@@ -453,16 +375,16 @@ function Reprint() {
                   //iconStyle={styles.iconStyle}
                   data={batches}
                   maxHeight={300}
-                  labelField="name"
-                  valueField="id"
+                  labelField="label"
+                  valueField="value"
                   placeholder="Select Batch"
                   //placeholder={!isFocusBatch ? 'Select Batch' : '...'}
                   //searchPlaceholder="Search..."
-                  value={selectedBatch.id}
+                  value={selectedBatch.value}
                   onFocus={() => setIsFocusBatch(true)}
                   onBlur={() => setIsFocusBatch(false)}
                   onChange={item => {
-                    setSelectedBatch({id: item.id, name: item.name});
+                    setSelectedBatch({value: item.value, label: item.label});
                     setIsFocusBatch(false);
                   }}
                   renderLeftIcon={() => (
@@ -482,7 +404,7 @@ function Reprint() {
                 Scan or write a code
               </Text>
               <TextInput
-                disabled={!selectedProduct?.id || !selectedBatch?.id}
+                disabled={!selectedProduct?.value || !selectedBatch?.value}
                 label="Enter sscc code for reprint"
                 value={text}
                 mode="outlined"
@@ -536,17 +458,17 @@ function Reprint() {
           </Modal>
         </Portal>
         {openModal && (
-        <EsignPage
-          config={config}
-          handleAuthResult={handleAuthResult}
-          approveAPIName={approveAPIName}
-          approveAPImethod={approveAPImethod}
-          approveAPIEndPoint={approveAPIEndPoint}
-          openModal={openModal}
-          setOpenModal={setOpenModal}
-          setStatus={setStatus}
-        />
-      )}
+          <EsignPage
+            config={config}
+            handleAuthResult={handleAuthResult}
+            approveAPIName={approveAPIName}
+            approveAPImethod={approveAPImethod}
+            approveAPIEndPoint={approveAPIEndPoint}
+            openModal={openModal}
+            setOpenModal={setOpenModal}
+            setStatus={setStatus}
+          />
+        )}
         <Snackbar
           visible={snackbarInfo.visible}
           onDismiss={onDismissSnackBar}

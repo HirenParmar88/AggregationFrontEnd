@@ -1,9 +1,9 @@
-import { StyleSheet } from "react-native";
+import {StyleSheet} from 'react-native';
 
- const styles=StyleSheet.create({
-    container: {
-    //backgroundColor: 'yellow',
+const styles = StyleSheet.create({
+  container: {
     flex: 1,
+    //backgroundColor: 'yellow',
     //borderWidth: 2,
     //borderColor: 'red',
   },
@@ -15,11 +15,11 @@ import { StyleSheet } from "react-native";
   input: {
     //height: 60,
     borderColor: '#ccc',
-    borderWidth: 1,
-    paddingLeft: 10,
-    borderRadius: 5,
+    // borderWidth: 1,
+    // paddingLeft: 10,
+    // borderRadius: 5,
     backgroundColor: '#fff',
-    fontSize: 16,
+    //fontSize: 16,
   },
   // btnContainer: {
   //   backgroundColor: 'red',
@@ -50,5 +50,5 @@ import { StyleSheet } from "react-native";
     borderRadius: 2,
     marginBottom: 10, // Extra space from the bottom if needed
   },
-})
+});
 export default styles;

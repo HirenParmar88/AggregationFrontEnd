@@ -27,8 +27,10 @@ import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import LoaderComponent from '../components/Loader';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import styles from '../../styles/remap';
-import { decodeAndSetConfig } from '../../utils/tokenUtils';
+import {decodeAndSetConfig} from '../../utils/tokenUtils';
 import EsignPage from './Esign';
+import {fetchProductData, fetchBatchData, fetchCountryCode} from '../components/fetchDetails';
+
 function RemapScreen() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
@@ -36,14 +38,19 @@ function RemapScreen() {
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState({
-    id: null,
-    name: null,
+    value: null,
+    label: null,
   });
-  const [selectedBatch, setSelectedBatch] = useState({id: null, name: null});
+  const [selectedBatch, setSelectedBatch] = useState({
+    value: null,
+    label: null,
+  });
   const [isFocusProduct, setIsFocusProduct] = useState(false);
   const [isFocusBatch, setIsFocusBatch] = useState(false);
   const [products, setProducts] = useState([]);
   const [batches, setBatches] = useState([]);
+  const [valueProduct, setValueProduct] = useState('');
+  const [valueBatch, setValueBatch] = useState('');
   const [countryCode, setCountryCode] = useState(null);
   const [scanCode, setScanCode] = useState(undefined);
   const [visible, setVisible] = useState(false);
@@ -89,7 +96,8 @@ function RemapScreen() {
           decodeAndSetConfig(setConfig, storedToken);
           setToken(storedToken);
           console.log('JWT token : ', storedToken);
-          fetchProductData(storedToken);
+          fetchProductData(storedToken, setProducts, setLoading);
+          console.log('product get in Remap Page :-', products);
         } else {
           throw new Error('Token is missing');
         }
@@ -98,164 +106,70 @@ function RemapScreen() {
         setLoading(false);
       }
     };
-    
     loadTokenAndData();
-    
-    const unsubscribe=navigation.addListener('blur',()=>{
-      setSelectedProduct({id: null, name: null});
-      setSelectedBatch({id: null, name: null});
-      setScanCode('')
+
+    const unsubscribe = navigation.addListener('blur', () => {
+      setSelectedProduct({value: null, label: null});
+      setSelectedBatch({value: null, label: null});
+      setScanCode('');
       setText('');
-    })
-    return unsubscribe
+    });
+    return unsubscribe;
   }, [isFocused]);
 
-  console.log('Config Remap:->', config);
-  
   useEffect(() => {
-    console.log('Is compatible:', HoneywellBarcodeReader.isCompatible);
-
+    //console.log('Is compatible:', HoneywellBarcodeReader.isCompatible);
     HoneywellBarcodeReader.register().then(claimed => {
       console.log(
         claimed ? 'Barcode reader is claimed' : 'Barcode reader is busy',
       );
     });
-
     HoneywellBarcodeReader.onBarcodeReadSuccess(event => {
       console.log('Current Scanned data :', event.data);
       console.log('Country code is ', countryCode);
       setScanCode(event.data);
     });
-
     HoneywellBarcodeReader.onBarcodeReadFail(() => {
       console.log('Barcode read failed');
+      onToggleSnackBar('Barcode read failed')
     });
-
     HoneywellBarcodeReader.onTriggerStateChange(state => {
       console.log('onTriggerStateChange', state);
     });
-
     HoneywellBarcodeReader.barcodeReaderInfo(details => {
       console.log('barcodeReaderClaimed', details);
     });
-
     return () => {};
   }, [countryCode, isFocused]);
 
   useEffect(() => {
-    if (selectedProduct.id) {
+    if (selectedProduct.value) {
       (async () => {
-        await fetchCountryCode();
-        await fetchBatchData();
+        await fetchCountryCode(
+          setCountryCode,
+          selectedProduct,
+          setLoading,
+          token,
+        );
+        await fetchBatchData(setBatches, setLoading, token, selectedProduct.value);
       })();
     }
     return () => {};
-  }, [selectedProduct.id, isFocused]);
-
-  const fetchProductData = async token => {
-    try {
-      setLoading(true);
-      const productResponse = await axios.get(`${url}/product/`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const {products} = productResponse.data.data; //destructuring objects
-      //console.log('This is products Data :', products)
-      //console.log("ProductID :-", products[0].product_id);
-
-      if (products) {
-        //console.log("Dropdown Products :", products)
-        const fetchedProducts = products.map(product => ({
-          name: product.product_name,
-          id: product.id,
-        }));
-        // console.log("value :",value);
-
-        setProducts(fetchedProducts);
-      } else {
-        console.error('No products data available');
-      }
-    } catch (error) {
-      console.error('Error fetching Product data for Remap :', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchBatchData = async () => {
-    try {
-      setLoading(true);
-      const batchResponse = await axios.get(
-        `${url}/batch/${selectedProduct.id}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-      console.log('Batch Response :', batchResponse.data);
-
-      if (batchResponse?.data?.success) {
-        const fetchedBatches = batchResponse.data.data?.batches?.map(batch => {
-          console.log('batch id ', batch.id);
-          return {
-            id: batch.id,
-            name: batch.batch_no,
-          };
-        });
-        setBatches(fetchedBatches);
-        //console.log("Store for select :", batches)
-      } else {
-        console.error('No batches data available');
-      }
-    } catch (error) {
-      console.error('Error Fetching batch data for Remap ', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCountryCode = async () => {
-    console.log('Remap Api called..');
-
-    try {
-      setLoading(true);
-      console.log('token in c ', token);
-      const response = await axios.get(
-        `${url}/product/countrycode/${selectedProduct.id}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-      console.log('Get country code Response :', response.data);
-
-      if (response.data?.success) {
-        console.log('settting country code ', response.data.data.country_code);
-        setCountryCode(response.data.data.country_code.toString());
-      } else {
-        console.error('No coutryt code data available');
-      }
-    } catch (error) {
-      console.error('Error Fetching country code ', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [selectedProduct.value, isFocused,countryCode]);
 
   const handleDropdownProductChange = async item => {
-    setSelectedProduct({id: item.id, name: item.name});
+    setSelectedProduct({value: item.value, label: item.label});
     setIsFocusProduct(false);
-    setBatches([]);
+    //setBatches([]);
+    console.log('selected Product Item in remap:-', item);
+    console.log('remap item.value Product', item.value);
+    await fetchBatchData(setBatches, setLoading, token, item.value);
+    console.log(item.value);
+    console.log(item.label);
   };
 
   const handleRemap = () => {
-    if (!selectedProduct.id || !selectedBatch.id) {
+    if (!selectedProduct.value || !selectedBatch.value) {
       onToggleSnackBar('Please select both product and batch.', 400);
       //Alert.alert('Error', 'Please select both product and batch.');
       return;
@@ -271,13 +185,10 @@ function RemapScreen() {
       setApproveAPIName('codeRemap-approve');
       setApproveAPImethod('POST');
       return;
-    }
-    else{
-
+    } else {
       setVisible(true); //modal open
       console.log('Remap pressed..');
     }
-
   };
 
   if (loading) {
@@ -289,8 +200,8 @@ function RemapScreen() {
     const remapRes = await axios.post(
       `${url}/code-remap`,
       {
-        product_id: selectedProduct.id,
-        batch_id: selectedBatch.id,
+        product_id: selectedProduct.value,
+        batch_id: selectedBatch.value,
         code: scanCode,
       },
       {
@@ -303,8 +214,8 @@ function RemapScreen() {
     console.log('Response of remap code ', remapRes.data);
     if (remapRes.data.success === true && remapRes.data.code === 200) {
       setScanCode('');
-      setSelectedProduct({id: null, name: null});
-      setSelectedBatch({id: null, name: null});
+      setSelectedProduct({value: null, label: null});
+      setSelectedBatch({value: null, label: null});
       onToggleSnackBar(remapRes.data.message, 200);
     } else {
       onToggleSnackBar(remapRes.data.message, remapRes.data.code);
@@ -352,10 +263,11 @@ function RemapScreen() {
         if (esignStatus === 'rejected') {
           onToggleSnackBar('eSign has been rejected for code remap');
           closeApprovalModal();
-        }
-        else{
-
-          onToggleSnackBar("You do not have permission to access e-sign. Please request approval from a user with e-sign permissions.",401);
+        } else {
+          onToggleSnackBar(
+            'You do not have permission to access e-sign. Please request approval from a user with e-sign permissions.',
+            401,
+          );
         }
       };
       if (isApprover) {
@@ -370,7 +282,7 @@ function RemapScreen() {
           if (esignStatus === 'rejected') closeApprovalModal();
         }
       } else {
-        console.log("dfdfdsffxddf")
+        console.log('dfdfdsffxddf');
         handleEsignStatus();
       }
       resetState();
@@ -401,12 +313,12 @@ function RemapScreen() {
                   //iconStyle={styles.iconStyle}
                   data={products}
                   maxHeight={300}
-                  labelField="name"
-                  valueField="id"
+                  labelField="label"
+                  valueField="value"
                   placeholder="Select Product"
                   //placeholder={!isFocusProduct ? 'Select Product' : '...'}
                   //searchPlaceholder="Search..."
-                  value={selectedProduct.id}
+                  value={selectedProduct.value}
                   onFocus={() => setIsFocusProduct(true)}
                   onBlur={() => setIsFocusProduct(false)}
                   onChange={handleDropdownProductChange}
@@ -433,16 +345,16 @@ function RemapScreen() {
                   //iconStyle={styles.iconStyle}
                   data={batches}
                   maxHeight={300}
-                  labelField="name"
-                  valueField="id"
+                  labelField="label"
+                  valueField="value"
                   placeholder="Select Batch"
                   //placeholder={!isFocusBatch ? 'Select Batch' : '...'}
                   //searchPlaceholder="Search..."
-                  value={selectedBatch.id}
+                  value={selectedBatch.value}
                   onFocus={() => setIsFocusBatch(true)}
                   onBlur={() => setIsFocusBatch(false)}
                   onChange={item => {
-                    setSelectedBatch({id: item.id, name: item.name});
+                    setSelectedBatch({value: item.value, label: item.label});
                     setIsFocusBatch(false);
                   }}
                   renderLeftIcon={() => (
@@ -462,7 +374,7 @@ function RemapScreen() {
                 Scan or write a code
               </Text>
               <TextInput
-                disabled={!selectedProduct?.id || !selectedBatch?.id}
+                disabled={!selectedProduct?.value || !selectedBatch?.value}
                 label="Enter remap  sscc code"
                 value={scanCode?.toString()}
                 mode="outlined"

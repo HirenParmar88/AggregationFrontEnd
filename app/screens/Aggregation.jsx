@@ -1,12 +1,6 @@
 //app/screens/Products.jsx
 import React, {useState, useEffect} from 'react';
-import {
-  Text,
-  View,
-  Alert,
-  TouchableOpacity,
-  Image,
-} from 'react-native';
+import {Text, View, Alert, TouchableOpacity, Image} from 'react-native';
 import {Snackbar} from 'react-native-paper';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import {Dropdown} from 'react-native-element-dropdown';
@@ -18,6 +12,7 @@ import {decodeAndSetConfig} from '../../utils/tokenUtils';
 import {url} from '../../utils/constant';
 import LoaderComponent from '../components/Loader';
 import styles from '../../styles/aggregation';
+import {fetchProductData, fetchBatchData} from '../components/fetchDetails';
 
 function AggregationComponent() {
   const navigation = useNavigation();
@@ -50,7 +45,8 @@ function AggregationComponent() {
         if (storedToken) {
           decodeAndSetConfig(setConfig, storedToken);
           setToken(storedToken);
-          fetchProductData(storedToken);
+          await fetchProductData(storedToken, setProducts, setLoading);
+          console.log('product :-', products);
         } else {
           throw new Error('Token is missing');
         }
@@ -80,70 +76,8 @@ function AggregationComponent() {
   };
 
   // Fetch products
-  console.log('Config :->', config);
-
-  const fetchProductData = async token => {
-    console.log('Product APIs called..');
-    try {
-      setLoading(true);
-      const productResponse = await axios.get(`${url}/product/`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      //console.log("Product API Response :->",productResponse);
-      const {products} = productResponse.data.data; //destructuring objects
-      //console.log('This is products Data :', products);
-      //console.log('product_id :-', products[0].product_id);
-      if (products) {
-        //console.log("Dropdown Products :", products)
-        const fetchedProducts = products.map(product => ({
-          label: product.product_name,
-          value: product.id,
-        }));
-        setProducts(fetchedProducts);
-      } else {
-        console.error('No products data available');
-      }
-    } catch (error) {
-      console.error('Error fetching Product data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  //Fetch batch
-  const fetchBatchData = async (token, product_id) => {
-    console.log('Batch APIs called..');
-    try {
-      setLoading(true);
-      const batchResponse = await axios.get(`${url}/batch/${product_id}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      //console.log("Batch Response :", batchResponse)
-      const {batches} = batchResponse?.data?.data;
-      //console.log('Batche Res :', batches);
-
-      if (batches) {
-        const fetchedBatches = batches.map(batch => ({
-          label: batch.batch_no,
-          value: batch.id,
-        }));
-        setBatches(fetchedBatches);
-        console.log('Store for select :', batches);
-      } else {
-        console.error('No batches data available');
-      }
-    } catch (error) {
-      console.error('Error Fetching batch data', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  //console.log('Config :->', config);
+  
   const handleAuthResult = async (
     isAuthenticated,
     user,
@@ -201,7 +135,10 @@ function AggregationComponent() {
   };
 
   const addAggregrate = async esign_status => {
-    console.log('Add Agregration');
+    console.log('Add Agregration....');
+    console.log(valueProduct);
+    console.log(valueBatch);
+
     const aggregationtransactionResponse = await axios.post(
       `${url}/aggregationtransaction/addaggregation`,
       {
@@ -232,28 +169,29 @@ function AggregationComponent() {
       const selectedProduct = products.find(p => p.value === valueProduct);
       const selectedBatch = batches.find(b => b.value === valueBatch);
 
-      // Alert.alert(
-      //   'Selected Data',
-      //   `Product: ${selectedProduct.label}\nBatch: ${selectedBatch.label}`,
-      //   [{text: 'OK'}],
-      // );
       console.log('selected product :', selectedProduct.label);
       console.log('selected batch:', selectedBatch.label);
       console.log('PID :-', valueProduct);
       console.log('BID :-', valueBatch);
       await AsyncStorage.setItem('productId', valueProduct);
       await AsyncStorage.setItem('batchId', valueBatch);
-      console.log("aggregationtransactionResponse :",aggregationtransactionResponse.data)
-      console.log(aggregationtransactionResponse.data.code!=200)
-      if(aggregationtransactionResponse.data.code!=200&&aggregationtransactionResponse.data.code!=409){
-        onToggleSnackBar(aggregationtransactionResponse.data.message)
-      }else{
-        onToggleSnackBar(aggregationtransactionResponse.data.message,200)
-        setTimeout(()=>{
+      console.log(
+        'aggregationtransactionResponse :',
+        aggregationtransactionResponse.data,
+      );
+      console.log(aggregationtransactionResponse.data.code != 200);
+      if (
+        aggregationtransactionResponse.data.code != 200 &&
+        aggregationtransactionResponse.data.code != 409
+      ) {
+        onToggleSnackBar(aggregationtransactionResponse.data.message);
+      } else {
+        onToggleSnackBar(aggregationtransactionResponse.data.message, 200);
+        setTimeout(() => {
           navigation.navigate('ScanList');
-        },2000)
+        }, 2000);
       }
-      console.log(aggregationtransactionResponse)
+      console.log(aggregationtransactionResponse);
     } else {
       Alert.alert('Error', 'Please select both product and batch.');
     }
@@ -262,8 +200,10 @@ function AggregationComponent() {
 
   const handleSubmit = async () => {
     console.log('Submit Product and Batch Id');
-
+    console.log('selected valueProduct :', valueProduct);
+    console.log('selected valueBatch :', valueBatch);
     console.log(config.config.esign_status, !openModal);
+
     if (config.config.esign_status && !openModal) {
       setOpenModal(true);
       setApproveAPIName('aggregated-transaction-create');
@@ -272,25 +212,23 @@ function AggregationComponent() {
     }
     addAggregrate('approved');
     // navigation.navigate('ScanList', {id: valueProduct, bid: valueBatch});
-
     setValueProduct(null);
     setValueBatch(null);
   };
-
   const resetForm = () => {
     setValueProduct(null);
     setValueBatch(null);
     setIsFocusProduct(false);
     setIsFocusBatch(false);
   };
-
   if (loading) {
     return <LoaderComponent />;
   }
   const handleDropdownProductChange = async item => {
-    await fetchBatchData(token, item.value);
+    console.log('item.value', item.value);
     setValueProduct(item.value);
-
+    console.log('selected Product Item :-', item);
+    await fetchBatchData(setBatches, setLoading, token, item.value);
     setIsFocusProduct(false);
   };
   return (
@@ -381,9 +319,9 @@ function AggregationComponent() {
       <TouchableOpacity
         mode="contained"
         style={styles.btn}
-        onPress={async() => {
+        onPress={async () => {
           if (!valueBatch || !valueProduct) {
-            onToggleSnackBar("Please select both product and batch.",400)
+            onToggleSnackBar('Please select both product and batch.', 400);
             //Alert.alert('Error', 'Please select both product and batch.');
             return;
           }
@@ -404,7 +342,7 @@ function AggregationComponent() {
           setStatus={setStatus}
         />
       )}
-      
+
       <Snackbar
         visible={snackbarInfo.visible}
         onDismiss={onDismissSnackBar}

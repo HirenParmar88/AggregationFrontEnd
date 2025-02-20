@@ -107,6 +107,8 @@ const Login = ({route}) => {
           setIsAuthenticated(true);
           navigation.navigate('Home');
         }, 3000); // Wait for 3 seconds before navigating to Home
+      }else if (res.data.code === 2004) {
+        setShowReLogin(true);
       }  else {
         onToggleSnackBar(res.data.message,res.data.code);
       }

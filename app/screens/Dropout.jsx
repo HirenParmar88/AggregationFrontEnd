@@ -27,13 +27,20 @@ import Feather from 'react-native-vector-icons/Feather';
 import EsignPage from './Esign';
 import {decodeAndSetConfig} from '../../utils/tokenUtils';
 import styles from '../../styles/dropout';
+import {fetchProductData, fetchBatchData,fetchCountryCode} from '../components/fetchDetails';
 
 function DropoutFun() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
-  const [selectedBatch, setSelectedBatch] = useState({id: null, name: null});
+  const [selectedBatch, setSelectedBatch] = useState({
+    value: null,
+    label: null,
+  });
   const [products, setProducts] = useState([]);
   const [batches, setBatches] = useState([]);
+  // const [valueProduct, setValueProduct] = useState('');
+  // const [valueBatch, setValueBatch] = useState('');
+  const [loading, setLoading] = useState(true);
   const [wholeBatch, setWholeBatch] = useState(true);
   const [dropoutReason, setDropoutReason] = useState('');
   const [isFocusP, setIsFocusP] = useState([]);
@@ -66,12 +73,10 @@ function DropoutFun() {
   };
   const onDismissSnackBar = () =>
     setSnackbarInfo({visible: false, message: ''});
-
-  const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState({
-    id: null,
-    name: null,
+    value: null,
+    label: null,
   });
 
   const containerStyle = {
@@ -100,21 +105,20 @@ function DropoutFun() {
 
   useEffect(() => {
     console.log('Is compatible:', HoneywellBarcodeReader.isCompatible);
-
     HoneywellBarcodeReader.register().then(claimed => {
       console.log(
         claimed ? 'Barcode reader is claimed' : 'Barcode reader is busy',
       );
     });
-
     HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
       console.log('Received data :', event);
       console.log('Current Scanned data :', event.data);
       console.log('Token inside barcode codes drop :', token);
-
       console.log('Previous data is :', scannedCodes);
       const scanRes = await scanValidation(event.data);
       if (scanRes && scanRes.code === 200) {
+        console.log("countryCode ### ",countryCode);
+        
         setScannedCodes(prevData => {
           const uniqueCode = getUniqueCode(event.data, countryCode);
           const alreadyExist = prevData.find(item => item === uniqueCode);
@@ -130,19 +134,15 @@ function DropoutFun() {
         });
       }
     });
-
     HoneywellBarcodeReader.onBarcodeReadFail(() => {
       console.log('Barcode read failed');
     });
-
     HoneywellBarcodeReader.onTriggerStateChange(state => {
       console.log('onTriggerStateChange', state);
     });
-
     HoneywellBarcodeReader.barcodeReaderInfo(details => {
       console.log('barcodeReaderClaimed', details);
     });
-
     return () => {};
   }, [selectedProduct, selectedBatch]);
 
@@ -168,7 +168,8 @@ function DropoutFun() {
         if (storedToken) {
           setToken(storedToken);
           decodeAndSetConfig(setConfig, storedToken);
-          fetchProductData(storedToken);
+          fetchProductData(storedToken, setProducts, setLoading);
+          console.log('product get in dropout Page :-', products);
         } else {
           throw new Error('Token is missing');
         }
@@ -184,15 +185,20 @@ function DropoutFun() {
   }, [isFocused]);
 
   useEffect(() => {
-    if (selectedProduct.id) {
+    if (selectedProduct.value) {
       (async () => {
-        await fetchBatchData();
-        await fetchCountryCode();
+        await fetchBatchData(setBatches, setLoading, token, selectedProduct.value);
+        await fetchCountryCode(
+          setCountryCode,
+          selectedProduct,
+          setLoading,
+          token,
+        );
       })();
     }
 
     return () => {};
-  }, [selectedProduct]);
+  }, [selectedProduct,countryCode]);
 
   const handleAuthResult = async (
     isAuthenticated,
@@ -251,7 +257,6 @@ function DropoutFun() {
             );
             await handleConfirmCodesDropout('approved');
           }
-
           closeApprovalModal();
         } else {
           if (esignStatus === 'rejected') {
@@ -282,8 +287,8 @@ function DropoutFun() {
     try {
       console.log('Token is scan Validation in Dropout :', token);
       const payload = {
-        productId: selectedProduct.id,
-        batchId: selectedBatch.id,
+        productId: selectedProduct.value,
+        batchId: selectedBatch.value,
         uniqueCode: barcodeData,
       };
       console.log('Payload for scan/validation :', payload);
@@ -294,33 +299,13 @@ function DropoutFun() {
         },
       });
       console.log('scan/validation APIs Res for DropOut :', scanRes.data);
-
       if (scanRes.data.code === 200 && scanRes.data.success === true) {
         onToggleSnackBar(scanRes.data.message, 200);
         console.log(scanRes.data.message, 200);
         return scanRes.data;
-      } else if (scanRes.data.code === 401) {
+      } else if (scanRes.data.code) {
         console.log(scanRes.data.message);
         onToggleSnackBar(scanRes.data.message, 401);
-        return null;
-      } else if (scanRes.data.code === 500) {
-        console.log(scanRes.data.message);
-        onToggleSnackBar(scanRes.data.message, 500);
-        return null;
-      } else if (scanRes.data.code === 409) {
-        console.log('Invalid scan res :', scanRes.data.message);
-        //Alert.alert(scanRes.data.message);
-        onToggleSnackBar(scanRes.data.message, 409);
-        return null;
-      } else if (scanRes.data.code === 404) {
-        console.log('404 : ', scanRes.data.message);
-        //Alert.alert(scanRes.data.message);
-        onToggleSnackBar(scanRes.data.message, 404);
-        return null;
-      } else if (scanRes.data.code === 400) {
-        console.log('Invalid packege level :  ', scanRes.data.message);
-        //Alert.alert(scanRes.data.message);
-        onToggleSnackBar(scanRes.data.message, 400);
         return null;
       } else {
         console.log('error !');
@@ -330,115 +315,19 @@ function DropoutFun() {
     }
   };
 
-  const fetchProductData = async token => {
-    try {
-      setLoading(true);
-      const productResponse = await axios.get(`${url}/product/`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const {products} = productResponse.data.data; //destructuring objects
-      //   console.log('This is products Data :', products);
-      if (products) {
-        const fetchedProducts = products?.map(product => {
-          //console.log('id ', product.id);
-          return {
-            id: product.id,
-            name: product.product_name,
-          };
-        });
-        // console.log('Fetched Products for Dropout :', fetchedProducts);
-
-        setProducts(fetchedProducts);
-      } else {
-        console.error('No products data available');
-      }
-    } catch (error) {
-      console.error('Error fetching Product data for dropout :', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchBatchData = async () => {
-    try {
-      setLoading(true);
-      console.log('product is ', selectedProduct.id);
-      const batchResponse = await axios.get(
-        `${url}/batch/${selectedProduct.id}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-      console.log('Batch Response :', batchResponse.data);
-
-      if (batchResponse.data.success) {
-        const fetchedBatches = batchResponse.data.data?.batches.map(batch => {
-          console.log('batch id ', batch.id);
-          return {
-            id: batch.id,
-            name: batch.batch_no,
-          };
-        });
-        console.log('Fetched Batches for Dropout :', fetchedBatches);
-
-        setBatches(fetchedBatches);
-      } else if (batchResponse.data.code === 401) {
-        await AsyncStorage.removeItem('authToken');
-      } else {
-        console.error('No batches data available');
-      }
-    } catch (error) {
-      console.error('Error Fetching batch data for dropout ', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCountryCode = async () => {
-    try {
-      setLoading(true);
-      console.log(selectedProduct);
-      const response = await axios.get(
-        `${url}/product/countrycode/${selectedProduct.id}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-      console.log('Get country code API Response :', response.data);
-
-      if (response.data?.success === true && response.data.code === 200) {
-        //onToggleSnackBar(response.data.message, 200);
-        console.log('settting country code :', response.data.data.country_code);
-        setCountryCode(response.data.data.country_code.toString());
-      } else if (response.data.code === 401) {
-        await AsyncStorage.removeItem('authToken');
-      } else {
-        console.error('No code data available');
-      }
-    } catch (error) {
-      console.error('Error Fetching country code ', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDropdownProductChange = async item => {
     console.log('product id select ', item);
-    setSelectedProduct({id: item.id, name: item.name});
-    setBatches([]);
+    setSelectedProduct({value: item.value, label: item.label});
+    //setBatches([]);
+    console.log('selected Product Item in dropout:-', item);
+    console.log('item.value Product', item.value);
+    await fetchBatchData(setBatches, setLoading, token, item.value);
+    console.log(item.value);
+    console.log(item.label);
   };
 
   const handleDropdownBatchChange = item => {
-    setSelectedBatch({id: item.id, name: item.name});
+    setSelectedBatch({value: item.value, label: item.label});
   };
 
   const radioBatchDropout = () => {
@@ -452,18 +341,12 @@ function DropoutFun() {
   };
 
   const handleSubmit = () => {
-    if (!selectedProduct.id || !selectedBatch.id) {
+    if (!selectedProduct.value || !selectedBatch.value) {
       onToggleSnackBar('Please select both product and batch.', 400);
-      //Alert.alert('Error', 'Please select both product and batch.');
       return;
     }
-    // Alert.alert(
-    //     "Selected Data",
-    //     `Product: ${products.find(p => p.value === productId)?.label}\nBatch: ${selectedBatch.name}`,
-    //     [{ text: "OK" }]
-    // );
-    console.log('Dropout Selected Product :', selectedProduct.id);
-    console.log('Dropout Selected Batch :', selectedBatch.id);
+    console.log('Dropout Selected Product :', selectedProduct.value);
+    console.log('Dropout Selected Batch :', selectedBatch.value);
     console.log('Radio Item selected :', wholeBatch ? 'Batch' : 'code');
     if (wholeBatch) {
       setVisibleBatch(true);
@@ -490,11 +373,11 @@ function DropoutFun() {
       {
         audit_log: {
           audit_log: config?.config?.audit_logs,
-          performed_action: `Dropout whole of this Product ID: ${selectedProduct?.id}, Batch ID: ${selectedBatch?.id} by User ID: ${config.userId}`,
+          performed_action: `Dropout whole of this Product ID: ${selectedProduct?.value}, Batch ID: ${selectedBatch?.value} by User ID: ${config.userId}`,
           remarks: 'none',
         },
-        product_id: selectedProduct.id,
-        batch_id: selectedBatch.id,
+        product_id: selectedProduct.value,
+        batch_id: selectedBatch.value,
         dropout_reason: dropoutReason,
       },
       {
@@ -509,8 +392,8 @@ function DropoutFun() {
     if (batchDropRes.data.success === true && batchDropRes.data.code === 200) {
       onToggleSnackBar(batchDropRes.data.message, 200);
       setDropoutReason('');
-      setSelectedBatch({id: null, value: null});
-      setSelectedProduct({id: null, value: null});
+      setSelectedBatch({value: null, label: null});
+      setSelectedProduct({value: null, label: null});
     } else if (batchResponse.data.code === 401) {
       await AsyncStorage.removeItem('authToken');
     }
@@ -534,11 +417,11 @@ function DropoutFun() {
       {
         audit_log: {
           audit_log: config?.config?.audit_logs,
-          performed_action: `Dropped ${scannedCodes.length} codes for Product ID: ${selectedProduct?.id}, Batch ID: ${selectedBatch?.id}, by User ID: ${config.userId}.`,
+          performed_action: `Dropped ${scannedCodes.length} codes for Product ID: ${selectedProduct?.value}, Batch ID: ${selectedBatch?.value}, by User ID: ${config.userId}.`,
           remarks: 'none',
         },
-        product_id: selectedProduct.id,
-        batch_id: selectedBatch.id,
+        product_id: selectedProduct.value,
+        batch_id: selectedBatch.value,
         dropout_reason: dropoutReason,
         dropoutCodes: scannedCodes,
       },
@@ -549,26 +432,23 @@ function DropoutFun() {
         },
       },
     );
-
     console.log('Response of codes dropout: ', codesDropRes.data);
     if (codesDropRes.data.success && codesDropRes.data.code === 200) {
       onToggleSnackBar(codesDropRes.data.message, 200);
-      setSelectedBatch({id: null, value: null});
-      setSelectedProduct({id: null, value: null});
+      setSelectedBatch({value: null, label: null});
+      setSelectedProduct({value: null, label: null});
       setDropoutReason('');
       setScannedCodes([]);
     } else if (codesDropRes.data.code === 500) {
       onToggleSnackBar(codesDropRes.data.message);
     }
-    setVisibleConfirmCodes(false); // Close the confirm dropout modal
+    setVisibleConfirmCodes(false); 
   };
 
   const onDropoutReasonChange = item => {
     console.log('reason to drop out....', item.value);
     setDropoutReason(item.value);
   };
-
-  //const onToggleSnackBar = message => setSnackbarInfo({visible: true, message});
 
   if (loading) {
     return <LoaderComponent />;
@@ -592,10 +472,10 @@ function DropoutFun() {
                 selectedTextStyle={styles.selectedTextStyle}
                 data={products}
                 maxHeight={300}
-                labelField="name"
-                valueField="id"
+                labelField="label"
+                valueField="value"
                 placeholder={'Select Product'}
-                value={selectedProduct.id}
+                value={selectedProduct.value}
                 onChange={handleDropdownProductChange}
                 renderLeftIcon={() => (
                   <AntDesign
@@ -617,10 +497,10 @@ function DropoutFun() {
                 selectedTextStyle={styles.selectedTextStyle}
                 data={batches}
                 maxHeight={300}
-                labelField="name"
-                valueField="id"
+                labelField="label"
+                valueField="value"
                 placeholder={'Select Batch'}
-                value={selectedBatch.id}
+                value={selectedBatch.value}
                 onChange={handleDropdownBatchChange}
                 renderLeftIcon={() => (
                   <AntDesign
@@ -698,10 +578,10 @@ function DropoutFun() {
             </Text>
             <View style={{padding: 10}}>
               <Text style={{fontSize: 18, fontWeight: 'bold'}}>
-                Batch: {selectedBatch.name}
+                Batch: {selectedBatch.label}
               </Text>
               <Text style={{fontSize: 18, fontWeight: 'bold'}}>
-                Product: {selectedProduct.name}
+                Product: {selectedProduct.label}
               </Text>
             </View>
             <View style={styles.modalBatchFooter}>
@@ -769,7 +649,7 @@ function DropoutFun() {
                 <TouchableOpacity
                   style={[styles.modalButton, styles.confirmButton]}
                   onPress={async () => {
-                      setVisibleConfirmBatch(false)
+                    setVisibleConfirmBatch(false);
                     if (config.config.esign_status && !openModal) {
                       setOpenModal(true);
                       setApproveAPIName('dropout-approve');
@@ -801,21 +681,21 @@ function DropoutFun() {
               </Text>
               <View style={{paddingTop: 25}}>
                 <Text style={{fontSize: 16, fontWeight: 'bold'}}>
-                  Batch: {selectedBatch.name}
+                  Batch: {selectedBatch.label}
                 </Text>
                 <Text style={{fontSize: 16, fontWeight: 'bold'}}>
-                  Product: {selectedProduct.name}
+                  Product: {selectedProduct.label}
                 </Text>
               </View>
             </View>
 
-              <View style={styles.modalFooter}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.confirmButton]}
-                  onPress={handleCodesDropout}>
-                  <Text style={styles.modalButtonText}>Submit</Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.confirmButton]}
+                onPress={handleCodesDropout}>
+                <Text style={styles.modalButtonText}>Submit</Text>
+              </TouchableOpacity>
+            </View>
           </Modal>
         </Portal>
 
@@ -843,7 +723,9 @@ function DropoutFun() {
                     maxHeight={300}
                     labelField="label"
                     valueField="value"
-                    placeholder={!isFocusP ? 'Select Batch for Dropout' : 'Select Reason'}
+                    placeholder={
+                      !isFocusP ? 'Select Batch for Dropout' : 'Select Reason'
+                    }
                     value={dropoutReason}
                     onFocus={() => setIsFocusP(true)}
                     onBlur={() => setIsFocusP(false)}
@@ -863,7 +745,7 @@ function DropoutFun() {
                 <TouchableOpacity
                   style={[styles.modalButton, styles.confirmButton]}
                   onPress={async () => {
-                    setVisibleConfirmCodes(false)
+                    setVisibleConfirmCodes(false);
                     if (config.config.esign_status && !openModal) {
                       setOpenModal(true);
                       setApproveAPIName('dropout-approve');
@@ -878,18 +760,18 @@ function DropoutFun() {
             </View>
           </Modal>
         </Portal>
-      {openModal && (
-        <EsignPage
-          config={config}
-          handleAuthResult={handleAuthResult}
-          approveAPIName={approveAPIName}
-          approveAPImethod={approveAPImethod}
-          approveAPIEndPoint={approveAPIEndPoint}
-          openModal={openModal}
-          setOpenModal={setOpenModal}
-          setStatus={setStatus}
-        />
-      )}
+        {openModal && (
+          <EsignPage
+            config={config}
+            handleAuthResult={handleAuthResult}
+            approveAPIName={approveAPIName}
+            approveAPImethod={approveAPImethod}
+            approveAPIEndPoint={approveAPIEndPoint}
+            openModal={openModal}
+            setOpenModal={setOpenModal}
+            setStatus={setStatus}
+          />
+        )}
         <Snackbar
           visible={snackbarInfo.visible}
           onDismiss={onDismissSnackBar}

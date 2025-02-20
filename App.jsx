@@ -94,7 +94,7 @@ function App() {
           }}
         />
       ),
-      name: "Reprint",
+      name: 'Reprint',
     },
     {
       component: (
@@ -115,7 +115,7 @@ function App() {
       ),
       name: 'Code Remap',
     },
-   
+
     {
       component: (
         <Drawer.Screen
@@ -156,6 +156,11 @@ function App() {
     },
   ]);
   useEffect(() => {
+    if (isAuthenticated) {
+      (async () => setScreens(await screenPrivileges(screens)))();
+    }
+  }, [isAuthenticated]);
+  useEffect(() => {
     (async () => {
       const token = await AsyncStorage.getItem('authToken');
       console.log('App screen Token :', token);
@@ -180,11 +185,9 @@ function App() {
         setIsAuthenticated(false);
       }
       setLoading(false);
-      if(isAuthenticated){
-        setScreens(await screenPrivileges(screens));
-      }
     })();
-  }, [hasSeenUrlScreen,isAuthenticated]);
+  }, [hasSeenUrlScreen]);
+  console.log('Screens :', screens);
   if (loading) {
     return <LoaderComponent />;
   }

@@ -28,6 +28,7 @@ import LoaderComponent from '../components/Loader';
 import styles from '../../styles/codereplace';
 import {decodeAndSetConfig} from '../../utils/tokenUtils';
 import EsignPage from './Esign';
+import {fetchProductData, fetchBatchData, fetchCountryCode} from '../components/fetchDetails';
 
 function CodeReplaceScreen() {
   const navigation = useNavigation();
@@ -36,13 +37,15 @@ function CodeReplaceScreen() {
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState({
-    id: null,
-    name: null,
+    value: null,
+    label: null,
   });
-  const [selectedBatch, setSelectedBatch] = useState({id: null, name: null});
+  const [selectedBatch, setSelectedBatch] = useState({value: null, label: null});
   const [isFocusProduct, setIsFocusProduct] = useState(false);
   const [isFocusBatch, setIsFocusBatch] = useState(false);
   const [products, setProducts] = useState([]);
+  const [valueProduct, setValueProduct]=useState('');
+  const [valueBatch, setValueBatch]=useState('');
   const [scannedCodes, setScannedCodes] = useState([]);
   const [batches, setBatches] = useState([]);
   const [countryCode, setCountryCode] = useState(null);
@@ -102,7 +105,8 @@ function CodeReplaceScreen() {
           setToken(storedToken);
           console.log('JWT token : ', storedToken);
           await decodeAndSetConfig(setConfig, token);
-          fetchProductData(storedToken);
+          fetchProductData(storedToken, setProducts, setLoading);
+          console.log('product get in code replace:-', products);
         } else {
           throw new Error('Token is missing');
         }
@@ -124,10 +128,9 @@ function CodeReplaceScreen() {
         claimed ? 'Barcode reader is claimed' : 'Barcode reader is busy',
       );
     });
-
     HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
-      // console.log('Current Scanned data :', event.data);
-      // console.log('Country code is ', countryCode);
+      console.log('Current Scanned data :', event.data);
+      console.log('Country code is ', countryCode);
       const uniqueCode = getUniqueCode(event.data, countryCode);
       console.log('Current Modal is visible ', visible);
       if (!visible) {
@@ -136,123 +139,32 @@ function CodeReplaceScreen() {
         setText(uniqueCode);
       }
     });
-
     HoneywellBarcodeReader.onBarcodeReadFail(() => {
       console.log('Barcode read failed');
     });
-
     HoneywellBarcodeReader.onTriggerStateChange(state => {
       console.log('onTriggerStateChange', state);
     });
-
     HoneywellBarcodeReader.barcodeReaderInfo(details => {
       console.log('barcodeReaderClaimed', details);
     });
-
     return () => {};
   }, [countryCode, visible, scanCode, text]);
 
   useEffect(() => {
-    if (selectedProduct?.id) {
+    console.log(selectedProduct.value);
+    if (selectedProduct?.value) {
       (async () => {
-        await fetchCountryCode();
+        await fetchCountryCode(
+          setCountryCode,
+          selectedProduct,
+          setLoading,
+          token,
+        );
       })();
     }
     return () => {};
-  }, [selectedProduct?.id, text]);
-
-  const fetchProductData = async token => {
-    try {
-      setLoading(true);
-      const productResponse = await axios.get(`${url}/product/`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const {products} = productResponse.data.data; //destructuring objects
-      console.log('products ', products);
-      //console.log('This is products Data :', products)
-      //console.log("ProductID :-", products[0].product_id);
-
-      if (products) {
-        //console.log("Dropdown Products :", products)
-        const fetchedProducts = products.map(product => ({
-          name: product.product_name,
-          id: product.id,
-        }));
-        // console.log("value :",value);
-        setProducts(fetchedProducts);
-      } else {
-        console.error('No products data available');
-      }
-    } catch (error) {
-      console.error('Error fetching Product data for Code Replace :', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  console.log(selectedBatch);
-  const fetchBatchData = async product_id => {
-    try {
-      setLoading(true);
-      const batchResponse = await axios.get(`${url}/batch/${product_id}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      console.log('Batch Response :', batchResponse.data);
-
-      if (batchResponse?.data?.success) {
-        const fetchedBatches = batchResponse.data.data?.batches?.map(batch => {
-          console.log('batch id ', batch.id);
-          return {
-            id: batch.id,
-            name: batch.batch_no,
-          };
-        });
-        console.log(fetchedBatches);
-        setBatches(fetchedBatches);
-        //console.log("Store for select :", batches)
-      } else {
-        console.error('No batches data available');
-      }
-    } catch (error) {
-      console.error('Error Fetching batch data for Code Replace ', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCountryCode = async () => {
-    try {
-      setLoading(true);
-      console.log('token in c ', token);
-      const response = await axios.get(
-        `${url}/product/countrycode/${selectedProduct.id}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-      console.log('Get country code Response :', response.data);
-
-      if (response.data?.success) {
-        console.log('settting country code ', response.data.data.country_code);
-        setCountryCode(response.data.data.country_code.toString());
-      } else {
-        console.error('No coutryt code data available');
-      }
-    } catch (error) {
-      console.error('Error Fetching country code ', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [selectedProduct?.value, text]);
 
   const getUniqueCode = (url, format) => {
     const formatParts = format.split('/');
@@ -269,13 +181,20 @@ function CodeReplaceScreen() {
   };
 
   const handleDropdownProductChange = async item => {
-    setSelectedProduct({id: item.id, name: item.name});
+    setSelectedProduct({value: item.value, label: item.label});
     setIsFocusProduct(false);
-    await fetchBatchData(item.id);
+    //await fetchBatchData(item.id);
+    console.log('item.value', item.value);
+    console.log('selected Product Item code replace:-', item);
+    await fetchBatchData(setBatches, setLoading, token, item.value);
+    console.log(item.value);
+    console.log(item.label);
   };
 
   const handleCodeReplace = () => {
-    if (!selectedProduct?.id || !selectedBatch?.id) {
+    console.log(valueProduct);
+    console.log(valueBatch);
+    if (!selectedProduct?.value || !selectedBatch?.value) {
       onToggleSnackBar('Please select both product and batch.', 400);
       //Alert.alert('Error', 'Please select both product and batch.');
       return;
@@ -285,7 +204,6 @@ function CodeReplaceScreen() {
       //Alert.alert('Error', 'Please scan or enter unique code');
       return;
     }
-
     setVisible(true); //modal open
     console.log('Code Replace pressed..');
   };
@@ -297,16 +215,16 @@ function CodeReplaceScreen() {
   const print = async () => {
     console.log('Code Replace success.');
     console.log({
-      product_id: selectedProduct.id,
-      batch_id: selectedBatch.id,
+      product_id: selectedProduct.value,
+      batch_id: selectedBatch.value,
       code: scanCode,
       replace_code: text,
     });
     const codereplaceRes = await axios.post(
       `${url}/code-replace`,
       {
-        product_id: selectedProduct.id,
-        batch_id: selectedBatch.id,
+        product_id: selectedProduct.value,
+        batch_id: selectedBatch.value,
         code: scanCode,
         replace_code: text,
       },
@@ -324,21 +242,20 @@ function CodeReplaceScreen() {
       codereplaceRes.data.code === 200
     ) {
       setScanCode('');
-      setSelectedProduct({id: null, name: null});
-      setSelectedBatch({id: null, name: null});
+      setSelectedProduct({value: null, label: null});
+      setSelectedBatch({value: null, label: null});
       onToggleSnackBar(codereplaceRes.data.message, 200);
       //navigation.navigate('Home');
     } else {
       onToggleSnackBar(codereplaceRes?.data?.message);
     }
-    setText('')
-    
+    setText('');
   };
 
   const cancel = () => {
     console.log('code replace cancel btn press ');
     setVisible(false);
-    navigation.navigate('Home');
+    //navigation.navigate('Home');
   };
 
   const handleAuthResult = async (
@@ -423,12 +340,12 @@ function CodeReplaceScreen() {
                   //iconStyle={styles.iconStyle}
                   data={products}
                   maxHeight={300}
-                  labelField="name"
-                  valueField="id"
+                  labelField="label"
+                  valueField="value"
                   placeholder="Select Product"
                   //placeholder={!isFocusProduct ? 'Select Product' : '...'}
                   //searchPlaceholder="Search..."
-                  value={selectedProduct?.id}
+                  value={selectedProduct?.value}
                   onFocus={() => setIsFocusProduct(true)}
                   onBlur={() => setIsFocusProduct(false)}
                   onChange={handleDropdownProductChange}
@@ -455,17 +372,19 @@ function CodeReplaceScreen() {
                   //iconStyle={styles.iconStyle}
                   data={batches}
                   maxHeight={300}
-                  labelField="name"
-                  valueField="id"
+                  labelField="label"
+                  valueField="value"
                   placeholder="Select Batch"
                   //placeholder={!isFocusBatch ? 'Select Batch' : '...'}
                   //searchPlaceholder="Search..."
-                  value={selectedBatch?.id}
+                  value={selectedBatch?.value}
                   onFocus={() => setIsFocusBatch(true)}
                   onBlur={() => setIsFocusBatch(false)}
                   onChange={item => {
-                    console.log(item);
-                    setSelectedBatch({id: item.id, name: item.name});
+                    console.log("Batch",item);
+                    console.log("Batch",item.value);
+                    console.log("Batch",item.label);
+                    setSelectedBatch({value: item.value, label: item.label});
                     setIsFocusBatch(false);
                   }}
                   renderLeftIcon={() => (
@@ -485,7 +404,7 @@ function CodeReplaceScreen() {
                 Enter or Scan code to replace
               </Text>
               <TextInput
-                disabled={!selectedProduct?.id || !selectedBatch?.id}
+                disabled={!selectedProduct?.value || !selectedBatch?.value}
                 label="Enter or Scan code"
                 value={scanCode || ''}
                 mode="outlined"
@@ -558,17 +477,17 @@ function CodeReplaceScreen() {
           </Modal>
         </Portal>
         {openModal && (
-        <EsignPage
-          config={config}
-          handleAuthResult={handleAuthResult}
-          approveAPIName={approveAPIName}
-          approveAPImethod={approveAPImethod}
-          approveAPIEndPoint={approveAPIEndPoint}
-          openModal={openModal}
-          setOpenModal={setOpenModal}
-          setStatus={setStatus}
-        />
-      )}
+          <EsignPage
+            config={config}
+            handleAuthResult={handleAuthResult}
+            approveAPIName={approveAPIName}
+            approveAPImethod={approveAPImethod}
+            approveAPIEndPoint={approveAPIEndPoint}
+            openModal={openModal}
+            setOpenModal={setOpenModal}
+            setStatus={setStatus}
+          />
+        )}
         <Snackbar
           visible={snackbarInfo.visible}
           onDismiss={onDismissSnackBar}

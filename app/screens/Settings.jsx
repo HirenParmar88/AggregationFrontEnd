@@ -188,6 +188,9 @@ function SettingScreen() {
     if (settingRes.data.success === true && settingRes.data.code === 200) {
       onToggleSnackBar(settingRes.data.message, 200);
       //navigation.navigate('Home');
+    } else if (settingRes.data.success === true && settingRes.data.code === 201) {
+      onToggleSnackBar(settingRes.data.message, 201);
+      //navigation.navigate('Home');
     } else {
       onToggleSnackBar(settingRes.data.message, settingRes.data.code);
     }
