@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useEffect, useReducer } from 'react';
 import {
   View,
   Image,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import {
-  Button,
   Text,
   TextInput,
   Snackbar,
@@ -15,35 +14,71 @@ import {
 } from 'react-native-paper';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useNavigation} from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import styles from '../../styles/login';
 
-const Login = ({route}) => {
-  const navigation = useNavigation();
-  const {setIsAuthenticated} = route.params;
-  const [backendUrl, setBackendUrl] = useState(null);
-  const [userId, setUserId] = useState('');
-  const [password, setPassword] = useState('');
-  const [snackbarInfo, setSnackbarInfo] = useState({
-    visible: false,
-    message: '',
-  });
-  const [passwordShow, setPasswordShow] = useState(false);
-  const [showReLogin, setShowReLogin] = useState(false);
+// Initial state
+const initialState = {
+  backendUrl: null,
+  userId: '',
+  password: '',
+  snackbarInfo: { visible: false, message: '', snackbarStyle: {} },
+  passwordShow: false,
+  showReLogin: false,
+};
 
+// Reducer function
+const loginReducer = (state, action) => {
+  //console.log("state,action :->",state,action);
+  switch (action.type) {
+    case 'SET_BACKEND_URL':
+      return { ...state, backendUrl: action.payload };
+    case 'SET_USER_ID':
+      return { ...state, userId: action.payload };
+    case 'SET_PASSWORD':
+      return { ...state, password: action.payload };
+    case 'TOGGLE_SNACKBAR':
+      return { ...state, snackbarInfo: action.payload };
+    case 'TOGGLE_PASSWORD_VISIBILITY':
+      return { ...state, passwordShow: !state.passwordShow };
+    case 'SET_SHOW_RELOGIN':
+      return { ...state, showReLogin: action.payload };
+    default:
+      return state;
+  }
+};
+
+const Login = ({ route }) => {
+  const navigation = useNavigation();
+  const { setIsAuthenticated } = route.params;
+
+  // useReducer to manage state
+  const [state, dispatch] = useReducer(loginReducer, initialState);
+
+  const {
+    backendUrl,
+    userId,
+    password,
+    snackbarInfo,
+    passwordShow,
+    showReLogin,
+  } = state;
+  console.log("state", state);
+  
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
       code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
-
-    setSnackbarInfo({
-      visible: true,
-      message,
-      snackbarStyle: {backgroundColor},
+    dispatch({
+      type: 'TOGGLE_SNACKBAR',
+      payload: { visible: true, message, snackbarStyle: { backgroundColor } },
     });
   };
 
   const onDismissSnackBar = () =>
-    setSnackbarInfo({visible: false, message: ''});
+    dispatch({
+      type: 'TOGGLE_SNACKBAR',
+      payload: { visible: false, message: '', snackbarStyle: {} },
+    });
 
   useEffect(() => {
     const loadURL = async () => {
@@ -51,24 +86,18 @@ const Login = ({route}) => {
         const storedUrl = await AsyncStorage.getItem('BackendUrl');
         console.log('Backend URL get for Login Page :', storedUrl);
         if (storedUrl) {
-          setBackendUrl(storedUrl); // Set the URL to state
+          dispatch({ type: 'SET_BACKEND_URL', payload: storedUrl });
         } else {
-          setBackendUrl('No URL found !'); // Default message if no URL is found
+          dispatch({ type: 'SET_BACKEND_URL', payload: 'No URL found !' });
         }
       } catch (error) {
         console.error('Error fetching backend url :', error);
       }
     };
     loadURL();
-    return () => {};
   }, []);
-  //console.log('process env :', url);
-  console.log('Back-End Dynamic URL Use for Login Page:', backendUrl);
 
   const handleLogin = async (forceFully = false) => {
-    console.log('Force fully :', forceFully);
-    console.log(backendUrl);
-
     if (!userId) {
       onToggleSnackBar('Username cannot be Empty!');
       return;
@@ -78,43 +107,27 @@ const Login = ({route}) => {
       return;
     }
     try {
-      console.log('api calling....');
-      //console.log("BACKEND DYNAMIC URLs :", config.API_URL);
-      console.log('Login URL :', `${backendUrl}/auth/login`);
       const res = await axios.post(
         `${backendUrl}/auth/login`,
-        {
-          userId: userId,
-          password,
-          forceFully,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
+        { userId, password, forceFully },
+        { headers: { 'Content-Type': 'application/json' } }
       );
-      console.log('api called...');
-      console.log('Login :', res.data);
       if (res.data.success === true && res.data.code === 200) {
-        const token = res.data.data.token; //store token
+        const token = res.data.data.token;
         await AsyncStorage.setItem('authToken', token);
-        console.log("AAAA",res.data.data.screens);
-        await AsyncStorage.setItem('screens', JSON.stringify(res.data.data.screens))
+        await AsyncStorage.setItem('screens', JSON.stringify(res.data.data.screens));
         onToggleSnackBar(res.data.message, 200);
-        //return res.data;
         setTimeout(() => {
           setIsAuthenticated(true);
           navigation.navigate('Home');
-        }, 3000); // Wait for 3 seconds before navigating to Home
-      }else if (res.data.code === 2004) {
-        setShowReLogin(true);
-      }  else {
-        onToggleSnackBar(res.data.message,res.data.code);
+        }, 3000);
+      } else if (res.data.code === 2004) {
+        dispatch({ type: 'SET_SHOW_RELOGIN', payload: true });
+      } else {
+        onToggleSnackBar(res.data.message, res.data.code);
       }
     } catch (error) {
       console.log(error);
-      
       onToggleSnackBar(error.message);
     }
   };
@@ -129,7 +142,6 @@ const Login = ({route}) => {
               style={styles.logo}
             />
             <Text style={styles.title}>Welcome to E-Quality!</Text>
-            {/* <Text>backendUrl: {backendUrl}</Text> */}
             <Text style={styles.subtitle}>
               Please sign-in to your account and start the adventure
             </Text>
@@ -141,7 +153,7 @@ const Login = ({route}) => {
                 style={styles.usernameInput}
                 placeholder="Enter Username"
                 value={userId}
-                onChangeText={setUserId}
+                onChangeText={(text) => dispatch({ type: 'SET_USER_ID', payload: text })}
               />
 
               <TextInput
@@ -150,29 +162,23 @@ const Login = ({route}) => {
                 right={
                   <TextInput.Icon
                     icon={!passwordShow ? 'eye' : 'eye-off'}
-                    onPress={() => setPasswordShow(!passwordShow)}
+                    onPress={() => dispatch({ type: 'TOGGLE_PASSWORD_VISIBILITY' })}
                   />
                 }
                 style={styles.passwordInput}
                 placeholder="Enter Password"
                 secureTextEntry={!passwordShow}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => dispatch({ type: 'SET_PASSWORD', payload: text })}
               />
             </View>
-            {/* <Button
-              mode="contained"
-              onPress={() => handleLogin(false)}
-              style={styles.btn}>
-              LOGIN
-            </Button> */}
+
             <TouchableOpacity
               mode="contained"
               style={styles.touchableBtn}
               onPress={() => handleLogin(false)}>
               <Text style={styles.submitBtnText}>LOGIN</Text>
             </TouchableOpacity>
-            {/* <Text>{config.API_URL}</Text> */}
           </View>
         </View>
       </ScrollView>
@@ -180,12 +186,12 @@ const Login = ({route}) => {
       <Portal>
         <Modal
           visible={showReLogin}
-          onDismiss={() => setShowReLogin(false)}
+          onDismiss={() => dispatch({ type: 'SET_SHOW_RELOGIN', payload: false })}
           contentContainerStyle={styles.reloginContainer}>
-          <View style={{flex: 1}}>
+          <View style={{ flex: 1 }}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                You are already loggedin please confirm to relogin
+                You are already logged in. Please confirm to relogin.
               </Text>
             </View>
             <View style={styles.modalFooter}>
@@ -196,7 +202,7 @@ const Login = ({route}) => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowReLogin(false)}>
+                onPress={() => dispatch({ type: 'SET_SHOW_RELOGIN', payload: false })}>
                 <Text style={styles.modalButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
@@ -214,4 +220,5 @@ const Login = ({route}) => {
     </View>
   );
 };
+
 export default Login;

@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const screenPrivileges = async screens => {
   try {
-    console.log(screens)
+    console.log("screens :-",screens)
     const screen_privileges = JSON.parse(await AsyncStorage.getItem('screens'));
 
     if (Array.isArray(screen_privileges) && screen_privileges.length>0) {

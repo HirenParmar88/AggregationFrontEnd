@@ -55,6 +55,7 @@ function ScanList() {
   const [previousChildLevel, setPreviousChildLevel] = useState(-1);
   const [totalQuantity, setTotalQuantity] = useState(0);
 
+
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
@@ -274,9 +275,7 @@ function ScanList() {
       console.log('codeScan APIs Response :', codeScanResponse.data);
 
       if (codeScanResponse.data.success && codeScanResponse.data.code === 200) {
-        if (codeScanResponse.data.data.currentLevel > 0) {
-          setPreviousChildLevel(currentLevel);
-        }
+        
         setData(prevData => {
           const alreadyExist = prevData.find(item => item === barcodeData);
           if (!alreadyExist) {

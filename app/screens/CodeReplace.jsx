@@ -152,7 +152,7 @@ function CodeReplaceScreen() {
   }, [countryCode, visible, scanCode, text]);
 
   useEffect(() => {
-    console.log(selectedProduct.value);
+    //console.log(selectedProduct.value);
     if (selectedProduct?.value) {
       (async () => {
         await fetchCountryCode(
@@ -454,6 +454,8 @@ function CodeReplaceScreen() {
                   style={styles.codeReplaceModalBtn}
                   mode="contained"
                   onPress={async () => {
+                    console.log("Text ",text)
+
                     console.log(config.config.esign_status, !openModal);
                     hideModal();
                     if (config.config.esign_status && !openModal) {

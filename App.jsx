@@ -13,9 +13,7 @@ import ScanList from './app/screens/ScanList';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import Foundation from 'react-native-vector-icons/Foundation';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
-import Feather from 'react-native-vector-icons/Feather';
 import DropoutFun from './app/screens/Dropout';
 import EsignPage from './app/screens/Esign';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -23,7 +21,6 @@ import {jwtDecode} from 'jwt-decode';
 import SettingScreen from './app/screens/Settings';
 import LoaderComponent from './app/components/Loader';
 import UrlScreen from './app/screens/UrlScreens';
-import {Text, View} from 'react-native';
 import {screenPrivileges} from './utils/screenPrivileges';
 
 const Stack = createNativeStackNavigator();
@@ -32,8 +29,8 @@ const Drawer = createDrawerNavigator();
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [hasSeenUrlScreen, setHasSeenUrlScreen] = useState(false);
   const [backendURL, setBackendUrl] = useState('');
+  const [isScreen,setIsScreen]=useState(false)
   console.log('Auth ', isAuthenticated);
   const [screens, setScreens] = useState([
     {
@@ -156,22 +153,16 @@ function App() {
     },
   ]);
   useEffect(() => {
-    if (isAuthenticated) {
+    if(isScreen){
       (async () => setScreens(await screenPrivileges(screens)))();
     }
-  }, [isAuthenticated]);
+  }, [isScreen]);
   useEffect(() => {
     (async () => {
       const token = await AsyncStorage.getItem('authToken');
       console.log('App screen Token :', token);
       setBackendUrl(await AsyncStorage.getItem('BackendUrl'));
 
-      const seenUrlScreen = await AsyncStorage.getItem('hasSeenUrlScreen');
-      console.log('seenUrlScreen :', seenUrlScreen);
-
-      if (seenUrlScreen) {
-        setHasSeenUrlScreen(seenUrlScreen);
-      }
       if (token) {
         const decoded = jwtDecode(token);
         const currentTime = Math.floor(Date.now() / 1000);
@@ -186,7 +177,7 @@ function App() {
       }
       setLoading(false);
     })();
-  }, [hasSeenUrlScreen]);
+  }, [isAuthenticated]);
   console.log('Screens :', screens);
   if (loading) {
     return <LoaderComponent />;
@@ -287,7 +278,6 @@ function App() {
             component={UrlScreen}
             options={{headerShown: false}}
           />
-
           <Stack.Screen
             name="Login"
             component={Login}
@@ -299,5 +289,4 @@ function App() {
     </NavigationContainer>
   );
 }
-
 export default App;

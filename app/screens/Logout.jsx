@@ -1,18 +1,38 @@
 //app/screens/Logout.jsx
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useReducer} from 'react';
 import {Text, Alert, View} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // To handle token storage
 import axios from 'axios';
 import {useNavigation, useFocusEffect} from '@react-navigation/native'; // Import useNavigation to navigate
 import {Dialog, Portal, Button as PaperButton} from 'react-native-paper';
 
+//Initial State
+const initialState={
+  backendUrl: null,
+  visible: false,
+};
+
+//Reducer Function
+const logoutReducer=(state, action)=>{
+  console.log('logout use reducer call..');
+  switch(action.type){
+    case 'set_backend_url':
+      return{...state, backendUrl:action.payload};
+    case 'toggle_modal':
+      return{...state, visible: action.payload};
+    default:
+      return state;
+  }
+}
 function Logout({route}) {
+  //const [backendUrl, setBackendUrl] = useState(null);
+  //const [visible, setVisible] = useState(false); 
   const navigation = useNavigation(); 
-  const [backendUrl, setBackendUrl] = useState(null);
-  const [visible, setVisible] = useState(false); 
   const {setIsAuthenticated} = route.params; 
-  const showModal = () => setVisible(true);
-  const hideModal = () => setVisible(false);
+  const [state, dispatch]=useReducer(logoutReducer, initialState);
+  const{backendUrl, visible} = state;
+  const showModal = () => dispatch({type:'toggle_modal', payload:true})
+  const hideModal = () => dispatch({type:'toggle_modal', payload:false})
 
   useEffect(() => {
     const loadURL = async () => {
@@ -20,9 +40,9 @@ function Logout({route}) {
         const storedUrl = await AsyncStorage.getItem('BackendUrl');
         console.log('Backend URL get for LogOut Page :', storedUrl);
         if (storedUrl) {
-          setBackendUrl(storedUrl); 
+          dispatch({type:'set_backend_url', payload: storedUrl}); 
         } else {
-          setBackendUrl('No URL found !'); 
+          dispatch({type:'set_backend_url', payload:'No URL Found!'});
         }
       } catch (error) {
         console.error('Error fetching backend url :', error);
