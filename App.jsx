@@ -1,5 +1,5 @@
-import React, {useState, useEffect} from 'react';
-import {NavigationContainer} from '@react-navigation/native';
+import React, {useState, useEffect, useCallback} from 'react';
+import {NavigationContainer,useFocusEffect} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createDrawerNavigator} from '@react-navigation/drawer';
 import Login from './app/screens/Login'; // Import your Login screen
@@ -25,142 +25,136 @@ import {screenPrivileges} from './utils/screenPrivileges';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
+const DRAWER_SCREENS = [
+  {
+    component: (
+      <Drawer.Screen
+        name="Aggregation"
+        component={AggregationComponent}
+        options={{
+          headerShown: true,
+          drawerIcon: ({focused, size}) => (
+            <FontAwesome5
+              name="boxes"
+              size={size}
+              color={focused ? '#000000' : '#000000'}
+            />
+          ),
+        }}
+      />
+    ),
+    name: 'Aggregation',
+  },
+  {
+    component: (
+      <Drawer.Screen
+        name="Dropout"
+        component={DropoutFun}
+        options={{
+          headerShown: false,
+          //drawerLabel:()=>null,
+          //title: null,
+          //drawerIcon: () => null,
+          drawerIcon: ({focused, size}) => (
+            <MaterialCommunityIcons
+              name="alert-box"
+              size={size}
+              color={focused ? '#000000' : '#000000'}
+            />
+          ),
+        }}
+      />
+    ),
+    name: 'Dropout',
+  },
+  {
+    component: (
+      <Drawer.Screen
+        name="Reprint"
+        component={Reprint}
+        options={{
+          headerShown: false,
+          drawerIcon: ({focused, size}) => (
+            <MaterialCommunityIcons
+              name="cloud-print"
+              size={size}
+              color={focused ? '#000000' : '#000000'}
+            />
+          ),
+        }}
+      />
+    ),
+    name: 'Reprint',
+  },
+  {
+    component: (
+      <Drawer.Screen
+        name="Remap"
+        component={RemapScreen}
+        options={{
+          headerShown: false,
+          drawerIcon: ({focused, size}) => (
+            <FontAwesome5
+              name="map-marked-alt"
+              size={size}
+              color={focused ? '#000000' : '#000000'}
+            />
+          ),
+        }}
+      />
+    ),
+    name: 'Code Remap',
+  },
+  {
+    component: (
+      <Drawer.Screen
+        name="Code Replace"
+        component={CodeReplaceScreen}
+        options={{
+          headerShown: false,
+          drawerIcon: ({focused, size}) => (
+            <MaterialCommunityIcons
+              name="find-replace"
+              size={size}
+              color={focused ? '#000000' : '#000000'}
+            />
+          ),
+        }}
+      />
+    ),
+    name: 'Code Replace',
+  },
+  {
+    component: (
+      <Drawer.Screen
+        name="Settings"
+        component={SettingScreen}
+        options={{
+          headerShown: false,
+          drawerIcon: ({focused, size}) => (
+            <MaterialIcons
+              name="settings"
+              size={size}
+              color={focused ? '#000000' : '#000000'}
+            />
+          ),
+        }}
+      />
+    ),
+    name: 'Settings',
+  },
+];
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [backendURL, setBackendUrl] = useState('');
-  const [isScreen,setIsScreen]=useState(false)
-  console.log('Auth ', isAuthenticated);
-  const [screens, setScreens] = useState([
-    {
-      component: (
-        <Drawer.Screen
-          name="Aggregation"
-          component={AggregationComponent}
-          options={{
-            headerShown: true,
-            drawerIcon: ({focused, size}) => (
-              <FontAwesome5
-                name="boxes"
-                size={size}
-                color={focused ? '#000000' : '#000000'}
-              />
-            ),
-          }}
-        />
-      ),
-      name: 'Aggregation',
-    },
-    {
-      component: (
-        <Drawer.Screen
-          name="Dropout"
-          component={DropoutFun}
-          options={{
-            headerShown: false,
-            //drawerLabel:()=>null,
-            //title: null,
-            //drawerIcon: () => null,
-            drawerIcon: ({focused, size}) => (
-              <MaterialCommunityIcons
-                name="alert-box"
-                size={size}
-                color={focused ? '#000000' : '#000000'}
-              />
-            ),
-          }}
-        />
-      ),
-      name: 'Dropout',
-    },
-    {
-      component: (
-        <Drawer.Screen
-          name="Reprint"
-          component={Reprint}
-          options={{
-            headerShown: false,
-            drawerIcon: ({focused, size}) => (
-              <MaterialCommunityIcons
-                name="cloud-print"
-                size={size}
-                color={focused ? '#000000' : '#000000'}
-              />
-            ),
-          }}
-        />
-      ),
-      name: 'Reprint',
-    },
-    {
-      component: (
-        <Drawer.Screen
-          name="Remap"
-          component={RemapScreen}
-          options={{
-            headerShown: false,
-            drawerIcon: ({focused, size}) => (
-              <FontAwesome5
-                name="map-marked-alt"
-                size={size}
-                color={focused ? '#000000' : '#000000'}
-              />
-            ),
-          }}
-        />
-      ),
-      name: 'Code Remap',
-    },
-
-    {
-      component: (
-        <Drawer.Screen
-          name="Code Replace"
-          component={CodeReplaceScreen}
-          options={{
-            headerShown: false,
-            drawerIcon: ({focused, size}) => (
-              <MaterialCommunityIcons
-                name="find-replace"
-                size={size}
-                color={focused ? '#000000' : '#000000'}
-              />
-            ),
-          }}
-        />
-      ),
-      name: 'Code Replace',
-    },
-    {
-      component: (
-        <Drawer.Screen
-          name="Settings"
-          component={SettingScreen}
-          options={{
-            headerShown: false,
-            drawerIcon: ({focused, size}) => (
-              <MaterialIcons
-                name="settings"
-                size={size}
-                color={focused ? '#000000' : '#000000'}
-              />
-            ),
-          }}
-        />
-      ),
-      name: 'Settings',
-    },
-  ]);
-  useEffect(() => {
-    if(isScreen){
-      (async () => setScreens(await screenPrivileges(screens)))();
-    }
-  }, [isScreen]);
+  const [screens, setScreens] = useState([]);
+  
   useEffect(() => {
     (async () => {
+      console.log("App useEffect calll..")
       const token = await AsyncStorage.getItem('authToken');
-      console.log('App screen Token :', token);
       setBackendUrl(await AsyncStorage.getItem('BackendUrl'));
 
       if (token) {
@@ -176,14 +170,15 @@ function App() {
         setIsAuthenticated(false);
       }
       setLoading(false);
+
+      const updatedScreens = await screenPrivileges(DRAWER_SCREENS);
+      setScreens(updatedScreens);
     })();
   }, [isAuthenticated]);
-  console.log('Screens :', screens);
+  
   if (loading) {
     return <LoaderComponent />;
   }
-  console.log(backendURL);
-  console.log('Auth ', isAuthenticated);
 
   return (
     <NavigationContainer>
@@ -205,6 +200,7 @@ function App() {
           />
 
           {screens.map(screen => screen.component)}
+          
           <Drawer.Screen
             name="ScanList"
             component={ScanList}
@@ -240,7 +236,7 @@ function App() {
           <Drawer.Screen
             name="Logout"
             component={Logout}
-            initialParams={{setIsAuthenticated}}
+            initialParams={{setIsAuthenticated,setScreens}}
             options={{
               drawerLabel: 'Logout',
               headerShown: false,

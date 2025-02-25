@@ -63,7 +63,6 @@ const Login = ({ route }) => {
     passwordShow,
     showReLogin,
   } = state;
-  console.log("state", state);
   
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =

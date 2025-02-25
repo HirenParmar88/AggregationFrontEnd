@@ -1,6 +1,6 @@
 //app/components/HomeScreen/HomeScreen.tsx
 
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import {
   View,
   ScrollView,
@@ -24,6 +24,7 @@ function HomeScreen() {
   const screenDimensions = Dimensions.get('screen');
   console.log(width, height, 'height and weight');
   console.log('screenDimensions', screenDimensions);
+  
   const [cssStyle, setCssStyle] = useState({
     imageView: {
       marginLeft: width * 0.05, // 5% of screen width

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState,useEffect} from 'react';
 import {
   Text,
   View,
@@ -14,6 +14,7 @@ import styles from '../../styles/urlscreen';
 function UrlScreen() {
   const navigation = useNavigation();
   const [text, setText] = useState('');
+
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
