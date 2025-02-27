@@ -55,7 +55,7 @@ function ScanList() {
   const [previousChildLevel, setPreviousChildLevel] = useState(-1);
   const [totalQuantity, setTotalQuantity] = useState(0);
 
-
+  
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
@@ -78,18 +78,21 @@ function ScanList() {
     });
 
     HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
-      if(quantity>0){
+      if (quantity > 0) {
         console.log('Received data :', event);
         console.log('Current Scanned data :', event.data);
         console.log('Previous data is :', data);
-  
+
         const scanRes = await scanValidation(event.data);
         //console.log('Inside BarcodeRead Callback ', scanRes);
         if (scanRes && scanRes.code === 200) {
           await codeScan(event.data); //codeScan API call
         }
-      }else{
-        onToggleSnackBar("All codes have been scanned. You may now complete the transaction.",400)
+      } else {
+        onToggleSnackBar(
+          'All codes have been scanned. You may now complete the transaction.',
+          400,
+        );
       }
     });
 
@@ -188,8 +191,8 @@ function ScanList() {
     decodeAndSetConfig(setConfig, await AsyncStorage.getItem('authToken'));
     try {
       const productId = await AsyncStorage.getItem('productId');
-      console.log("productId :-",productId);
-      
+      console.log('productId :-', productId);
+
       const response = await axios.post(
         `${url}/packagingHierarchy`,
         {
@@ -208,12 +211,16 @@ function ScanList() {
         },
       );
       console.log('Packaging Hierarchy API Res :', response.data);
-      setTotalQuantity(response.data.data.quantity);
-      if (response.data.success === true && response.data.code===200) {
+      
+      if (response.data.success === true && response.data.code === 200) {
         onToggleSnackBar(response.data.message, response.data.code);
         if (response?.data?.data?.scannedCodes?.length > 0) {
           setData(response?.data?.data?.scannedCodes);
         }
+        if(!response.data.data?.isRestorePreviousState){
+          setTotalQuantity(response.data.data.quantity);
+        }
+        
         setQuantity(response.data.data.quantity);
         setPackageNo(response.data.data.packageNo);
         setCurrentLevel(response.data.data.currentLevel);
@@ -258,7 +265,7 @@ function ScanList() {
       }
 
       if (quantity == 1) {
-        payload['totalQuantity'] = totalQuantity;
+        payload['totalQuantity'] = totalQuantity>0?totalQuantity:data?.length;
         payload['previousChildLevel'] = currentLevel;
       }
       console.log('Payload for codeScan api req :', payload);
@@ -275,7 +282,6 @@ function ScanList() {
       console.log('codeScan APIs Response :', codeScanResponse.data);
 
       if (codeScanResponse.data.success && codeScanResponse.data.code === 200) {
-        
         setData(prevData => {
           const alreadyExist = prevData.find(item => item === barcodeData);
           if (!alreadyExist) {
@@ -313,12 +319,12 @@ function ScanList() {
 
   const handleEndTransaction = () => {
     console.log('End transaction button pressed..');
-    setParentModalVisible(true); 
+    setParentModalVisible(true);
   };
 
   const handleParentModalDismiss = async confirmed => {
-    setParentModalVisible(false); 
-    setTransactionStatus(confirmed ? 'completed' : 'failed'); 
+    setParentModalVisible(false);
+    setTransactionStatus(confirmed ? 'completed' : 'failed');
     console.log(confirmed);
     if (
       confirmed &&
@@ -331,7 +337,7 @@ function ScanList() {
   };
 
   const handleChildModalDismiss = () => {
-    setChildModalVisible(false); 
+    setChildModalVisible(false);
   };
 
   //Print SSCC codes API
@@ -413,9 +419,13 @@ function ScanList() {
     }
   };
 
-  AppState.addEventListener('change', async () => await handleAggregateState());
-  console.log("totalProduct :",totalProduct);
-  
+  AppState.addEventListener(
+    'change',
+    async currentState =>
+      currentState == 'background' && (await handleAggregateState()),
+  );
+  console.log('totalProduct :', totalProduct);
+
   return (
     <>
       <KeyboardAvoidingView
@@ -479,7 +489,7 @@ function ScanList() {
 
         <TouchableOpacity
           mode="contained"
-          disabled={totalProduct!=1}
+          disabled={totalProduct != 1}
           style={styles.submitButton}
           onPress={handleEndTransaction}>
           <Text style={styles.endTranTxt}>End Transaction</Text>
@@ -551,7 +561,7 @@ function ScanList() {
             <View style={styles.childModalFooter}>
               <Button
                 mode="contained"
-                onPress={handleChildModalDismiss} 
+                onPress={handleChildModalDismiss}
                 style={styles.modalOKButton}>
                 OK
               </Button>
@@ -585,7 +595,7 @@ function ScanList() {
             <View style={styles.childModalFooter}>
               <Button
                 mode="contained"
-                onPress={handleChildModalDismiss} 
+                onPress={handleChildModalDismiss}
                 style={styles.modelRetryButton}>
                 Retry
               </Button>

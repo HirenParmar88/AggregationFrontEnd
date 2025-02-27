@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useCallback} from 'react';
-import {NavigationContainer,useFocusEffect} from '@react-navigation/native';
+import {NavigationContainer, useFocusEffect} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createDrawerNavigator} from '@react-navigation/drawer';
 import Login from './app/screens/Login'; // Import your Login screen
@@ -22,6 +22,7 @@ import SettingScreen from './app/screens/Settings';
 import LoaderComponent from './app/components/Loader';
 import UrlScreen from './app/screens/UrlScreens';
 import {screenPrivileges} from './utils/screenPrivileges';
+//import GetNetInfo from './app/components/NetInfo';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -150,10 +151,10 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [backendURL, setBackendUrl] = useState('');
   const [screens, setScreens] = useState([]);
-  
+
   useEffect(() => {
     (async () => {
-      console.log("App useEffect calll..")
+      console.log('App useEffect calll..');
       const token = await AsyncStorage.getItem('authToken');
       setBackendUrl(await AsyncStorage.getItem('BackendUrl'));
 
@@ -175,7 +176,7 @@ function App() {
       setScreens(updatedScreens);
     })();
   }, [isAuthenticated]);
-  
+
   if (loading) {
     return <LoaderComponent />;
   }
@@ -200,7 +201,7 @@ function App() {
           />
 
           {screens.map(screen => screen.component)}
-          
+
           <Drawer.Screen
             name="ScanList"
             component={ScanList}
@@ -236,7 +237,7 @@ function App() {
           <Drawer.Screen
             name="Logout"
             component={Logout}
-            initialParams={{setIsAuthenticated,setScreens}}
+            initialParams={{setIsAuthenticated, setScreens}}
             options={{
               drawerLabel: 'Logout',
               headerShown: false,
@@ -249,6 +250,24 @@ function App() {
               ),
             }} // You can customize the label here
           />
+
+          {/* <Drawer.Screen
+            name="GetNetInfo"
+            component={GetNetInfo}
+            initialParams={{setIsAuthenticated, setScreens}}
+            options={{
+              drawerLabel: 'GetNetInfo',
+              headerShown: false,
+              drawerIcon: ({focused, size}) => (
+                <MaterialIcons
+                  name="logout"
+                  size={size}
+                  color={focused ? '#000000' : '#000000'}
+                />
+              ),
+            }} // You can customize the label here
+          /> */}
+
           {/* <Drawer.Screen
             name="Loader"
             component={LoaderComponent}

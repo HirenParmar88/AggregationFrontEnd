@@ -1,22 +1,27 @@
-import React, {useEffect, useState} from 'react';
-import NetInfo from '@react-native-community/netinfo';
-import {Text, View} from 'react-native';
-function GetNetInfo() {
-  const [isNetConnected, setIsNetConnected] = useState();
-  useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener(state => {
-      console.log('Connection Type :', state.type);
-      console.log('Is connected :', state.isConnected);
-      setIsNetConnected(state.isConnected);
-    });
-    return () => {
-      unsubscribe();
-    };
-  }, []);
+import React, { useContext } from 'react';
+import { Text } from 'react-native';
+import {NetworkContext} from '../../context/NetworkContext';
+
+const GetNetInfo = () => {
+  const { isNetConnected, isVisible } = useContext(NetworkContext);
+
   return (
-    <View>
-      <Text>NoInternet: {isNetConnected}</Text>
-    </View>
+    <>
+      {isVisible && (
+        <Text
+          style={{
+            backgroundColor: isNetConnected ? 'green' : 'red',
+            color: '#fff',
+            textAlign: 'center',
+            bottom: 0,
+            width: '100%',
+            position: 'absolute',
+          }}>
+          {isNetConnected ? 'Back to Online' : 'Offline'}
+        </Text>
+      )}
+    </>
   );
-}
+};
+
 export default GetNetInfo;
