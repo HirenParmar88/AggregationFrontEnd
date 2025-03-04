@@ -9,6 +9,7 @@ import {url} from '../../utils/constant';
 import styles from '../../styles/settings';
 import {decodeAndSetConfig} from '../../utils/tokenUtils';
 import EsignPage from './Esign';
+import {useBackend} from '../../context/BackendContext';
 
 function SettingScreen() {
   const navigation = useNavigation();
@@ -24,7 +25,7 @@ function SettingScreen() {
   const [approveAPIName, setApproveAPIName] = useState();
   const [approveAPImethod, setApproveAPImethod] = useState();
   const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
-
+  const {backendUrl} = useBackend();
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
@@ -93,10 +94,17 @@ function SettingScreen() {
       };
       if (isApprover) {
         console.log('Approved is ', esignStatus === 'approved');
+        console.log('approveAPIName ', approveAPIName, openModal);
+        setOpenModal(false);
+        if (approveAPIName === 'settings-create') {
+          setOpenModal(true);
+          setApproveAPIName('settings-approve');
+          setApproveAPImethod('POST');
+          return;
+        }
         if (esignStatus === 'approved') {
           onToggleSnackBar('eSign has been approved for settings', 200);
-          setVisible(true);
-
+          await settings()
           closeApprovalModal();
         } else {
           onToggleSnackBar('eSign has been rejected for settings');
@@ -134,7 +142,7 @@ function SettingScreen() {
     // console.log("Token use for getApiSettings:",token);
     console.log('URL', url);
     const settingGetRes = await axios.get(
-      `${url}/printerallocation/${await DeviceInfo.getUniqueId()}`,
+      `${backendUrl}/printerallocation/${await DeviceInfo.getUniqueId()}`,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -170,7 +178,7 @@ function SettingScreen() {
     console.log('URL in settings', url);
 
     const settingRes = await axios.post(
-      `${url}/printerallocation/`,
+      `${backendUrl}/printerallocation/`,
       {
         printer_ip: printerIP,
         printer_port: printerPort,
@@ -188,7 +196,10 @@ function SettingScreen() {
     if (settingRes.data.success === true && settingRes.data.code === 200) {
       onToggleSnackBar(settingRes.data.message, 200);
       //navigation.navigate('Home');
-    } else if (settingRes.data.success === true && settingRes.data.code === 201) {
+    } else if (
+      settingRes.data.success === true &&
+      settingRes.data.code === 201
+    ) {
       onToggleSnackBar(settingRes.data.message, 201);
       //navigation.navigate('Home');
     } else {
@@ -239,7 +250,7 @@ function SettingScreen() {
               console.log(config.config.esign_status, !openModal);
               if (config.config.esign_status && !openModal) {
                 setOpenModal(true);
-                setApproveAPIName('printerAllocation-approve');
+                setApproveAPIName('settings-create');
                 setApproveAPImethod('POST');
                 return;
               }

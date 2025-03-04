@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useIsFocused, useNavigation, useRoute} from '@react-navigation/native';
 import EsignPage from './Esign';
 import {decodeAndSetConfig} from '../../utils/tokenUtils';
-import {url} from '../../utils/constant';
+//import {url} from '../../utils/constant';
 import LoaderComponent from '../components/Loader';
 import styles from '../../styles/aggregation';
 import {fetchProductData, fetchBatchData} from '../components/fetchDetails';
@@ -115,14 +115,23 @@ function AggregationComponent() {
       };
       if (isApprover) {
         console.log('Approved is ', esignStatus === 'approved');
+        console.log("approveAPIName ",approveAPIName,openModal)
+        setOpenModal(false)
+        onToggleSnackBar('eSign has been approved for add aggregate', 200);
+          if(approveAPIName==="aggregated-transaction-create"){
+            setOpenModal(true)
+            setApproveAPIName('aggregated-transaction-approve');
+            setApproveAPImethod('POST')
+            return
+          }
         if (esignStatus === 'approved') {
-          onToggleSnackBar('eSign has been approved for add aggregate', 200);
           await addAggregrate('approved');
 
           closeApprovalModal();
         } else {
           onToggleSnackBar('eSign has been rejected for add aggregate');
-          await addAggregrate('rejected');
+
+          // await addAggregrate('rejected');
           if (esignStatus === 'rejected') closeApprovalModal();
         }
       } else {
@@ -138,9 +147,10 @@ function AggregationComponent() {
     console.log('Add Agregration....');
     console.log(valueProduct);
     console.log(valueBatch);
-
+    const backendUrl= await AsyncStorage.getItem('BackendUrl');
+    
     const aggregationtransactionResponse = await axios.post(
-      `${url}/aggregationtransaction/addaggregation`,
+      `${backendUrl}/aggregationtransaction/addaggregation`,
       {
         audit_log: {
           audit_log: config?.config?.audit_logs,
@@ -188,7 +198,7 @@ function AggregationComponent() {
       } else {
         onToggleSnackBar(aggregationtransactionResponse.data.message, 200);
         setTimeout(() => {
-          navigation.navigate('ScanList');
+          navigation.navigate('ScanList',{backendUrl:backendUrl});
         }, 2000);
       }
       console.log(aggregationtransactionResponse);

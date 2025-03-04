@@ -28,7 +28,7 @@ import EsignPage from './Esign';
 import {decodeAndSetConfig} from '../../utils/tokenUtils';
 import styles from '../../styles/dropout';
 import {fetchProductData, fetchBatchData,fetchCountryCode} from '../components/fetchDetails';
-
+import { useBackend } from '../../context/BackendContext';
 function DropoutFun() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
@@ -60,7 +60,7 @@ function DropoutFun() {
   const [approveAPIName, setApproveAPIName] = useState();
   const [approveAPImethod, setApproveAPImethod] = useState();
   const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
-
+  const {backendUrl} = useBackend()
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
       code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
@@ -217,13 +217,13 @@ function DropoutFun() {
         user,
       });
       console.log(isApprover, isAuthenticated);
-      const closeApprovalModal = () => setOpenModal(false);
       const resetState = () => {
         setApproveAPIName('');
         setApproveAPImethod('');
         setApproveAPIEndPoint('');
         setOpenModal(false);
       };
+      const closeApprovalModal = () => setOpenModal(false);
       if (!isAuthenticated) {
         onToggleSnackBar('Authentication failed, Please try again.', 400);
         //Alert.alert('Authentication failed, Please try again.');
@@ -244,6 +244,18 @@ function DropoutFun() {
       if (isApprover) {
         console.log('Approved is ', esignStatus === 'approved');
         if (esignStatus === 'approved') {
+          console.log("approveAPIName ",approveAPIName,openModal)
+          setOpenModal(false)
+          onToggleSnackBar(
+            'eSign has been approved for dropout whole batch',
+            200,
+          );
+          if(approveAPIName==="dropout-create"){
+            setOpenModal(true)
+            setApproveAPIName('dropout-approve');
+            setApproveAPImethod('POST')
+            return
+          }
           if (wholeBatch) {
             onToggleSnackBar(
               'eSign has been approved for dropout whole batch',
@@ -257,7 +269,6 @@ function DropoutFun() {
             );
             await handleConfirmCodesDropout('approved');
           }
-          closeApprovalModal();
         } else {
           if (esignStatus === 'rejected') {
             if (wholeBatch) {
@@ -292,7 +303,7 @@ function DropoutFun() {
         uniqueCode: barcodeData,
       };
       console.log('Payload for scan/validation :', payload);
-      const scanRes = await axios.post(`${url}/scan/validation`, payload, {
+      const scanRes = await axios.post(`${backendUrl}/scan/validation`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -369,7 +380,7 @@ function DropoutFun() {
       onToggleSnackBar('Select dropout reason');
     }
     const batchDropRes = await axios.post(
-      `${url}/dropout/wholebatch`,
+      `${backendUrl}/dropout/wholebatch`,
       {
         audit_log: {
           audit_log: config?.config?.audit_logs,
@@ -413,7 +424,7 @@ function DropoutFun() {
       onToggleSnackBar('Select dropout reason');
     }
     const codesDropRes = await axios.post(
-      `${url}/dropout/codes`,
+      `${backendUrl}/dropout/codes`,
       {
         audit_log: {
           audit_log: config?.config?.audit_logs,
@@ -652,7 +663,7 @@ function DropoutFun() {
                     setVisibleConfirmBatch(false);
                     if (config.config.esign_status && !openModal) {
                       setOpenModal(true);
-                      setApproveAPIName('dropout-approve');
+                      setApproveAPIName('dropout-create');
                       setApproveAPImethod('POST');
                       return;
                     }

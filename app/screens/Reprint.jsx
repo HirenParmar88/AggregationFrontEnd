@@ -31,7 +31,7 @@ import {decodeAndSetConfig} from '../../utils/tokenUtils';
 import styles from '../../styles/reprint';
 import EsignPage from './Esign';
 import {fetchProductData, fetchBatchData, fetchCountryCode} from '../components/fetchDetails';
-
+import { useBackend } from '../../context/BackendContext';
 function Reprint() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
@@ -47,6 +47,7 @@ function Reprint() {
     value: null,
     label: null,
   });
+  const {backendUrl} = useBackend()
   const [isFocusProduct, setIsFocusProduct] = useState(false);
   const [isFocusBatch, setIsFocusBatch] = useState(false);
   const [products, setProducts] = useState([]);
@@ -200,7 +201,7 @@ function Reprint() {
     }
     if (config.config.esign_status && !openModal) {
       setOpenModal(true);
-      setApproveAPIName('codeReplace-approve');
+      setApproveAPIName('reprint-create');
       setApproveAPImethod('POST');
       return;
     }
@@ -220,7 +221,7 @@ function Reprint() {
   const print = async () => {
     //console.log('Reprint success.');
     const reprintRes = await axios.post(
-      `${url}/reprint`,
+      `${backendUrl}/reprint`,
       {
         audit_log: {
           audit_log: config?.config?.audit_logs,
@@ -303,8 +304,16 @@ function Reprint() {
       };
       if (isApprover) {
         console.log('Approved is ', esignStatus === 'approved');
-        if (esignStatus === 'approved') {
+        console.log("approveAPIName ",approveAPIName,openModal)
+          setOpenModal(false)
           onToggleSnackBar('eSign has been approved in reprint', 200);
+          if(approveAPIName==="reprint-create"){
+            setOpenModal(true)
+            setApproveAPIName('reprint-approve');
+            setApproveAPImethod('POST')
+            return
+          }
+        if (esignStatus === 'approved') {
           setVisible(true);
 
           closeApprovalModal();

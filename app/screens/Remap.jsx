@@ -30,7 +30,7 @@ import styles from '../../styles/remap';
 import {decodeAndSetConfig} from '../../utils/tokenUtils';
 import EsignPage from './Esign';
 import {fetchProductData, fetchBatchData, fetchCountryCode} from '../components/fetchDetails';
-
+import { useBackend } from '../../context/BackendContext';
 function RemapScreen() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
@@ -63,7 +63,7 @@ function RemapScreen() {
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
-  });
+  });const {backendUrl} = useBackend()
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
       code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
@@ -182,7 +182,7 @@ function RemapScreen() {
     console.log(config.config.esign_status, !openModal);
     if (config.config.esign_status && !openModal) {
       setOpenModal(true);
-      setApproveAPIName('codeRemap-approve');
+      setApproveAPIName('code-remap-create');
       setApproveAPImethod('POST');
       return;
     } else {
@@ -198,7 +198,7 @@ function RemapScreen() {
   const print = async () => {
     console.log('Remap success.');
     const remapRes = await axios.post(
-      `${url}/code-remap`,
+      `${backendUrl}/code-remap`,
       {
         product_id: selectedProduct.value,
         batch_id: selectedBatch.value,
@@ -272,6 +272,15 @@ function RemapScreen() {
       };
       if (isApprover) {
         console.log('Approved is ', esignStatus === 'approved');
+        console.log("approveAPIName ",approveAPIName,openModal)
+          setOpenModal(false)
+          onToggleSnackBar('eSign has been approved for code remap', 200);
+          if(approveAPIName==="code-remap-create"){
+            setOpenModal(true)
+            setApproveAPIName('code-remap-approve');
+            setApproveAPImethod('POST')
+            return
+          }
         if (esignStatus === 'approved') {
           onToggleSnackBar('eSign has been approved for code remap', 200);
           setVisible(true);
