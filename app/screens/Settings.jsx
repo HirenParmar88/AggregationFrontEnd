@@ -1,15 +1,14 @@
-import React, {useState, useEffect} from 'react';
-import {ScrollView, Text, View, TouchableOpacity} from 'react-native';
-import {Appbar, TextInput, Snackbar} from 'react-native-paper';
-import {useNavigation, useIsFocused} from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import { ScrollView, Text, View, TouchableOpacity } from 'react-native';
+import { Appbar, TextInput, Snackbar } from 'react-native-paper';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import DeviceInfo from 'react-native-device-info';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {url} from '../../utils/constant';
 import styles from '../../styles/settings';
-import {decodeAndSetConfig} from '../../utils/tokenUtils';
+import { decodeAndSetConfig } from '../../utils/tokenUtils';
 import EsignPage from './Esign';
-import {useBackend} from '../../context/BackendContext';
+
 
 function SettingScreen() {
   const navigation = useNavigation();
@@ -25,7 +24,7 @@ function SettingScreen() {
   const [approveAPIName, setApproveAPIName] = useState();
   const [approveAPImethod, setApproveAPImethod] = useState();
   const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
-  const {backendUrl} = useBackend();
+
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
@@ -36,11 +35,11 @@ function SettingScreen() {
     setSnackbarInfo({
       visible: true,
       message,
-      snackbarStyle: {backgroundColor},
+      snackbarStyle: { backgroundColor },
     });
   };
   const onDismissSnackBar = () =>
-    setSnackbarInfo({visible: false, message: ''});
+    setSnackbarInfo({ visible: false, message: '' });
 
   useEffect(() => {
     //getData();
@@ -50,7 +49,7 @@ function SettingScreen() {
         setConfig,
         await AsyncStorage.getItem('authToken'),
       ))();
-    return () => {};
+    return () => { };
   }, [isFocused]);
   const handleAuthResult = async (
     isAuthenticated,
@@ -97,9 +96,11 @@ function SettingScreen() {
         console.log('approveAPIName ', approveAPIName, openModal);
         setOpenModal(false);
         if (approveAPIName === 'settings-create') {
-          setOpenModal(true);
-          setApproveAPIName('settings-approve');
-          setApproveAPImethod('POST');
+          setTimeout(() => {
+            setOpenModal(true);
+            setApproveAPIName('settings-approve');
+            setApproveAPImethod('POST');
+          }, 1000);
           return;
         }
         if (esignStatus === 'approved') {
@@ -140,7 +141,9 @@ function SettingScreen() {
     console.log('GET Api call.');
     // const token = await AsyncStorage.getItem('authToken');
     // console.log("Token use for getApiSettings:",token);
-    console.log('URL', url);
+    const backendUrl = await AsyncStorage.getItem("BackendUrl")
+
+    console.log('URL', backendUrl);
     const settingGetRes = await axios.get(
       `${backendUrl}/printerallocation/${await DeviceInfo.getUniqueId()}`,
       {
@@ -175,8 +178,7 @@ function SettingScreen() {
 
     const token = await AsyncStorage.getItem('authToken');
     console.log('Token for settings POST Api :', token);
-    console.log('URL in settings', url);
-
+    const backendUrl = await AsyncStorage.getItem("BackendUrl")
     const settingRes = await axios.post(
       `${backendUrl}/printerallocation/`,
       {

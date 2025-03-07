@@ -28,7 +28,7 @@ import styles from '../../styles/codereplace';
 import { decodeAndSetConfig } from '../../utils/tokenUtils';
 import EsignPage from './Esign';
 import { fetchProductData, fetchBatchData, fetchCountryCode } from '../components/fetchDetails';
-import { useBackend } from '../../context/BackendContext';
+
 
 function CodeReplaceScreen() {
   const navigation = useNavigation();
@@ -55,7 +55,6 @@ function CodeReplaceScreen() {
   const [approveAPImethod, setApproveAPImethod] = useState();
   const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
   const [snackbarInfo, setSnackbarInfo] = useState({ visible: false, message: '' });
-  const { backendUrl } = useBackend();
 
   const onToggleSnackBar = (message, code) => {
     const backgroundColor = code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
@@ -90,7 +89,9 @@ function CodeReplaceScreen() {
           setToken(storedToken);
           console.log('JWT token : ', storedToken);
           await decodeAndSetConfig(setConfig, storedToken);
-          fetchProductData(storedToken, setProducts, setLoading);
+          const backendUrl = await AsyncStorage.getItem("BackendUrl")
+          console.log(backendUrl)
+          await fetchProductData(storedToken, setProducts, setLoading, backendUrl);
         } else {
           throw new Error('Token is missing');
         }
@@ -124,13 +125,14 @@ function CodeReplaceScreen() {
     HoneywellBarcodeReader.onTriggerStateChange((state) => console.log('onTriggerStateChange', state));
     HoneywellBarcodeReader.barcodeReaderInfo((details) => console.log('barcodeReaderClaimed', details));
 
-    return () => {};
+    return () => { };
   }, [countryCode, visible]);
 
   useEffect(() => {
     if (selectedProduct?.value) {
       (async () => {
-        await fetchCountryCode(setCountryCode, selectedProduct, setLoading, token);
+        const backendUrl = await AsyncStorage.getItem('BackendUrl')
+        await fetchCountryCode(setCountryCode, selectedProduct, setLoading, token, backendUrl);
       })();
     }
   }, [selectedProduct?.value]);
@@ -146,7 +148,8 @@ function CodeReplaceScreen() {
   const handleDropdownProductChange = async (item) => {
     setSelectedProduct({ value: item.value, label: item.label });
     setIsFocusProduct(false);
-    await fetchBatchData(setBatches, setLoading, token, item.value);
+    const backendUrl = await AsyncStorage.getItem('BackendUrl')
+    await fetchBatchData(setBatches, setLoading, token, item.value, backendUrl);
   };
 
   const handleCodeReplace = () => {
@@ -167,6 +170,7 @@ function CodeReplaceScreen() {
 
   const codeReplace = async () => {
     try {
+      const backendUrl = await AsyncStorage.getItem('BackendUrl')
       const codereplaceRes = await axios.post(
         `${backendUrl}/code-replace`,
         {
@@ -192,8 +196,8 @@ function CodeReplaceScreen() {
       }
       setText('');
     } catch (error) {
-      console.error('Code replace failed:', error);
-      onToggleSnackBar('An error occurred while processing your request.');
+      // console.error('Code replace failed:', error);
+      onToggleSnackBar('An error occurred while processing your request.' + error.message);
     }
   };
 
@@ -235,11 +239,13 @@ function CodeReplaceScreen() {
     };
 
     if (isApprover) {
-      onToggleSnackBar('eSign has been approve for code replace',200);
-      if(approveAPIName==="code-replace-create"){
-        setOpenModal(true)
-        setApproveAPIName('code-replace-approve');
-        setApproveAPImethod('POST')
+      onToggleSnackBar('eSign has been approve for code replace', 200);
+      if (approveAPIName === "code-replace-create") {
+        setTimeout(() => {
+          setOpenModal(true)
+          setApproveAPIName('code-replace-approve');
+          setApproveAPImethod('POST')
+        }, 1000)
         return
       }
       if (esignStatus === 'approved') {
@@ -374,7 +380,7 @@ function CodeReplaceScreen() {
                   mode="contained"
                   onPress={async () => {
                     hideModal();
-                  
+
                     if (config.config.esign_status && !openModal) {
                       setOpenModal(true);
                       setApproveAPIName('code-replace-create');

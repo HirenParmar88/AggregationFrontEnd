@@ -11,10 +11,8 @@ import {
 import {Modal, Portal, Text, TextInput, Snackbar} from 'react-native-paper';
 import Fontisto from 'react-native-vector-icons/Fontisto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-//import {url} from '../../utils/constant';
 import styles from '../../styles/esign';
 const {width, height} = Dimensions.get('window');
-//console.log("Widht & heig ", width, height)
 
 function EsignPage({
   config,

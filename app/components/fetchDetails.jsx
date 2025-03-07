@@ -1,11 +1,12 @@
 import axios from 'axios';
 import {url} from '../../utils/constant';
 
-export const fetchProductData = async (token, setProducts, setLoading) => {
+export const fetchProductData = async (token, setProducts, setLoading,backendUrl) => {
   console.log('Product APIs called..');
+  console.log(backendUrl)
   try {
     setLoading(true);
-    const productResponse = await axios.get(`${url}/product/`, {
+    const productResponse = await axios.get(`${backendUrl}/product/`, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
@@ -32,11 +33,11 @@ export const fetchProductData = async (token, setProducts, setLoading) => {
   }
 };
 
-export const fetchBatchData = async (setBatches, setLoading, token, product_id) => {
+export const fetchBatchData = async (setBatches, setLoading, token, product_id,backendUrl) => {
   console.log('Batch APIs called..');
   try {
     setLoading(true);
-    const batchResponse = await axios.get(`${url}/batch/${product_id}`, {
+    const batchResponse = await axios.get(`${backendUrl}/batch/${product_id}`, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
@@ -68,12 +69,13 @@ export const fetchCountryCode = async (
   selectedProduct,
   setLoading,
   token,
+  backendUrl
 ) => {
     try {
       setLoading(true);
       console.log('token in c ', token);
       const response = await axios.get(
-        `${url}/product/countrycode/${selectedProduct.value}`,
+        `${backendUrl}/product/countrycode/${selectedProduct.value}`,
         {
           headers: {
             'Content-Type': 'application/json',

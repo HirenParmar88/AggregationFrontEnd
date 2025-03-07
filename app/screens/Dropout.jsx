@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   KeyboardAvoidingView,
@@ -15,20 +15,19 @@ import {
   Portal,
   Snackbar,
 } from 'react-native-paper';
-import {useIsFocused, useNavigation} from '@react-navigation/native';
-import {Dropdown} from 'react-native-element-dropdown';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
+import { Dropdown } from 'react-native-element-dropdown';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {url} from '../../utils/constant';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import LoaderComponent from '../components/Loader';
 import Feather from 'react-native-vector-icons/Feather';
 import EsignPage from './Esign';
-import {decodeAndSetConfig} from '../../utils/tokenUtils';
+import { decodeAndSetConfig } from '../../utils/tokenUtils';
 import styles from '../../styles/dropout';
-import {fetchProductData, fetchBatchData,fetchCountryCode} from '../components/fetchDetails';
-import { useBackend } from '../../context/BackendContext';
+import { fetchProductData, fetchBatchData, fetchCountryCode } from '../components/fetchDetails';
+
 function DropoutFun() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
@@ -60,7 +59,7 @@ function DropoutFun() {
   const [approveAPIName, setApproveAPIName] = useState();
   const [approveAPImethod, setApproveAPImethod] = useState();
   const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
-  const {backendUrl} = useBackend()
+
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
       code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
@@ -68,11 +67,11 @@ function DropoutFun() {
     setSnackbarInfo({
       visible: true,
       message,
-      snackbarStyle: {backgroundColor},
+      snackbarStyle: { backgroundColor },
     });
   };
   const onDismissSnackBar = () =>
-    setSnackbarInfo({visible: false, message: ''});
+    setSnackbarInfo({ visible: false, message: '' });
   const [token, setToken] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState({
     value: null,
@@ -93,14 +92,14 @@ function DropoutFun() {
   };
 
   const dataConfirmDropout = [
-    {label: 'Damage', value: 'Damage'},
-    {label: 'Defect', value: 'Defect'},
-    {label: 'Expired Good', value: 'Expired Good'},
-    {label: 'QA-Sample', value: 'QA-Sample'},
-    {label: 'Product-Recall', value: 'Product-Recall'},
-    {label: 'Market Complaint', value: 'Market Complaint'},
-    {label: 'Product Testing', value: 'Product Testing'},
-    {label: 'Demo-Sample', value: 'Demo-Sample'},
+    { label: 'Damage', value: 'Damage' },
+    { label: 'Defect', value: 'Defect' },
+    { label: 'Expired Good', value: 'Expired Good' },
+    { label: 'QA-Sample', value: 'QA-Sample' },
+    { label: 'Product-Recall', value: 'Product-Recall' },
+    { label: 'Market Complaint', value: 'Market Complaint' },
+    { label: 'Product Testing', value: 'Product Testing' },
+    { label: 'Demo-Sample', value: 'Demo-Sample' },
   ];
 
   useEffect(() => {
@@ -117,8 +116,8 @@ function DropoutFun() {
       console.log('Previous data is :', scannedCodes);
       const scanRes = await scanValidation(event.data);
       if (scanRes && scanRes.code === 200) {
-        console.log("countryCode ### ",countryCode);
-        
+        console.log("countryCode ### ", countryCode);
+
         setScannedCodes(prevData => {
           const uniqueCode = getUniqueCode(event.data, countryCode);
           const alreadyExist = prevData.find(item => item === uniqueCode);
@@ -143,7 +142,7 @@ function DropoutFun() {
     HoneywellBarcodeReader.barcodeReaderInfo(details => {
       console.log('barcodeReaderClaimed', details);
     });
-    return () => {};
+    return () => { };
   }, [selectedProduct, selectedBatch]);
 
   const getUniqueCode = (url, format) => {
@@ -168,7 +167,8 @@ function DropoutFun() {
         if (storedToken) {
           setToken(storedToken);
           decodeAndSetConfig(setConfig, storedToken);
-          fetchProductData(storedToken, setProducts, setLoading);
+          const backendUrl = await AsyncStorage.getItem("BackendUrl")
+          fetchProductData(storedToken, setProducts, setLoading, backendUrl);
           console.log('product get in dropout Page :-', products);
         } else {
           throw new Error('Token is missing');
@@ -181,24 +181,26 @@ function DropoutFun() {
     if (isFocused) {
       loadTokenAndData();
     }
-    return () => {};
+    return () => { };
   }, [isFocused]);
 
   useEffect(() => {
     if (selectedProduct.value) {
       (async () => {
-        await fetchBatchData(setBatches, setLoading, token, selectedProduct.value);
+        const backendUrl = await AsyncStorage.getItem("BackendUrl")
+        await fetchBatchData(setBatches, setLoading, token, selectedProduct.value, backendUrl);
         await fetchCountryCode(
           setCountryCode,
           selectedProduct,
           setLoading,
           token,
+          backendUrl
         );
       })();
     }
 
-    return () => {};
-  }, [selectedProduct,countryCode]);
+    return () => { };
+  }, [selectedProduct, countryCode]);
 
   const handleAuthResult = async (
     isAuthenticated,
@@ -244,16 +246,18 @@ function DropoutFun() {
       if (isApprover) {
         console.log('Approved is ', esignStatus === 'approved');
         if (esignStatus === 'approved') {
-          console.log("approveAPIName ",approveAPIName,openModal)
+          console.log("approveAPIName ", approveAPIName, openModal)
           setOpenModal(false)
           onToggleSnackBar(
             'eSign has been approved for dropout whole batch',
             200,
           );
-          if(approveAPIName==="dropout-create"){
-            setOpenModal(true)
-            setApproveAPIName('dropout-approve');
-            setApproveAPImethod('POST')
+          if (approveAPIName === "dropout-create") {
+            setTimeout(() => {
+              setOpenModal(true)
+              setApproveAPIName('dropout-approve');
+              setApproveAPImethod('POST')
+            }, 1000)
             return
           }
           if (wholeBatch) {
@@ -303,6 +307,7 @@ function DropoutFun() {
         uniqueCode: barcodeData,
       };
       console.log('Payload for scan/validation :', payload);
+      const backendUrl = await AsyncStorage.getItem("BackendUrl")
       const scanRes = await axios.post(`${backendUrl}/scan/validation`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -328,7 +333,7 @@ function DropoutFun() {
 
   const handleDropdownProductChange = async item => {
     console.log('product id select ', item);
-    setSelectedProduct({value: item.value, label: item.label});
+    setSelectedProduct({ value: item.value, label: item.label });
     //setBatches([]);
     console.log('selected Product Item in dropout:-', item);
     console.log('item.value Product', item.value);
@@ -338,7 +343,7 @@ function DropoutFun() {
   };
 
   const handleDropdownBatchChange = item => {
-    setSelectedBatch({value: item.value, label: item.label});
+    setSelectedBatch({ value: item.value, label: item.label });
   };
 
   const radioBatchDropout = () => {
@@ -379,6 +384,7 @@ function DropoutFun() {
     if (!dropoutReason) {
       onToggleSnackBar('Select dropout reason');
     }
+    const backendUrl = await AsyncStorage.getItem("BackendUrl")
     const batchDropRes = await axios.post(
       `${backendUrl}/dropout/wholebatch`,
       {
@@ -403,8 +409,8 @@ function DropoutFun() {
     if (batchDropRes.data.success === true && batchDropRes.data.code === 200) {
       onToggleSnackBar(batchDropRes.data.message, 200);
       setDropoutReason('');
-      setSelectedBatch({value: null, label: null});
-      setSelectedProduct({value: null, label: null});
+      setSelectedBatch({ value: null, label: null });
+      setSelectedProduct({ value: null, label: null });
     } else if (batchResponse.data.code === 401) {
       await AsyncStorage.removeItem('authToken');
     }
@@ -423,6 +429,7 @@ function DropoutFun() {
     if (!dropoutReason) {
       onToggleSnackBar('Select dropout reason');
     }
+    const backendUrl = await AsyncStorage.getItem("BackendUrl")
     const codesDropRes = await axios.post(
       `${backendUrl}/dropout/codes`,
       {
@@ -446,14 +453,14 @@ function DropoutFun() {
     console.log('Response of codes dropout: ', codesDropRes.data);
     if (codesDropRes.data.success && codesDropRes.data.code === 200) {
       onToggleSnackBar(codesDropRes.data.message, 200);
-      setSelectedBatch({value: null, label: null});
-      setSelectedProduct({value: null, label: null});
+      setSelectedBatch({ value: null, label: null });
+      setSelectedProduct({ value: null, label: null });
       setDropoutReason('');
       setScannedCodes([]);
     } else if (codesDropRes.data.code === 500) {
       onToggleSnackBar(codesDropRes.data.message);
     }
-    setVisibleConfirmCodes(false); 
+    setVisibleConfirmCodes(false);
   };
 
   const onDropoutReasonChange = item => {
@@ -467,7 +474,7 @@ function DropoutFun() {
 
   return (
     <>
-      <KeyboardAvoidingView style={{flex: 1}} behavior="padding">
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <Appbar.Header>
           <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
           <Appbar.Content title="Dropout" />
@@ -478,7 +485,7 @@ function DropoutFun() {
           <View style={styles.dropdownContainer}>
             <View style={styles.containerDropdownItem}>
               <Dropdown
-                style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
+                style={[styles.dropdown, { borderColor: 'rgb(80, 189, 160)' }]}
                 placeholderStyle={styles.placeholderStyle}
                 selectedTextStyle={styles.selectedTextStyle}
                 data={products}
@@ -503,7 +510,7 @@ function DropoutFun() {
           <View style={styles.dropdownContainer}>
             <View style={styles.containerDropdownItem}>
               <Dropdown
-                style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
+                style={[styles.dropdown, { borderColor: 'rgb(80, 189, 160)' }]}
                 placeholderStyle={styles.placeholderStyle}
                 selectedTextStyle={styles.selectedTextStyle}
                 data={batches}
@@ -532,7 +539,7 @@ function DropoutFun() {
                 status={wholeBatch ? 'checked' : 'unchecked'}
                 onPress={radioBatchDropout}
               />
-              <Text style={{fontSize: 16}}>Batch Dropout</Text>
+              <Text style={{ fontSize: 16 }}>Batch Dropout</Text>
             </View>
             <View style={styles.radioItem2}>
               <RadioButton
@@ -540,7 +547,7 @@ function DropoutFun() {
                 status={!wholeBatch ? 'checked' : 'unchecked'}
                 onPress={radioCodesDropout}
               />
-              <Text style={{fontSize: 16}}>Codes Dropout</Text>
+              <Text style={{ fontSize: 16 }}>Codes Dropout</Text>
             </View>
           </View>
 
@@ -550,7 +557,7 @@ function DropoutFun() {
 
           <ScrollView>
             {!wholeBatch && (
-              <List.Section style={{flexDirection: 'column-reverse'}}>
+              <List.Section style={{ flexDirection: 'column-reverse' }}>
                 {scannedCodes.map((item, index) => (
                   <List.Item
                     key={index}
@@ -559,7 +566,7 @@ function DropoutFun() {
                       <Feather
                         name="package"
                         size={25}
-                        style={{marginLeft: 5}}
+                        style={{ marginLeft: 5 }}
                       />
                     )}
                   />
@@ -587,11 +594,11 @@ function DropoutFun() {
             <Text style={styles.modalBatchContent}>
               Are you sure you want to dropout?
             </Text>
-            <View style={{padding: 10}}>
-              <Text style={{fontSize: 18, fontWeight: 'bold'}}>
+            <View style={{ padding: 10 }}>
+              <Text style={{ fontSize: 18, fontWeight: 'bold' }}>
                 Batch: {selectedBatch.label}
               </Text>
-              <Text style={{fontSize: 18, fontWeight: 'bold'}}>
+              <Text style={{ fontSize: 18, fontWeight: 'bold' }}>
                 Product: {selectedProduct.label}
               </Text>
             </View>
@@ -629,7 +636,7 @@ function DropoutFun() {
                   <Dropdown
                     style={[
                       styles.dropdown,
-                      isFocusP && {borderColor: 'rgb(80, 189, 160)'},
+                      isFocusP && { borderColor: 'rgb(80, 189, 160)' },
                     ]}
                     placeholderStyle={styles.placeholderStyle}
                     selectedTextStyle={styles.selectedTextStyle}
@@ -690,11 +697,11 @@ function DropoutFun() {
               <Text style={styles.modalCodesContent}>
                 Are you sure you want to dropout?
               </Text>
-              <View style={{paddingTop: 25}}>
-                <Text style={{fontSize: 16, fontWeight: 'bold'}}>
+              <View style={{ paddingTop: 25 }}>
+                <Text style={{ fontSize: 16, fontWeight: 'bold' }}>
                   Batch: {selectedBatch.label}
                 </Text>
-                <Text style={{fontSize: 16, fontWeight: 'bold'}}>
+                <Text style={{ fontSize: 16, fontWeight: 'bold' }}>
                   Product: {selectedProduct.label}
                 </Text>
               </View>
@@ -725,7 +732,7 @@ function DropoutFun() {
                   <Dropdown
                     style={[
                       styles.dropdown,
-                      isFocusP && {borderColor: 'rgb(80, 189, 160)'},
+                      isFocusP && { borderColor: 'rgb(80, 189, 160)' },
                     ]}
                     placeholderStyle={styles.placeholderStyle}
                     selectedTextStyle={styles.selectedTextStyle}

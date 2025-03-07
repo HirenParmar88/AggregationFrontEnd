@@ -43,7 +43,8 @@ function ProductDropdownComponent({valueProduct,handleDropdownProductChange,setV
 
     try {
       setLoading(true);
-      const productResponse = await axios.get(`${url}/product/`, {
+      const backendUrl=await AsyncStorage.getItem("BackendUrl")
+      const productResponse = await axios.get(`${backendUrl}/product/`, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,

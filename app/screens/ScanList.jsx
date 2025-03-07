@@ -1,5 +1,5 @@
 'use client';
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   AppState,
   AppRegistry,
@@ -20,19 +20,18 @@ import {
   Modal,
   Snackbar,
 } from 'react-native-paper';
-import {useIsFocused, useNavigation} from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // To handle token storage
-import {url} from '../../utils/constant';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Feather from 'react-native-vector-icons/Feather';
 import DeviceInfo from 'react-native-device-info';
-import {decodeAndSetConfig} from '../../utils/tokenUtils';
+import { decodeAndSetConfig } from '../../utils/tokenUtils';
 import styles from '../../styles/scanlist';
 
-function ScanList() {
+function ScanList({ route }) {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [data, setData] = useState([]);
@@ -54,8 +53,9 @@ function ScanList() {
   const [serialNumber, setSerialNumber] = useState();
   const [previousChildLevel, setPreviousChildLevel] = useState(-1);
   const [totalQuantity, setTotalQuantity] = useState(0);
+  // const backendUrl = useRef(route.params.backendUrl)
 
-  
+
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
@@ -66,7 +66,7 @@ function ScanList() {
       handleScannedData();
     }
     //scanValidation();
-    return () => {};
+    return () => { };
   }, [isFocused]);
 
   useEffect(() => {
@@ -108,7 +108,7 @@ function ScanList() {
       //console.log('barcodeReaderClaimed', details);
     });
 
-    return async () => {};
+    return async () => { };
   }, [
     transactionId,
     quantity,
@@ -129,12 +129,12 @@ function ScanList() {
     setSnackbarInfo({
       visible: true,
       message,
-      snackbarStyle: {backgroundColor},
+      snackbarStyle: { backgroundColor },
     });
   };
 
   const onDismissSnackBar = () =>
-    setSnackbarInfo({visible: false, message: ''});
+    setSnackbarInfo({ visible: false, message: '' });
 
   //scan Validation API
   const scanValidation = async barcodeData => {
@@ -149,8 +149,8 @@ function ScanList() {
         uniqueCode: barcodeData,
       };
       console.log('Payload for scan/validation :', payload);
-
-      const scanRes = await axios.post(`${url}/scan/validation`, payload, {
+      const backendUrl = await AsyncStorage.getItem("BackendUrl")
+      const scanRes = await axios.post(`${backendUrl}/scan/validation`, payload, {
         headers: {
           Authorization: `Bearer ${await AsyncStorage.getItem('authToken')}`,
           'Content-Type': 'application/json',
@@ -189,12 +189,13 @@ function ScanList() {
   //packaging Hierarchy API
   const handleScannedData = async () => {
     decodeAndSetConfig(setConfig, await AsyncStorage.getItem('authToken'));
+    const backendUrl = await AsyncStorage.getItem('BackendUrl')
     try {
       const productId = await AsyncStorage.getItem('productId');
       console.log('productId :-', productId);
 
       const response = await axios.post(
-        `${url}/packagingHierarchy`,
+        `${backendUrl}/packagingHierarchy`,
         {
           audit_log: {
             audit_log: config?.config?.audit_logs,
@@ -211,16 +212,16 @@ function ScanList() {
         },
       );
       console.log('Packaging Hierarchy API Res :', response.data);
-      
+
       if (response.data.success === true && response.data.code === 200) {
         onToggleSnackBar(response.data.message, response.data.code);
         if (response?.data?.data?.scannedCodes?.length > 0) {
           setData(response?.data?.data?.scannedCodes);
         }
-        if(!response.data.data?.isRestorePreviousState){
+        if (!response.data.data?.isRestorePreviousState) {
           setTotalQuantity(response.data.data.quantity);
         }
-        
+
         setQuantity(response.data.data.quantity);
         setPackageNo(response.data.data.packageNo);
         setCurrentLevel(response.data.data.currentLevel);
@@ -265,12 +266,13 @@ function ScanList() {
       }
 
       if (quantity == 1) {
-        payload['totalQuantity'] = totalQuantity>0?totalQuantity:data?.length;
+        payload['totalQuantity'] = totalQuantity > 0 ? totalQuantity : data?.length;
         payload['previousChildLevel'] = currentLevel;
       }
       console.log('Payload for codeScan api req :', payload);
+      const backendUrl = await AsyncStorage.getItem("BackendUrl")
       const codeScanResponse = await axios.post(
-        `${url}/scan/codeScan`,
+        `${backendUrl}/scan/codeScan`,
         payload,
         {
           headers: {
@@ -343,8 +345,9 @@ function ScanList() {
   //Print SSCC codes API
   const handlePrintCode = async (SsccCode, SerialNo) => {
     try {
+      const backendUrl = await AsyncStorage.getItem("BackendUrl");
       const res = await axios.post(
-        `${url}/print`,
+        `${backendUrl}/print`,
         {
           SsccCode,
           SerialNo,
@@ -388,8 +391,10 @@ function ScanList() {
     console.log(payload);
     try {
       // if (state === 'inactive' || state === 'background') {
+      const backendUrl = await AsyncStorage.getItem("BackendUrl")
+
       const res = await axios.post(
-        `${url}/aggregationtransaction/handleAggregatedTransactionScanState`,
+        `${backendUrl}/aggregationtransaction/handleAggregatedTransactionScanState`,
         {
           ...payload,
         },
@@ -429,7 +434,7 @@ function ScanList() {
   return (
     <>
       <KeyboardAvoidingView
-        style={{flex: 1}}
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Appbar.Header>
           <Appbar.BackAction
@@ -464,13 +469,13 @@ function ScanList() {
         {/* <Divider /> */}
 
         <ScrollView contentContainerStyle={styles.container}>
-          <List.Section style={{flexDirection: 'column-reverse'}}>
+          <List.Section style={{ flexDirection: 'column-reverse' }}>
             {data.map((item, index) => (
               <List.Item
                 key={index}
                 title={item}
                 left={() => (
-                  <Feather name="package" size={25} style={{paddingRight: 0}} />
+                  <Feather name="package" size={25} style={{ paddingRight: 0 }} />
                 )}
               />
             ))}

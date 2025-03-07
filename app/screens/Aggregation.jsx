@@ -1,18 +1,17 @@
 //app/screens/Products.jsx
-import React, {useState, useEffect} from 'react';
-import {Text, View, Alert, TouchableOpacity, Image} from 'react-native';
-import {Snackbar} from 'react-native-paper';
+import React, { useState, useEffect, useRef } from 'react';
+import { Text, View, Alert, TouchableOpacity, Image } from 'react-native';
+import { Snackbar } from 'react-native-paper';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import {Dropdown} from 'react-native-element-dropdown';
+import { Dropdown } from 'react-native-element-dropdown';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useIsFocused, useNavigation, useRoute} from '@react-navigation/native';
+import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native';
 import EsignPage from './Esign';
-import {decodeAndSetConfig} from '../../utils/tokenUtils';
-//import {url} from '../../utils/constant';
+import { decodeAndSetConfig } from '../../utils/tokenUtils';
 import LoaderComponent from '../components/Loader';
 import styles from '../../styles/aggregation';
-import {fetchProductData, fetchBatchData} from '../components/fetchDetails';
+import { fetchProductData, fetchBatchData } from '../components/fetchDetails';
 
 function AggregationComponent() {
   const navigation = useNavigation();
@@ -37,6 +36,8 @@ function AggregationComponent() {
     message: '',
   });
 
+
+
   useEffect(() => {
     const loadTokenAndData = async () => {
       try {
@@ -45,7 +46,10 @@ function AggregationComponent() {
         if (storedToken) {
           decodeAndSetConfig(setConfig, storedToken);
           setToken(storedToken);
-          await fetchProductData(storedToken, setProducts, setLoading);
+          console.log(storedToken)
+          const backendUrl = await AsyncStorage.getItem('BackendUrl')
+          console.log(backendUrl)
+          await fetchProductData(storedToken, setProducts, setLoading, backendUrl);
           console.log('product :-', products);
         } else {
           throw new Error('Token is missing');
@@ -62,7 +66,7 @@ function AggregationComponent() {
     };
   }, [isFocused]);
   const onDismissSnackBar = () =>
-    setSnackbarInfo({visible: false, message: ''});
+    setSnackbarInfo({ visible: false, message: '' });
 
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
@@ -71,13 +75,13 @@ function AggregationComponent() {
     setSnackbarInfo({
       visible: true,
       message,
-      snackbarStyle: {backgroundColor},
+      snackbarStyle: { backgroundColor },
     });
   };
 
   // Fetch products
   //console.log('Config :->', config);
-  
+
   const handleAuthResult = async (
     isAuthenticated,
     user,
@@ -115,15 +119,15 @@ function AggregationComponent() {
       };
       if (isApprover) {
         console.log('Approved is ', esignStatus === 'approved');
-        console.log("approveAPIName ",approveAPIName,openModal)
+        console.log("approveAPIName ", approveAPIName, openModal)
         setOpenModal(false)
         onToggleSnackBar('eSign has been approved for add aggregate', 200);
-          if(approveAPIName==="aggregated-transaction-create"){
-            setOpenModal(true)
-            setApproveAPIName('aggregated-transaction-approve');
-            setApproveAPImethod('POST')
-            return
-          }
+        if (approveAPIName === "aggregated-transaction-create") {
+          setOpenModal(true)
+          setApproveAPIName('aggregated-transaction-approve');
+          setApproveAPImethod('POST')
+          return
+        }
         if (esignStatus === 'approved') {
           await addAggregrate('approved');
 
@@ -147,8 +151,8 @@ function AggregationComponent() {
     console.log('Add Agregration....');
     console.log(valueProduct);
     console.log(valueBatch);
-    const backendUrl= await AsyncStorage.getItem('BackendUrl');
-    
+    const backendUrl = await AsyncStorage.getItem('BackendUrl');
+
     const aggregationtransactionResponse = await axios.post(
       `${backendUrl}/aggregationtransaction/addaggregation`,
       {
@@ -197,8 +201,9 @@ function AggregationComponent() {
         onToggleSnackBar(aggregationtransactionResponse.data.message);
       } else {
         onToggleSnackBar(aggregationtransactionResponse.data.message, 200);
-        setTimeout(() => {
-          navigation.navigate('ScanList',{backendUrl:backendUrl});
+        setTimeout(async () => {
+          const backendUrl = await AsyncStorage.getItem("BackendUrl")
+          navigation.navigate('ScanList', { "backendUrl": backendUrl });
         }, 2000);
       }
       console.log(aggregationtransactionResponse);
@@ -215,9 +220,11 @@ function AggregationComponent() {
     console.log(config.config.esign_status, !openModal);
 
     if (config.config.esign_status && !openModal) {
-      setOpenModal(true);
-      setApproveAPIName('aggregated-transaction-create');
-      setApproveAPImethod('POST');
+      setTimeout(() => {
+        setOpenModal(true);
+        setApproveAPIName('aggregated-transaction-create');
+        setApproveAPImethod('POST');
+      }, 1000)
       return;
     }
     addAggregrate('approved');
@@ -238,7 +245,8 @@ function AggregationComponent() {
     console.log('item.value', item.value);
     setValueProduct(item.value);
     console.log('selected Product Item :-', item);
-    await fetchBatchData(setBatches, setLoading, token, item.value);
+    const backendUrl = await AsyncStorage.getItem('BackendUrl')
+    await fetchBatchData(setBatches, setLoading, token, item.value, backendUrl);
     setIsFocusProduct(false);
   };
   return (
@@ -263,7 +271,7 @@ function AggregationComponent() {
         {/* {renderLabelProduct()} */}
         <View style={styles.dropdownContainer}>
           <Dropdown
-            style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
+            style={[styles.dropdown, { borderColor: 'rgb(80, 189, 160)' }]}
             placeholderStyle={styles.placeholderStyle}
             selectedTextStyle={styles.selectedTextStyle}
             //inputSearchStyle={styles.inputSearchStyle}
@@ -294,7 +302,7 @@ function AggregationComponent() {
         {/* {renderLabelBatch()} */}
         <View style={styles.dropdownContainer}>
           <Dropdown
-            style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
+            style={[styles.dropdown, { borderColor: 'rgb(80, 189, 160)' }]}
             placeholderStyle={styles.placeholderStyle}
             selectedTextStyle={styles.selectedTextStyle}
             //inputSearchStyle={styles.inputSearchStyle}

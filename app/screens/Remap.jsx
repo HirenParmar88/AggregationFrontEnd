@@ -1,5 +1,5 @@
 //app/components/screens/Remap.jsx
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   KeyboardAvoidingView,
@@ -17,20 +17,19 @@ import {
   Divider,
   Snackbar,
 } from 'react-native-paper';
-import {useIsFocused, useNavigation} from '@react-navigation/native';
-import {Dropdown} from 'react-native-element-dropdown';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
+import { Dropdown } from 'react-native-element-dropdown';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import {url} from '../../utils/constant';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import LoaderComponent from '../components/Loader';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import styles from '../../styles/remap';
-import {decodeAndSetConfig} from '../../utils/tokenUtils';
+import { decodeAndSetConfig } from '../../utils/tokenUtils';
 import EsignPage from './Esign';
-import {fetchProductData, fetchBatchData, fetchCountryCode} from '../components/fetchDetails';
-import { useBackend } from '../../context/BackendContext';
+import { fetchProductData, fetchBatchData, fetchCountryCode } from '../components/fetchDetails';
+
 function RemapScreen() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
@@ -63,7 +62,8 @@ function RemapScreen() {
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
-  });const {backendUrl} = useBackend()
+  });
+
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
       code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
@@ -71,13 +71,14 @@ function RemapScreen() {
     setSnackbarInfo({
       visible: true,
       message,
-      snackbarStyle: {backgroundColor},
+      snackbarStyle: { backgroundColor },
     });
   };
   const onDismissSnackBar = () =>
-    setSnackbarInfo({visible: false, message: ''});
+    setSnackbarInfo({ visible: false, message: '' });
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
+
 
   const containerStyle = {
     backgroundColor: 'white',
@@ -96,7 +97,8 @@ function RemapScreen() {
           decodeAndSetConfig(setConfig, storedToken);
           setToken(storedToken);
           console.log('JWT token : ', storedToken);
-          fetchProductData(storedToken, setProducts, setLoading);
+          const backendUrl = await AsyncStorage.getItem("BackendUrl")
+          fetchProductData(storedToken, setProducts, setLoading, backendUrl);
           console.log('product get in Remap Page :-', products);
         } else {
           throw new Error('Token is missing');
@@ -109,8 +111,8 @@ function RemapScreen() {
     loadTokenAndData();
 
     const unsubscribe = navigation.addListener('blur', () => {
-      setSelectedProduct({value: null, label: null});
-      setSelectedBatch({value: null, label: null});
+      setSelectedProduct({ value: null, label: null });
+      setSelectedBatch({ value: null, label: null });
       setScanCode('');
       setText('');
     });
@@ -139,31 +141,34 @@ function RemapScreen() {
     HoneywellBarcodeReader.barcodeReaderInfo(details => {
       console.log('barcodeReaderClaimed', details);
     });
-    return () => {};
+    return () => { };
   }, [countryCode, isFocused]);
 
   useEffect(() => {
     if (selectedProduct.value) {
       (async () => {
+        const backendUrl = await AsyncStorage.getItem("BackendUrl")
         await fetchCountryCode(
           setCountryCode,
           selectedProduct,
           setLoading,
           token,
+          backendUrl
         );
         await fetchBatchData(setBatches, setLoading, token, selectedProduct.value);
       })();
     }
-    return () => {};
-  }, [selectedProduct.value, isFocused,countryCode]);
+    return () => { };
+  }, [selectedProduct.value, isFocused, countryCode]);
 
   const handleDropdownProductChange = async item => {
-    setSelectedProduct({value: item.value, label: item.label});
+    setSelectedProduct({ value: item.value, label: item.label });
     setIsFocusProduct(false);
     //setBatches([]);
     console.log('selected Product Item in remap:-', item);
     console.log('remap item.value Product', item.value);
-    await fetchBatchData(setBatches, setLoading, token, item.value);
+    const backendUrl = await AsyncStorage.getItem("BackendUrl")
+    await fetchBatchData(setBatches, setLoading, token, item.value, backendUrl);
     console.log(item.value);
     console.log(item.label);
   };
@@ -197,6 +202,7 @@ function RemapScreen() {
 
   const print = async () => {
     console.log('Remap success.');
+    const backendUrl = await AsyncStorage.getItem("BackendUrl")
     const remapRes = await axios.post(
       `${backendUrl}/code-remap`,
       {
@@ -214,8 +220,8 @@ function RemapScreen() {
     console.log('Response of remap code ', remapRes.data);
     if (remapRes.data.success === true && remapRes.data.code === 200) {
       setScanCode('');
-      setSelectedProduct({value: null, label: null});
-      setSelectedBatch({value: null, label: null});
+      setSelectedProduct({ value: null, label: null });
+      setSelectedBatch({ value: null, label: null });
       onToggleSnackBar(remapRes.data.message, 200);
     } else {
       onToggleSnackBar(remapRes.data.message, remapRes.data.code);
@@ -272,15 +278,17 @@ function RemapScreen() {
       };
       if (isApprover) {
         console.log('Approved is ', esignStatus === 'approved');
-        console.log("approveAPIName ",approveAPIName,openModal)
-          setOpenModal(false)
-          onToggleSnackBar('eSign has been approved for code remap', 200);
-          if(approveAPIName==="code-remap-create"){
+        console.log("approveAPIName ", approveAPIName, openModal)
+        setOpenModal(false)
+        onToggleSnackBar('eSign has been approved for code remap', 200);
+        if (approveAPIName === "code-remap-create") {
+          setTimeout(() => {
             setOpenModal(true)
             setApproveAPIName('code-remap-approve');
             setApproveAPImethod('POST')
-            return
-          }
+          }, 1000)
+          return
+        }
         if (esignStatus === 'approved') {
           onToggleSnackBar('eSign has been approved for code remap', 200);
           setVisible(true);
@@ -303,7 +311,7 @@ function RemapScreen() {
   return (
     <>
       <KeyboardAvoidingView
-        style={{flex: 1}}
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Appbar.Header>
           <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
@@ -315,7 +323,7 @@ function RemapScreen() {
               {/* <Text variant="titleMedium" style={styles.labelText}>Product</Text> */}
               <View style={styles.containerDropdownItem}>
                 <Dropdown
-                  style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
+                  style={[styles.dropdown, { borderColor: 'rgb(80, 189, 160)' }]}
                   placeholderStyle={styles.placeholderStyle}
                   selectedTextStyle={styles.selectedTextStyle}
                   inputSearchStyle={styles.inputSearchStyle}
@@ -347,7 +355,7 @@ function RemapScreen() {
               {/* <Text variant="titleMedium" style={styles.labelText}>Batch</Text> */}
               <View style={styles.containerDropdownItem}>
                 <Dropdown
-                  style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
+                  style={[styles.dropdown, { borderColor: 'rgb(80, 189, 160)' }]}
                   placeholderStyle={styles.placeholderStyle}
                   selectedTextStyle={styles.selectedTextStyle}
                   inputSearchStyle={styles.inputSearchStyle}
@@ -363,7 +371,7 @@ function RemapScreen() {
                   onFocus={() => setIsFocusBatch(true)}
                   onBlur={() => setIsFocusBatch(false)}
                   onChange={item => {
-                    setSelectedBatch({value: item.value, label: item.label});
+                    setSelectedBatch({ value: item.value, label: item.label });
                     setIsFocusBatch(false);
                   }}
                   renderLeftIcon={() => (

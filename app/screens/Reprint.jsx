@@ -1,6 +1,6 @@
 //app/components/screens/Reprint.jsx
 
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   KeyboardAvoidingView,
@@ -18,20 +18,19 @@ import {
   Divider,
   Snackbar,
 } from 'react-native-paper';
-import {useIsFocused, useNavigation} from '@react-navigation/native';
-import {Dropdown} from 'react-native-element-dropdown';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
+import { Dropdown } from 'react-native-element-dropdown';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import {url} from '../../utils/constant';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import LoaderComponent from '../components/Loader';
 import DeviceInfo from 'react-native-device-info';
-import {decodeAndSetConfig} from '../../utils/tokenUtils';
+import { decodeAndSetConfig } from '../../utils/tokenUtils';
 import styles from '../../styles/reprint';
 import EsignPage from './Esign';
-import {fetchProductData, fetchBatchData, fetchCountryCode} from '../components/fetchDetails';
-import { useBackend } from '../../context/BackendContext';
+import { fetchProductData, fetchBatchData, fetchCountryCode } from '../components/fetchDetails';
+
 function Reprint() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
@@ -47,7 +46,6 @@ function Reprint() {
     value: null,
     label: null,
   });
-  const {backendUrl} = useBackend()
   const [isFocusProduct, setIsFocusProduct] = useState(false);
   const [isFocusBatch, setIsFocusBatch] = useState(false);
   const [products, setProducts] = useState([]);
@@ -72,11 +70,11 @@ function Reprint() {
     setSnackbarInfo({
       visible: true,
       message,
-      snackbarStyle: {backgroundColor},
+      snackbarStyle: { backgroundColor },
     });
   };
   const onDismissSnackBar = () =>
-    setSnackbarInfo({visible: false, message: ''});
+    setSnackbarInfo({ visible: false, message: '' });
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
 
@@ -97,7 +95,8 @@ function Reprint() {
           setToken(storedToken);
           decodeAndSetConfig(setConfig, storedToken);
           console.log('JWT token : ', storedToken);
-          fetchProductData(storedToken, setProducts, setLoading);
+          const backendUrl = await AsyncStorage.getItem("BackendUrl")
+          fetchProductData(storedToken, setProducts, setLoading, backendUrl);
           console.log('product get in Reprint Page :-', products);
         } else {
           throw new Error('Token is missing');
@@ -111,8 +110,8 @@ function Reprint() {
     loadTokenAndData();
 
     return () => {
-      setSelectedProduct({value: null, label: null});
-      setSelectedBatch({value: null, label: null});
+      setSelectedProduct({ value: null, label: null });
+      setSelectedBatch({ value: null, label: null });
       setText('');
     };
   }, [isFocused]);
@@ -145,22 +144,24 @@ function Reprint() {
       console.log('barcodeReaderClaimed', details);
     });
 
-    return () => {};
+    return () => { };
   }, [countryCode]);
 
   useEffect(() => {
     if (selectedProduct.value) {
       (async () => {
+        const backendUrl = await AsyncStorage.getItem("BackendUrl")
         await fetchCountryCode(
           setCountryCode,
           selectedProduct,
           setLoading,
           token,
+          backendUrl
         );
-        await fetchBatchData(setBatches, setLoading, token, selectedProduct.value);
+        await fetchBatchData(setBatches, setLoading, token, selectedProduct.value, backendUrl);
       })();
     }
-    return () => {};
+    return () => { };
   }, [selectedProduct.value]);
 
   const getUniqueCode = (url, format) => {
@@ -178,12 +179,13 @@ function Reprint() {
   };
 
   const handleDropdownProductChange = async item => {
-    setSelectedProduct({value: item.value, label: item.label});
+    setSelectedProduct({ value: item.value, label: item.label });
     setIsFocusProduct(false);
     //setBatches([]);
     console.log('selected Product Item in reprint:-', item);
     console.log('item.value Product', item.value);
-    await fetchBatchData(setBatches, setLoading, token, item.value);
+    const backendUrl = await AsyncStorage.getItem("BackendUrl")
+    await fetchBatchData(setBatches, setLoading, token, item.value, backendUrl);
     console.log(item.value);
     console.log(item.label);
   };
@@ -220,6 +222,7 @@ function Reprint() {
 
   const print = async () => {
     //console.log('Reprint success.');
+    const backendUrl = await AsyncStorage.getItem("BackendUrl")
     const reprintRes = await axios.post(
       `${backendUrl}/reprint`,
       {
@@ -244,13 +247,13 @@ function Reprint() {
     console.log('Response of reprint code ', reprintRes.data);
     if (reprintRes.data.success === true && reprintRes.data.code === 200) {
       setText('');
-      setSelectedProduct({value: null, label: null});
-      setSelectedBatch({value: null, label: null});
+      setSelectedProduct({ value: null, label: null });
+      setSelectedBatch({ value: null, label: null });
       onToggleSnackBar(reprintRes.data.message, 200);
       //navigation.navigate('Home');
     } else {
-      setSelectedProduct({value: null, label: null});
-      setSelectedBatch({value: null, label: null});
+      setSelectedProduct({ value: null, label: null });
+      setSelectedBatch({ value: null, label: null });
       onToggleSnackBar(reprintRes.data.message, reprintRes.data.code);
     }
     hideModal();
@@ -304,15 +307,17 @@ function Reprint() {
       };
       if (isApprover) {
         console.log('Approved is ', esignStatus === 'approved');
-        console.log("approveAPIName ",approveAPIName,openModal)
-          setOpenModal(false)
-          onToggleSnackBar('eSign has been approved in reprint', 200);
-          if(approveAPIName==="reprint-create"){
+        console.log("approveAPIName ", approveAPIName, openModal)
+        setOpenModal(false)
+        onToggleSnackBar('eSign has been approved in reprint', 200);
+        if (approveAPIName === "reprint-create") {
+          setTimeout(() => {
             setOpenModal(true)
             setApproveAPIName('reprint-approve');
             setApproveAPImethod('POST')
-            return
-          }
+          }, 1000)
+          return
+        }
         if (esignStatus === 'approved') {
           setVisible(true);
 
@@ -333,7 +338,7 @@ function Reprint() {
   return (
     <>
       <KeyboardAvoidingView
-        style={{flex: 1}}
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Appbar.Header>
           <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
@@ -345,7 +350,7 @@ function Reprint() {
               {/* <Text variant="titleMedium" style={styles.labelText}>Product</Text> */}
               <View style={styles.containerDropdownItem}>
                 <Dropdown
-                  style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
+                  style={[styles.dropdown, { borderColor: 'rgb(80, 189, 160)' }]}
                   placeholderStyle={styles.placeholderStyle}
                   selectedTextStyle={styles.selectedTextStyle}
                   inputSearchStyle={styles.inputSearchStyle}
@@ -377,7 +382,7 @@ function Reprint() {
               {/* <Text variant="titleMedium" style={styles.labelText}>Batch</Text> */}
               <View style={styles.containerDropdownItem}>
                 <Dropdown
-                  style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
+                  style={[styles.dropdown, { borderColor: 'rgb(80, 189, 160)' }]}
                   placeholderStyle={styles.placeholderStyle}
                   selectedTextStyle={styles.selectedTextStyle}
                   inputSearchStyle={styles.inputSearchStyle}
@@ -393,7 +398,7 @@ function Reprint() {
                   onFocus={() => setIsFocusBatch(true)}
                   onBlur={() => setIsFocusBatch(false)}
                   onChange={item => {
-                    setSelectedBatch({value: item.value, label: item.label});
+                    setSelectedBatch({ value: item.value, label: item.label });
                     setIsFocusBatch(false);
                   }}
                   renderLeftIcon={() => (

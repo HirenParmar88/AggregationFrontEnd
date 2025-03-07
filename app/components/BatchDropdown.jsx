@@ -16,7 +16,8 @@ function BatchDropdownComponent() {
 
     try {
       setLoading(true);
-      const batchResponse = await axios.get(`${url}/batch/${product_id}`, {
+      const backendUrl=await AsyncStorage.getItem("BackendUrl")
+      const batchResponse = await axios.get(`${backendUrl}/batch/${product_id}`, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
