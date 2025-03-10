@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AppState,
   AppRegistry,
@@ -24,6 +24,7 @@ import { useIsFocused, useNavigation } from '@react-navigation/native';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // To handle token storage
+import { url } from '../../utils/constant';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Feather from 'react-native-vector-icons/Feather';
@@ -31,7 +32,7 @@ import DeviceInfo from 'react-native-device-info';
 import { decodeAndSetConfig } from '../../utils/tokenUtils';
 import styles from '../../styles/scanlist';
 
-function ScanList({ route }) {
+function ScanList() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [data, setData] = useState([]);
@@ -51,9 +52,6 @@ function ScanList({ route }) {
   const [ssccNumber, setSsccNumber] = useState();
   const [config, setConfig] = useState(null);
   const [serialNumber, setSerialNumber] = useState();
-  const [previousChildLevel, setPreviousChildLevel] = useState(-1);
-  const [totalQuantity, setTotalQuantity] = useState(0);
-  // const backendUrl = useRef(route.params.backendUrl)
 
 
   const [snackbarInfo, setSnackbarInfo] = useState({
@@ -188,12 +186,21 @@ function ScanList({ route }) {
 
   //packaging Hierarchy API
   const handleScannedData = async () => {
-    decodeAndSetConfig(setConfig, await AsyncStorage.getItem('authToken'));
-    const backendUrl = await AsyncStorage.getItem('BackendUrl')
     try {
+      const authToken = await AsyncStorage.getItem('authToken');
+      const backendUrl = await AsyncStorage.getItem('BackendUrl');
       const productId = await AsyncStorage.getItem('productId');
+  
       console.log('productId :-', productId);
-
+  
+      if (!authToken || !backendUrl || !productId) {
+        console.error('Missing required data.');
+        return;
+      }
+  
+      // Decode and set config
+      decodeAndSetConfig(setConfig, authToken);
+  
       const response = await axios.post(
         `${backendUrl}/packagingHierarchy`,
         {
@@ -207,21 +214,34 @@ function ScanList({ route }) {
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${await AsyncStorage.getItem('authToken')}`,
+            Authorization: `Bearer ${authToken}`,
           },
-        },
+        }
       );
+  
       console.log('Packaging Hierarchy API Res :', response.data);
-
+  
       if (response.data.success === true && response.data.code === 200) {
         onToggleSnackBar(response.data.message, response.data.code);
+  
         if (response?.data?.data?.scannedCodes?.length > 0) {
           setData(response?.data?.data?.scannedCodes);
         }
-        if (!response.data.data?.isRestorePreviousState) {
-          setTotalQuantity(response.data.data.quantity);
+  
+        let totalPackage = await AsyncStorage.getItem('totalPackage');
+        console.log('Total Package :', totalPackage);
+  
+        if (!totalPackage) {
+          await AsyncStorage.setItem('totalPackage', response.data.data.packageNo?.toString());
         }
-
+  
+        totalPackage = await AsyncStorage.getItem('totalPackage');
+        console.log('Total Package from AsyncStorage:', totalPackage);
+  
+        const tempIndex = parseInt(totalPackage, 10);
+        console.log('tempIndex:', tempIndex, 'Type of tempIndex:', typeof tempIndex);
+  
+        setCurrentIndex(tempIndex);
         setQuantity(response.data.data.quantity);
         setPackageNo(response.data.data.packageNo);
         setCurrentLevel(response.data.data.currentLevel);
@@ -233,9 +253,11 @@ function ScanList({ route }) {
         onToggleSnackBar(response.data.message, 400);
       }
     } catch (err) {
-      console.log('Error :', err);
+      console.error('Error:', err);
+      onToggleSnackBar('An error occurred while processing your request', 500);
     }
   };
+  
   //console.log('Total Quantity :', totalQuantity);
 
   //codescan API
@@ -266,11 +288,14 @@ function ScanList({ route }) {
       }
 
       if (quantity == 1) {
-        payload['totalQuantity'] = totalQuantity > 0 ? totalQuantity : data?.length;
+        const totalData = data?.length;
+        console.log("total Data for set parent id", totalData)
+        payload['totalQuantity'] = totalData
         payload['previousChildLevel'] = currentLevel;
       }
       console.log('Payload for codeScan api req :', payload);
       const backendUrl = await AsyncStorage.getItem("BackendUrl")
+
       const codeScanResponse = await axios.post(
         `${backendUrl}/scan/codeScan`,
         payload,
@@ -345,7 +370,7 @@ function ScanList({ route }) {
   //Print SSCC codes API
   const handlePrintCode = async (SsccCode, SerialNo) => {
     try {
-      const backendUrl = await AsyncStorage.getItem("BackendUrl");
+      const backendUrl = await AsyncStorage.getItem("BackendUrl")
       const res = await axios.post(
         `${backendUrl}/print`,
         {
