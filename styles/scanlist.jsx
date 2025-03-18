@@ -3,10 +3,6 @@ const styles = StyleSheet.create({
     container: {
       flexGrow: 1,
       paddingLeft: 20,
-      //paddingHorizontal: 10,
-      //paddingBottom: 0,
-      //backgroundColor: 'yellow',
-      //height:200,
     },
     formContainer: {
       marginTop: 0,
@@ -25,7 +21,7 @@ const styles = StyleSheet.create({
       fontWeight: 'bold',
       marginRight: 10,
       color: '#333',
-      width: 110,
+      width: '70%',
       color: '#fff',
     },
     label2: {

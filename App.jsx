@@ -30,6 +30,7 @@ const DRAWER_SCREENS = [
   {
     component: (
       <Drawer.Screen
+        key={'1'}
         name="Aggregation"
         component={AggregationComponent}
         options={{
@@ -49,6 +50,7 @@ const DRAWER_SCREENS = [
   {
     component: (
       <Drawer.Screen
+        key={'2'}
         name="Dropout"
         component={DropoutFun}
         options={{
@@ -71,6 +73,7 @@ const DRAWER_SCREENS = [
   {
     component: (
       <Drawer.Screen
+        key={'3'}
         name="Reprint"
         component={Reprint}
         options={{
@@ -90,6 +93,7 @@ const DRAWER_SCREENS = [
   {
     component: (
       <Drawer.Screen
+        key={'4'}
         name="Remap"
         component={RemapScreen}
         options={{
@@ -109,6 +113,7 @@ const DRAWER_SCREENS = [
   {
     component: (
       <Drawer.Screen
+        key={'5'}
         name="Code Replace"
         component={CodeReplaceScreen}
         options={{
@@ -128,6 +133,7 @@ const DRAWER_SCREENS = [
   {
     component: (
       <Drawer.Screen
+        key={'6'}
         name="Settings"
         component={SettingScreen}
         options={{

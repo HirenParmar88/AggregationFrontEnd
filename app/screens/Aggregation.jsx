@@ -20,7 +20,6 @@ function AggregationComponent() {
   const [valueBatch, setValueBatch] = useState(null);
   const [isFocusProduct, setIsFocusProduct] = useState(false);
   const [isFocusBatch, setIsFocusBatch] = useState(false);
-  const [aggregateId, setAggregateId] = useState({});
   const [config, setConfig] = useState(null);
   const [products, setProducts] = useState([]);
   const [batches, setBatches] = useState([]);
@@ -46,11 +45,8 @@ function AggregationComponent() {
         if (storedToken) {
           decodeAndSetConfig(setConfig, storedToken);
           setToken(storedToken);
-          console.log(storedToken)
-          const backendUrl = await AsyncStorage.getItem('BackendUrl')
-          console.log(backendUrl)
+          const backendUrl = await AsyncStorage.getItem('BackendUrl');
           await fetchProductData(storedToken, setProducts, setLoading, backendUrl);
-          console.log('product :-', products);
         } else {
           throw new Error('Token is missing');
         }
@@ -148,65 +144,41 @@ function AggregationComponent() {
   };
 
   const addAggregrate = async esign_status => {
-    console.log('Add Agregration....');
-    console.log(valueProduct);
-    console.log(valueBatch);
-    const backendUrl = await AsyncStorage.getItem('BackendUrl');
-
-    const aggregationtransactionResponse = await axios.post(
-      `${backendUrl}/aggregationtransaction/addaggregation`,
-      {
-        audit_log: {
-          audit_log: config?.config?.audit_logs,
-          performed_action: `Aggregation added for Product ID: ${valueProduct}, Batch ID: ${valueBatch} by User ID: ${config.userId}`,
-          remarks: 'none',
-        },
-        productId: valueProduct,
-        batchId: valueBatch,
-        esign_status: esign_status,
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-    console.log(
-      'aggregationtransactionResponse :',
-      aggregationtransactionResponse,
-    );
-    // setAggregateId(aggregationtransactionResponse.data.data)
-    // await processApproval(user,aggregationtransactionResponse.data.data.id)
-
     if (valueProduct && valueBatch) {
-      const selectedProduct = products.find(p => p.value === valueProduct);
-      const selectedBatch = batches.find(b => b.value === valueBatch);
-
-      console.log('selected product :', selectedProduct.label);
-      console.log('selected batch:', selectedBatch.label);
-      console.log('PID :-', valueProduct);
-      console.log('BID :-', valueBatch);
+      const backendUrl = await AsyncStorage.getItem('BackendUrl');
+      const res = await axios.post(
+        `${backendUrl}/aggregationtransaction/addaggregation`,
+        {
+          audit_log: {
+            audit_log: config?.config?.audit_logs,
+            performed_action: `Aggregation added for Product ID: ${valueProduct}, Batch ID: ${valueBatch} by User ID: ${config.userId}`,
+            remarks: 'none',
+          },
+          productId: valueProduct,
+          batchId: valueBatch,
+          esign_status: esign_status,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      console.log('aggregationtransactionResponse :', res.data);
       await AsyncStorage.setItem('productId', valueProduct);
       await AsyncStorage.setItem('batchId', valueBatch);
-      console.log(
-        'aggregationtransactionResponse :',
-        aggregationtransactionResponse.data,
-      );
-      console.log(aggregationtransactionResponse.data.code != 200);
       if (
-        aggregationtransactionResponse.data.code != 200 &&
-        aggregationtransactionResponse.data.code != 409
+        res.data.code != 200 &&
+        res.data.code != 409
       ) {
-        onToggleSnackBar(aggregationtransactionResponse.data.message);
+        onToggleSnackBar(res.data.message);
       } else {
-        onToggleSnackBar(aggregationtransactionResponse.data.message, 200);
+        onToggleSnackBar(res.data.message, 200);
         setTimeout(async () => {
-          const backendUrl = await AsyncStorage.getItem("BackendUrl")
           navigation.navigate('ScanList', { "backendUrl": backendUrl });
         }, 2000);
       }
-      console.log(aggregationtransactionResponse);
     } else {
       Alert.alert('Error', 'Please select both product and batch.');
     }
@@ -214,10 +186,7 @@ function AggregationComponent() {
   };
 
   const handleSubmit = async () => {
-    console.log('Submit Product and Batch Id');
-    console.log('selected valueProduct :', valueProduct);
-    console.log('selected valueBatch :', valueBatch);
-    console.log(config.config.esign_status, !openModal);
+    console.log('Aggregation start ', { valueProduct, valueBatch });
 
     if (config.config.esign_status && !openModal) {
       setTimeout(() => {
@@ -232,15 +201,18 @@ function AggregationComponent() {
     setValueProduct(null);
     setValueBatch(null);
   };
+
   const resetForm = () => {
     setValueProduct(null);
     setValueBatch(null);
     setIsFocusProduct(false);
     setIsFocusBatch(false);
   };
+
   if (loading) {
     return <LoaderComponent />;
   }
+
   const handleDropdownProductChange = async item => {
     console.log('item.value', item.value);
     setValueProduct(item.value);
@@ -251,10 +223,6 @@ function AggregationComponent() {
   };
   return (
     <>
-      {/* <Appbar.Header>
-                <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
-                <Appbar.Content title="Product" />
-            </Appbar.Header> */}
       <View style={styles.imageView}>
         <Image
           source={require('../../assets/images/start_aggregation.png')}

@@ -233,15 +233,6 @@ function SettingScreen() {
               style={styles.textInputPort}
             />
           </View>
-          <View style={styles.body2}>
-            <TextInput
-              label="No of variables*"
-              value={variables}
-              mode="outlined"
-              onChangeText={variables => setVariables(variables)}
-              style={styles.textInputVariables}
-            />
-          </View>
         </ScrollView>
         <View>
           <TouchableOpacity

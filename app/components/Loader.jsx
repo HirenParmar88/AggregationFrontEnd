@@ -6,11 +6,6 @@ import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 function LoaderComponent() {
   return (
     <>
-      {/* <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
-        <Appbar.Content title="Loader" />
-      </Appbar.Header> */}
-
       <SafeAreaProvider>
         <SafeAreaView style={[styles.container, styles.horizontal]}>
           <ActivityIndicator size="large" />

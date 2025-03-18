@@ -107,6 +107,7 @@ function HomeScreen() {
     {
       component: (
         <TouchableOpacity
+          key={'1'}
           style={cssStyle.TouchableBtn}
           //labelStyle={{fontSize:15}}
           mode="contained"
@@ -127,6 +128,7 @@ function HomeScreen() {
     {
       component: (
         <TouchableOpacity
+          key={'2'}
           style={cssStyle.TouchableBtn}
           //labelStyle={{fontSize:15}}
           mode="contained"
@@ -146,6 +148,7 @@ function HomeScreen() {
     {
       component: (
         <TouchableOpacity
+          key={'3'}
           mode="contained"
           style={cssStyle.TouchableBtn}
           //labelStyle={{fontSize:15}}
@@ -165,6 +168,7 @@ function HomeScreen() {
     {
       component: (
         <TouchableOpacity
+          key={'4'}
           mode="contained"
           style={cssStyle.TouchableBtn}
           //labelStyle={{fontSize:15}}
@@ -184,6 +188,7 @@ function HomeScreen() {
     {
       component: (
         <TouchableOpacity
+          key={'5'}
           mode="contained"
           style={cssStyle.TouchableBtn}
           //labelStyle={{fontSize:15}}

@@ -110,9 +110,7 @@ function DropoutFun() {
       );
     });
     HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
-      console.log('Received data :', event);
       console.log('Current Scanned data :', event.data);
-      console.log('Token inside barcode codes drop :', token);
       console.log('Previous data is :', scannedCodes);
       const scanRes = await scanValidation(event.data);
       if (scanRes && scanRes.code === 200) {
@@ -300,15 +298,14 @@ function DropoutFun() {
   const scanValidation = async barcodeData => {
     console.log('scan validation API call for dropout ..');
     try {
-      console.log('Token is scan Validation in Dropout :', token);
       const payload = {
         productId: selectedProduct.value,
         batchId: selectedBatch.value,
         uniqueCode: barcodeData,
       };
-      console.log('Payload for scan/validation :', payload);
+      console.log('Payload for scan/validation/dropout :', payload);
       const backendUrl = await AsyncStorage.getItem("BackendUrl")
-      const scanRes = await axios.post(`${backendUrl}/scan/validation`, payload, {
+      const scanRes = await axios.post(`${backendUrl}/scan/validation/dropout`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -766,7 +763,7 @@ function DropoutFun() {
                     setVisibleConfirmCodes(false);
                     if (config.config.esign_status && !openModal) {
                       setOpenModal(true);
-                      setApproveAPIName('dropout-approve');
+                      setApproveAPIName('dropout-create');
                       setApproveAPImethod('POST');
                       return;
                     }

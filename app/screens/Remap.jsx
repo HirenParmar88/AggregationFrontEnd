@@ -126,10 +126,13 @@ function RemapScreen() {
         claimed ? 'Barcode reader is claimed' : 'Barcode reader is busy',
       );
     });
-    HoneywellBarcodeReader.onBarcodeReadSuccess(event => {
+    HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
       console.log('Current Scanned data :', event.data);
       console.log('Country code is ', countryCode);
-      setScanCode(event.data);
+      const scanRes = await scanValidation(event.data);
+      if (scanRes && scanRes.code === 200) {
+        setScanCode(event.data);
+      }
     });
     HoneywellBarcodeReader.onBarcodeReadFail(() => {
       console.log('Barcode read failed');
@@ -142,7 +145,7 @@ function RemapScreen() {
       console.log('barcodeReaderClaimed', details);
     });
     return () => { };
-  }, [countryCode, isFocused]);
+  }, [countryCode, isFocused, selectedProduct, selectedBatch]);
 
   useEffect(() => {
     if (selectedProduct.value) {
@@ -171,6 +174,39 @@ function RemapScreen() {
     await fetchBatchData(setBatches, setLoading, token, item.value, backendUrl);
     console.log(item.value);
     console.log(item.label);
+  };
+
+  const scanValidation = async barcodeData => {
+    console.log('scan validation API call for remap ..');
+    try {
+      const payload = {
+        productId: selectedProduct.value,
+        batchId: selectedBatch.value,
+        uniqueCode: barcodeData,
+      };
+      console.log('Payload for scan/validation/remap :', payload);
+      const backendUrl = await AsyncStorage.getItem("BackendUrl")
+      const scanRes = await axios.post(`${backendUrl}/scan/validation/remap`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log('scan/validation APIs Res for Remap :', scanRes.data);
+      if (scanRes.data.code === 200 && scanRes.data.success === true) {
+        onToggleSnackBar(scanRes.data.message, 200);
+        console.log(scanRes.data.message, 200);
+        return scanRes.data;
+      } else if (scanRes.data.code) {
+        console.log(scanRes.data.message);
+        onToggleSnackBar(scanRes.data.message, 401);
+        return null;
+      } else {
+        console.log('error !');
+      }
+    } catch (error) {
+      console.error('Error to scan validation API call', error);
+    }
   };
 
   const handleRemap = () => {

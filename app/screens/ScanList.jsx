@@ -1,15 +1,13 @@
-'use client';
-import React, { useState, useEffect } from 'react';
+"use client";
+import React, { useState, useEffect, useRef } from "react";
 import {
   AppState,
-  AppRegistry,
   ScrollView,
   View,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   TouchableOpacity,
-} from 'react-native';
+} from "react-native";
 import {
   Appbar,
   Text,
@@ -19,18 +17,17 @@ import {
   Portal,
   Modal,
   Snackbar,
-} from 'react-native-paper';
-import { useIsFocused, useNavigation } from '@react-navigation/native';
-import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // To handle token storage
-import { url } from '../../utils/constant';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import Feather from 'react-native-vector-icons/Feather';
-import DeviceInfo from 'react-native-device-info';
-import { decodeAndSetConfig } from '../../utils/tokenUtils';
-import styles from '../../styles/scanlist';
+} from "react-native-paper";
+import { useIsFocused, useNavigation } from "@react-navigation/native";
+import HoneywellBarcodeReader from "react-native-honeywell-datacollection";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // To handle token storage
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import Feather from "react-native-vector-icons/Feather";
+import DeviceInfo from "react-native-device-info";
+import { decodeAndSetConfig } from "../../utils/tokenUtils";
+import styles from "../../styles/scanlist";
 
 function ScanList() {
   const navigation = useNavigation();
@@ -39,90 +36,72 @@ function ScanList() {
   const [parentModalVisible, setParentModalVisible] = useState(false);
   const [childModalVisible, setChildModalVisible] = useState(false);
   const [transactionStatus, setTransactionStatus] = useState(null);
-
   const [quantity, setQuantity] = useState(0);
-  const [currentLevel, setCurrentLevel] = useState(0);
-  const [totalLevel, setTotalLevel] = useState(0);
-  const [packageNo, setPackageNo] = useState(0);
-  const [totalProduct, setTotalProduct] = useState(0);
-  const [perPackageProduct, setPerPackageProduct] = useState(0);
-  const [transactionId, setTransactionId] = useState('');
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [currentPackageLevel, setCurrentPackageLevel] = useState(0);
-  const [ssccNumber, setSsccNumber] = useState();
+  const [transactionId, setTransactionId] = useState("");
+  const [ssccNumber, setSsccNumber] = useState(null);
   const [config, setConfig] = useState(null);
-  const [serialNumber, setSerialNumber] = useState();
-
+  const [serialNumber, setSerialNumber] = useState(null);
+  const backendUrl = useRef();
 
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
-    message: '',
+    message: "",
   });
 
   useEffect(() => {
-    if (!packageNo && !quantity) {
+    if (!quantity) {
       handleScannedData();
     }
     //scanValidation();
-    return () => { };
+    return () => {};
   }, [isFocused]);
 
   useEffect(() => {
     //console.log('Is compatible:', HoneywellBarcodeReader.isCompatible);
-    HoneywellBarcodeReader.register().then(claimed => {
+    HoneywellBarcodeReader.register().then((claimed) => {
       console.log(
-        claimed ? 'Barcode reader is claimed' : 'Barcode reader is busy',
+        claimed ? "Barcode reader is claimed" : "Barcode reader is busy"
       );
     });
 
-    HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
+    HoneywellBarcodeReader.onBarcodeReadSuccess(async (event) => {
       if (quantity > 0) {
-        console.log('Received data :', event);
-        console.log('Current Scanned data :', event.data);
-        console.log('Previous data is :', data);
+        console.log("Current Scanned data :", event.data);
+        console.log("Previous data is :", data);
 
         const scanRes = await scanValidation(event.data);
-        //console.log('Inside BarcodeRead Callback ', scanRes);
-        if (scanRes && scanRes.code === 200) {
+        console.log('Inside BarcodeRead Callback ', scanRes);
+        if (scanRes) {
           await codeScan(event.data); //codeScan API call
         }
       } else {
         onToggleSnackBar(
-          'All codes have been scanned. You may now complete the transaction.',
-          400,
-        );
+          "All codes have been scanned. You may now complete the transaction.", 400);
       }
     });
 
     HoneywellBarcodeReader.onBarcodeReadFail(() => {
-      console.log('Barcode read failed');
+      console.log("Barcode read failed");
     });
 
-    HoneywellBarcodeReader.onTriggerStateChange(state => {
-      console.log('onTriggerStateChange', state);
+    HoneywellBarcodeReader.onTriggerStateChange((state) => {
+      console.log("onTriggerStateChange", state);
     });
 
-    HoneywellBarcodeReader.barcodeReaderInfo(details => {
+    HoneywellBarcodeReader.barcodeReaderInfo((details) => {
       //console.log('barcodeReaderClaimed', details);
     });
 
-    return async () => { };
+    return async () => {};
   }, [
     transactionId,
     quantity,
-    currentIndex,
-    currentLevel,
-    packageNo,
-    perPackageProduct,
-    totalLevel,
-    totalProduct,
-    currentPackageLevel,
     isFocused,
   ]);
 
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
-      code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
+      code === 200 ? "rgb(80, 189, 160)" : "rgb(210, 43, 43)";
 
     setSnackbarInfo({
       visible: true,
@@ -132,233 +111,167 @@ function ScanList() {
   };
 
   const onDismissSnackBar = () =>
-    setSnackbarInfo({ visible: false, message: '' });
+    setSnackbarInfo({ visible: false, message: "" });
 
   //scan Validation API
-  const scanValidation = async barcodeData => {
-    console.log('scan validation call....');
+  const scanValidation = async (barcodeData) => {
+    console.log("scan validation call....");
     try {
-      const productId = await AsyncStorage.getItem('productId');
-      const batchId = await AsyncStorage.getItem('batchId');
+      const productId = await AsyncStorage.getItem("productId");
+      const batchId = await AsyncStorage.getItem("batchId");
 
       const payload = {
-        productId: productId,
-        batchId: batchId,
+        productId,
+        batchId,
         uniqueCode: barcodeData,
       };
-      console.log('Payload for scan/validation :', payload);
-      const backendUrl = await AsyncStorage.getItem("BackendUrl")
-      const scanRes = await axios.post(`${backendUrl}/scan/validation`, payload, {
-        headers: {
-          Authorization: `Bearer ${await AsyncStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      console.log('scan/validation APIs Res :', scanRes.data);
+      console.log("Payload for scan/validation :", payload);
+      const backendUrl = await AsyncStorage.getItem("BackendUrl");
+      console.log("Backend url ", backendUrl);
+      
+      const scanRes = await axios.post(
+        `${backendUrl}/scan/validation`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${await AsyncStorage.getItem("authToken")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log("scan/validation APIs Res :", scanRes.data);
 
-      if (scanRes.data.code === 200 && scanRes.data.success === true) {
-        //onToggleSnackBar(scanRes.data.message, 200);
+      if (scanRes.data.success) {
         console.log(scanRes.data.message, 200);
-        return scanRes.data;
-      } else if (scanRes.data.code === 409) {
-        console.log('Invalid scan res :', scanRes.data.message);
-        onToggleSnackBar(scanRes.data.message, 409);
-        return null;
-      } else if (scanRes.data.code === 404) {
-        console.log('404 : ', scanRes.data.message);
-        onToggleSnackBar(scanRes.data.message, 404);
-        return null;
-      } else if (scanRes.data.code === 400) {
-        console.log('404 :  ', scanRes.data.message);
-        onToggleSnackBar(scanRes.data.message, 400);
-        return null;
-      } else if (scanRes.data.code === 401) {
-        console.log('401 :  ', scanRes.data.message);
-        onToggleSnackBar(scanRes.data.message, 401);
-        return null;
+        return true;
       } else {
-        console.log('error !');
+        console.log("Invalid scan res :", scanRes.data.message);
+        onToggleSnackBar(scanRes.data.message);
+        return false;
       }
     } catch (error) {
-      console.error('Error to scan validation API call', error);
+      console.error("Error to scan validation API call", error);
     }
   };
 
   //packaging Hierarchy API
   const handleScannedData = async () => {
+    decodeAndSetConfig(setConfig, await AsyncStorage.getItem("authToken"));
+    backendUrl.current = await AsyncStorage.getItem("BackendUrl");
     try {
-      const authToken = await AsyncStorage.getItem('authToken');
-      const backendUrl = await AsyncStorage.getItem('BackendUrl');
-      const productId = await AsyncStorage.getItem('productId');
-  
-      console.log('productId :-', productId);
-  
-      if (!authToken || !backendUrl || !productId) {
-        console.error('Missing required data.');
-        return;
-      }
-  
-      // Decode and set config
-      decodeAndSetConfig(setConfig, authToken);
+      const productId = await AsyncStorage.getItem("productId");
+      // const batchId = await AsyncStorage.getItem("batchId");
+      console.log("productId :-", productId);
   
       const response = await axios.post(
-        `${backendUrl}/packagingHierarchy`,
+        `${backendUrl.current}/product/packagingHierarchy`,
         {
           audit_log: {
             audit_log: config?.config?.audit_logs,
-            remarks: 'none',
+            remarks: "none",
           },
-          productId: productId,
-          currentLevel: currentLevel,
+          productId: productId
         },
         {
           headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${await AsyncStorage.getItem("authToken")}`,
           },
         }
       );
-  
-      console.log('Packaging Hierarchy API Res :', response.data);
+      console.log("Packaging Hierarchy API Res :", response.data);
   
       if (response.data.success === true && response.data.code === 200) {
         onToggleSnackBar(response.data.message, response.data.code);
-  
         if (response?.data?.data?.scannedCodes?.length > 0) {
           setData(response?.data?.data?.scannedCodes);
         }
-  
-        let totalPackage = await AsyncStorage.getItem('totalPackage');
-        console.log('Total Package :', totalPackage);
-  
-        if (!totalPackage) {
-          await AsyncStorage.setItem('totalPackage', response.data.data.packageNo?.toString());
-        }
-  
-        totalPackage = await AsyncStorage.getItem('totalPackage');
-        console.log('Total Package from AsyncStorage:', totalPackage);
-  
-        const tempIndex = parseInt(totalPackage, 10);
-        console.log('tempIndex:', tempIndex, 'Type of tempIndex:', typeof tempIndex);
-  
-        setCurrentIndex(tempIndex);
         setQuantity(response.data.data.quantity);
-        setPackageNo(response.data.data.packageNo);
-        setCurrentLevel(response.data.data.currentLevel);
-        setTotalLevel(response.data.data.totalLevel);
-        setTotalProduct(response.data.data.totalProduct);
-        setPerPackageProduct(response.data.data.perPackageProduct);
         setTransactionId(response.data.data.transactionId);
       } else {
+        console.log(response.data.message)
         onToggleSnackBar(response.data.message, 400);
       }
     } catch (err) {
-      console.error('Error:', err);
-      onToggleSnackBar('An error occurred while processing your request', 500);
+      console.log("Error :", err);
     }
   };
-  
   //console.log('Total Quantity :', totalQuantity);
 
   //codescan API
-  const codeScan = async barcodeData => {
-    console.log('code scan Api called......');
+  const codeScan = async (barcodeData) => {
+    console.log("Code scan API called......");
+
     try {
+      const productId = await AsyncStorage.getItem("productId");
+      const batchId = await AsyncStorage.getItem("batchId");
+      const authToken = await AsyncStorage.getItem("authToken");
+
       const payload = {
         uniqueCode: barcodeData,
-        transactionId: transactionId,
-        packageNo: packageNo,
-        currentPackageLevel: currentPackageLevel,
-        quantity: quantity,
-        perPackageProduct: perPackageProduct,
-        totalLevel: totalLevel,
-        totalProduct: totalProduct,
-        currentIndex: currentIndex,
+        transactionId,
+        quantity
       };
-      if (quantity == 1) {
-        payload['audit_log'] = {
-          audit_log: config?.config?.audit_logs,
-          performed_action: `Scan transaction completed with Transaction ID: ${transactionId}, Product ID: ${await AsyncStorage.getItem(
-            'productId',
-          )}, Batch ID: ${await AsyncStorage.getItem(
-            'batchId',
-          )}, and scanned by User ID: ${config.userId}.`,
-          remarks: 'none',
+
+      if (config?.config?.audit_logs) {
+        payload["audit_log"] = {
+          audit_log: true,
+          performed_action: `Scan transaction completed with Transaction ID: ${transactionId}, Product ID: ${productId}, Batch ID: ${batchId}, and scanned by User ID: ${config.userId}.`,
+          remarks: "none",
         };
       }
+      console.log("Payload for codeScan API request:", payload);
 
-      if (quantity == 1) {
-        const totalData = data?.length;
-        console.log("total Data for set parent id", totalData)
-        payload['totalQuantity'] = totalData
-        payload['previousChildLevel'] = currentLevel;
-      }
-      console.log('Payload for codeScan api req :', payload);
-      const backendUrl = await AsyncStorage.getItem("BackendUrl")
-
+      // Making the API call
       const codeScanResponse = await axios.post(
-        `${backendUrl}/scan/codeScan`,
+        `${backendUrl.current}/scan/codescan`,
         payload,
         {
           headers: {
-            Authorization: `Bearer ${await AsyncStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
           },
-        },
+        }
       );
-      console.log('codeScan APIs Response :', codeScanResponse.data);
+
+      console.log("codeScan API Response:", codeScanResponse.data);
 
       if (codeScanResponse.data.success && codeScanResponse.data.code === 200) {
-        setData(prevData => {
-          const alreadyExist = prevData.find(item => item === barcodeData);
-          if (!alreadyExist) {
-            return [...prevData, barcodeData];
-          } else {
-            return [...prevData];
-          }
+        setData((prevData) => {
+          const alreadyExist = prevData.includes(barcodeData);
+          return alreadyExist ? [...prevData] : [...prevData, barcodeData];
         });
+
         onToggleSnackBar(codeScanResponse.data.message, 200);
-        console.log('Transaction ID :', transactionId);
-        setTransactionId(codeScanResponse.data.data.transactionId);
-        setPackageNo(codeScanResponse.data.data.packageNo);
-        setPerPackageProduct(codeScanResponse.data.data.perPackageProduct);
-        setQuantity(codeScanResponse.data.data.quantity);
-        setCurrentIndex(codeScanResponse.data.data.currentIndex);
-        setTotalLevel(codeScanResponse.data.data.totalLevel);
-        setTotalProduct(codeScanResponse.data.data.totalProduct);
-        setCurrentPackageLevel(codeScanResponse.data.data.currentPackageLevel); //set current level value
-        console.log('Updated..');
-        if (codeScanResponse.data.data.quantity === 0) {
-          setCurrentPackageLevel(0);
-          setSerialNumber(codeScanResponse.data.data.serialNo);
-          setSsccNumber(codeScanResponse.data.data.sscc_code);
-        }
+        console.log("Transaction ID:", transactionId);
+
+        // Update state with new response data.
+        const responseData = codeScanResponse.data.data;
+        setTransactionId(responseData.transactionId);
+        setQuantity(responseData.quantity);
+        setSerialNumber(responseData.serialNo);
+        setSsccNumber(responseData.sscc_code);
       } else {
         onToggleSnackBar(
           codeScanResponse.data.message,
-          codeScanResponse.data.code,
+          codeScanResponse.data.code
         );
       }
     } catch (error) {
-      console.error('Error to code scan API call..', error);
+      console.error("Error during code scan API call:", error);
     }
   };
 
   const handleEndTransaction = () => {
-    console.log('End transaction button pressed..');
+    console.log("End transaction button pressed..");
     setParentModalVisible(true);
   };
 
-  const handleParentModalDismiss = async confirmed => {
+  const handleParentModalDismiss = async (confirmed) => {
     setParentModalVisible(false);
-    setTransactionStatus(confirmed ? 'completed' : 'failed');
-    console.log(confirmed);
-    if (
-      confirmed &&
-      (ssccNumber != undefined || ssccNumber?.trim()) != '' &&
-      serialNumber != 0 &&
-      typeof serialNumber == 'number'
-    ) {
+    setTransactionStatus(confirmed ? "completed" : "failed");
+
+    if (confirmed && ssccNumber) {
       await handlePrintCode(ssccNumber, parseInt(serialNumber));
     }
   };
@@ -368,24 +281,29 @@ function ScanList() {
   };
 
   //Print SSCC codes API
-  const handlePrintCode = async (SsccCode, SerialNo) => {
+  const handlePrintCode = async (ssccCode, serialNo) => {
+    console.log("print payload ", {
+      ssccCode,
+      serialNo,
+      macAddress: await DeviceInfo.getUniqueId(),
+    });
+    
     try {
-      const backendUrl = await AsyncStorage.getItem("BackendUrl")
       const res = await axios.post(
-        `${backendUrl}/print`,
+        `${backendUrl.current}/print`,
         {
-          SsccCode,
-          SerialNo,
-          mac_address: await DeviceInfo.getUniqueId(),
+          ssccCode,
+          serialNo,
+          macAddress: await DeviceInfo.getUniqueId(),
         },
         {
           headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${await AsyncStorage.getItem('authToken')}`,
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${await AsyncStorage.getItem("authToken")}`,
           },
-        },
+        }
       );
-      console.log('Response of handle print ', res.data);
+      console.log("Response of handle print ", res.data);
 
       if (res.data.success === true && res.data.code === 200) {
         setData([]);
@@ -395,44 +313,35 @@ function ScanList() {
         onToggleSnackBar(res.data.message, res.data.code);
       }
     } catch (error) {
-      console.log('Error to print code for ', SsccCode);
+      console.log("Error to print code for ", error);
     }
   };
 
-  const handleAggregateState = async currentState => {
+  const handleAggregateState = async (currentState) => {
     console.log(currentState);
 
     const payload = {
       aggregatedTransactionId: transactionId,
-      packageNo: packageNo,
-      currentPackageLevel: currentPackageLevel,
       quantity: quantity,
-      perPackageProduct: perPackageProduct,
-      totalLevel: totalLevel,
-      totalProduct: totalProduct,
-      currentIndex: currentIndex,
       scannedCodes: data,
     };
-    console.log(payload);
     try {
       // if (state === 'inactive' || state === 'background') {
-      const backendUrl = await AsyncStorage.getItem("BackendUrl")
-
       const res = await axios.post(
-        `${backendUrl}/aggregationtransaction/handleAggregatedTransactionScanState`,
+        `${backendUrl.current}/aggregationtransaction/handleAggregatedTransactionScanState`,
         {
           ...payload,
         },
         {
           headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${await AsyncStorage.getItem('authToken')}`,
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${await AsyncStorage.getItem("authToken")}`,
           },
-        },
+        }
       );
       console.log(
-        'Response for handleAggregatedTransactionScanState ',
-        res.data,
+        "Response for handleAggregatedTransactionScanState ",
+        res.data
       );
 
       if (res.data.success === true && res.data.code === 200) {
@@ -443,27 +352,27 @@ function ScanList() {
       // }
     } catch (error) {
       console.log(
-        'Error to Aggregated Transaction Scan State code for ',
-        SsccCode,
+        "Error to Aggregated Transaction Scan State code for ",
+        SsccCode
       );
     }
   };
 
   AppState.addEventListener(
-    'change',
-    async currentState =>
-      currentState == 'background' && (await handleAggregateState()),
+    "change",
+    async (currentState) =>
+      currentState == "background" && (await handleAggregateState())
   );
-  console.log('totalProduct :', totalProduct);
 
   return (
     <>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
         <Appbar.Header>
           <Appbar.BackAction
-            onPress={() => navigation.navigate('Aggregation')}
+            onPress={() => navigation.navigate("Aggregation")}
           />
           <Appbar.Content title="Scan List" />
         </Appbar.Header>
@@ -471,7 +380,7 @@ function ScanList() {
         <View style={styles.formContainer}>
           <View style={styles.row}>
             <Text style={styles.label}>Pack Level:</Text>
-            <Text style={styles.label2}>{currentPackageLevel}</Text>
+            <Text style={styles.label2}>{'1'}</Text>
           </View>
 
           <View style={styles.row}>
@@ -494,13 +403,17 @@ function ScanList() {
         {/* <Divider /> */}
 
         <ScrollView contentContainerStyle={styles.container}>
-          <List.Section style={{ flexDirection: 'column-reverse' }}>
+          <List.Section style={{ flexDirection: "column-reverse" }}>
             {data.map((item, index) => (
               <List.Item
                 key={index}
                 title={item}
                 left={() => (
-                  <Feather name="package" size={25} style={{ paddingRight: 0 }} />
+                  <Feather
+                    name="package"
+                    size={25}
+                    style={{ paddingRight: 0 }}
+                  />
                 )}
               />
             ))}
@@ -513,15 +426,16 @@ function ScanList() {
           visible={snackbarInfo.visible}
           onDismiss={onDismissSnackBar}
           duration={3000}
-          style={[styles.snackbar, snackbarInfo.snackbarStyle]}>
+          style={[styles.snackbar, snackbarInfo.snackbarStyle]}
+        >
           {snackbarInfo.message}
         </Snackbar>
-
         <TouchableOpacity
           mode="contained"
-          disabled={totalProduct != 1}
+          disabled={quantity!==0}
           style={styles.submitButton}
-          onPress={handleEndTransaction}>
+          onPress={handleEndTransaction}
+        >
           <Text style={styles.endTranTxt}>End Transaction</Text>
         </TouchableOpacity>
 
@@ -530,7 +444,8 @@ function ScanList() {
           <Modal
             visible={parentModalVisible}
             onDismiss={async () => await handleParentModalDismiss(false)} // Dismiss on Cancel
-            contentContainerStyle={styles.modalContainer}>
+            contentContainerStyle={styles.modalContainer}
+          > 
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Scan List</Text>
             </View>
@@ -553,13 +468,15 @@ function ScanList() {
               <Button
                 mode="contained"
                 onPress={async () => await handleParentModalDismiss(true)} // Confirm button action
-                style={styles.modalConfirmButton}>
+                style={styles.modalConfirmButton}
+              >
                 Confirm
               </Button>
               <Button
                 mode="contained"
                 onPress={async () => await handleParentModalDismiss(false)} // Cancel button action
-                style={styles.modalButton}>
+                style={styles.modalButton}
+              >
                 Cancel
               </Button>
             </View>
@@ -569,9 +486,10 @@ function ScanList() {
         {/* Child Modal (Printing Completed) */}
         <Portal>
           <Modal
-            visible={childModalVisible && transactionStatus === 'completed'}
+            visible={childModalVisible && transactionStatus === "completed"}
             onDismiss={handleChildModalDismiss} // Close the modal
-            contentContainerStyle={styles.modalContainer}>
+            contentContainerStyle={styles.modalContainer}
+          >
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Status</Text>
             </View>
@@ -592,7 +510,8 @@ function ScanList() {
               <Button
                 mode="contained"
                 onPress={handleChildModalDismiss}
-                style={styles.modalOKButton}>
+                style={styles.modalOKButton}
+              >
                 OK
               </Button>
             </View>
@@ -602,9 +521,10 @@ function ScanList() {
         {/* Child Modal (Printing Failed) */}
         <Portal>
           <Modal
-            visible={childModalVisible && transactionStatus === 'failed'}
+            visible={childModalVisible && transactionStatus === "failed"}
             onDismiss={handleChildModalDismiss} // Close the modal
-            contentContainerStyle={styles.modalContainer}>
+            contentContainerStyle={styles.modalContainer}
+          >
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Status</Text>
             </View>
@@ -626,7 +546,8 @@ function ScanList() {
               <Button
                 mode="contained"
                 onPress={handleChildModalDismiss}
-                style={styles.modelRetryButton}>
+                style={styles.modelRetryButton}
+              >
                 Retry
               </Button>
             </View>

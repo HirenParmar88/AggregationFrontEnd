@@ -75,7 +75,7 @@ function UrlScreen() {
               mode='outlined'
               label="Back-End URL"
               style={styles.input}
-              placeholder="Enter Back-End URL"
+              placeholder="http://example.com/"
               value={text}
               onChangeText={setText}
             />

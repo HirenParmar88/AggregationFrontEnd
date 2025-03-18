@@ -2,8 +2,6 @@ import axios from 'axios';
 import {url} from '../../utils/constant';
 
 export const fetchProductData = async (token, setProducts, setLoading,backendUrl) => {
-  console.log('Product APIs called..');
-  console.log(backendUrl)
   try {
     setLoading(true);
     const productResponse = await axios.get(`${backendUrl}/product/`, {
@@ -12,8 +10,8 @@ export const fetchProductData = async (token, setProducts, setLoading,backendUrl
         Authorization: `Bearer ${token}`,
       },
     });
-    console.log("Product API Response :->",productResponse);
-    const {products} = productResponse.data.data; //destructuring objects
+    // console.log("Product API Response :->",productResponse.data);
+    const {products} = productResponse.data?.data; //destructuring objects
     //console.log('This is products Data :', products);
     //console.log('product_id :-', products[0].product_id);
     if (products) {
