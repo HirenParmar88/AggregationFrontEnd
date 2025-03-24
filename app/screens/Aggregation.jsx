@@ -168,16 +168,13 @@ function AggregationComponent() {
       console.log('aggregationtransactionResponse :', res.data);
       await AsyncStorage.setItem('productId', valueProduct);
       await AsyncStorage.setItem('batchId', valueBatch);
-      if (
-        res.data.code != 200 &&
-        res.data.code != 409
-      ) {
-        onToggleSnackBar(res.data.message);
-      } else {
+      if(res.data?.code === 200){
         onToggleSnackBar(res.data.message, 200);
         setTimeout(async () => {
-          navigation.navigate('ScanList', { "backendUrl": backendUrl });
+          navigation.navigate('ScanList', { "backendUrl": backendUrl, exists: res.data.data.exists });
         }, 2000);
+      } else {
+        onToggleSnackBar(res.data.message);
       }
     } else {
       Alert.alert('Error', 'Please select both product and batch.');
@@ -197,9 +194,7 @@ function AggregationComponent() {
       return;
     }
     addAggregrate('approved');
-    // navigation.navigate('ScanList', {id: valueProduct, bid: valueBatch});
-    setValueProduct(null);
-    setValueBatch(null);
+    
   };
 
   const resetForm = () => {
@@ -214,9 +209,9 @@ function AggregationComponent() {
   }
 
   const handleDropdownProductChange = async item => {
-    console.log('item.value', item.value);
+    // console.log('item.value', item.value);
     setValueProduct(item.value);
-    console.log('selected Product Item :-', item);
+    // console.log('selected Product Item :-', item);
     const backendUrl = await AsyncStorage.getItem('BackendUrl')
     await fetchBatchData(setBatches, setLoading, token, item.value, backendUrl);
     setIsFocusProduct(false);

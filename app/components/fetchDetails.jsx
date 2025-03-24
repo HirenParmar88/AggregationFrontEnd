@@ -32,7 +32,7 @@ export const fetchProductData = async (token, setProducts, setLoading,backendUrl
 };
 
 export const fetchBatchData = async (setBatches, setLoading, token, product_id,backendUrl) => {
-  console.log('Batch APIs called..');
+  // console.log('Batch APIs called..');
   try {
     setLoading(true);
     const batchResponse = await axios.get(`${backendUrl}/batch/${product_id}`, {

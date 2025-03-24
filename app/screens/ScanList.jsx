@@ -1,5 +1,5 @@
-"use client";
-import React, { useState, useEffect, useRef } from "react";
+'use client';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   AppState,
   ScrollView,
@@ -7,7 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
-} from "react-native";
+} from 'react-native';
 import {
   Appbar,
   Text,
@@ -17,57 +17,79 @@ import {
   Portal,
   Modal,
   Snackbar,
-} from "react-native-paper";
-import { useIsFocused, useNavigation } from "@react-navigation/native";
-import HoneywellBarcodeReader from "react-native-honeywell-datacollection";
-import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // To handle token storage
-import MaterialIcons from "react-native-vector-icons/MaterialIcons";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import Feather from "react-native-vector-icons/Feather";
-import DeviceInfo from "react-native-device-info";
-import { decodeAndSetConfig } from "../../utils/tokenUtils";
-import styles from "../../styles/scanlist";
+} from 'react-native-paper';
+import {useIsFocused, useNavigation} from '@react-navigation/native';
+import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // To handle token storage
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Feather from 'react-native-vector-icons/Feather';
+import DeviceInfo from 'react-native-device-info';
+import {decodeAndSetConfig} from '../../utils/tokenUtils';
+import styles from '../../styles/scanlist';
+import LoaderComponent from '../components/Loader';
 
-function ScanList() {
+function ScanList({route}) {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
+  const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
   const [parentModalVisible, setParentModalVisible] = useState(false);
   const [childModalVisible, setChildModalVisible] = useState(false);
   const [transactionStatus, setTransactionStatus] = useState(null);
   const [quantity, setQuantity] = useState(0);
-  const [transactionId, setTransactionId] = useState("");
+  const [transactionId, setTransactionId] = useState('');
   const [ssccNumber, setSsccNumber] = useState(null);
   const [config, setConfig] = useState(null);
   const [serialNumber, setSerialNumber] = useState(null);
-  const backendUrl = useRef();
-
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
-    message: "",
+    message: '',
   });
+  const [productId, setProductId] = useState('');
+  const [batchId, setBatchId] = useState('');
+  const [authToken, setAuthToken] = useState('');
+  /* Get the param */
+  const {backendUrl, exists} = route.params;
+  // let productId, batchId, authToken;
 
   useEffect(() => {
-    if (!quantity) {
+    if (productId && batchId && authToken) {
       handleScannedData();
     }
-    //scanValidation();
+    return () => {
+      console.log('returning from useeffect isFocused false');
+    };
+  }, [isFocused, productId, batchId, authToken]);
+
+  useEffect(() => {
+    (async () => {
+      const pId = await AsyncStorage.getItem('productId');
+      const bId = await AsyncStorage.getItem('batchId');
+      const token = await AsyncStorage.getItem('authToken');
+      setProductId(pId);
+      setBatchId(bId);
+      setAuthToken(token);
+      console.log('route.params ', route.params, productId, batchId, authToken);
+    })();
     return () => {};
-  }, [isFocused]);
+  }, [productId, batchId, authToken]);
+
+ 
 
   useEffect(() => {
     //console.log('Is compatible:', HoneywellBarcodeReader.isCompatible);
-    HoneywellBarcodeReader.register().then((claimed) => {
+    HoneywellBarcodeReader.register().then(claimed => {
       console.log(
-        claimed ? "Barcode reader is claimed" : "Barcode reader is busy"
+        claimed ? 'Barcode reader is claimed' : 'Barcode reader is busy',
       );
     });
 
-    HoneywellBarcodeReader.onBarcodeReadSuccess(async (event) => {
+    HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
       if (quantity > 0) {
-        console.log("Current Scanned data :", event.data);
-        console.log("Previous data is :", data);
+        console.log('Current Scanned data :', event.data);
+        console.log('Previous data is :', data);
 
         const scanRes = await scanValidation(event.data);
         console.log('Inside BarcodeRead Callback ', scanRes);
@@ -76,174 +98,168 @@ function ScanList() {
         }
       } else {
         onToggleSnackBar(
-          "All codes have been scanned. You may now complete the transaction.", 400);
+          'All codes have been scanned. You may now complete the transaction.',
+          400,
+        );
       }
     });
 
     HoneywellBarcodeReader.onBarcodeReadFail(() => {
-      console.log("Barcode read failed");
+      console.log('Barcode read failed');
     });
 
-    HoneywellBarcodeReader.onTriggerStateChange((state) => {
-      console.log("onTriggerStateChange", state);
+    HoneywellBarcodeReader.onTriggerStateChange(state => {
+      console.log('onTriggerStateChange', state);
     });
 
-    HoneywellBarcodeReader.barcodeReaderInfo((details) => {
+    HoneywellBarcodeReader.barcodeReaderInfo(details => {
       //console.log('barcodeReaderClaimed', details);
     });
 
     return async () => {};
-  }, [
-    transactionId,
-    quantity,
-    isFocused,
-  ]);
+  }, [transactionId, quantity, isFocused]);
 
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
-      code === 200 ? "rgb(80, 189, 160)" : "rgb(210, 43, 43)";
+      code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
 
     setSnackbarInfo({
       visible: true,
       message,
-      snackbarStyle: { backgroundColor },
+      snackbarStyle: {backgroundColor},
     });
   };
 
   const onDismissSnackBar = () =>
-    setSnackbarInfo({ visible: false, message: "" });
+    setSnackbarInfo({visible: false, message: ''});
 
   //scan Validation API
-  const scanValidation = async (barcodeData) => {
-    console.log("scan validation call....");
+  const scanValidation = async barcodeData => {
+    console.log('scan validation call....');
     try {
-      const productId = await AsyncStorage.getItem("productId");
-      const batchId = await AsyncStorage.getItem("batchId");
-
       const payload = {
         productId,
         batchId,
         uniqueCode: barcodeData,
       };
-      console.log("Payload for scan/validation :", payload);
-      const backendUrl = await AsyncStorage.getItem("BackendUrl");
-      console.log("Backend url ", backendUrl);
-      
+      console.log('Payload for scan/validation :', payload);
+      setLoading(true);
       const scanRes = await axios.post(
         `${backendUrl}/scan/validation`,
         payload,
         {
           headers: {
-            Authorization: `Bearer ${await AsyncStorage.getItem("authToken")}`,
-            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
           },
-        }
+        },
       );
-      console.log("scan/validation APIs Res :", scanRes.data);
+      console.log('scan/validation APIs Res :', scanRes.data);
 
       if (scanRes.data.success) {
         console.log(scanRes.data.message, 200);
+        setLoading(false);
         return true;
       } else {
-        console.log("Invalid scan res :", scanRes.data.message);
+        console.log('Invalid scan res :', scanRes.data.message);
         onToggleSnackBar(scanRes.data.message);
+        setLoading(false);
         return false;
       }
     } catch (error) {
-      console.error("Error to scan validation API call", error);
+      console.error('Error to scan validation API call', error);
+      setLoading(false);
     }
   };
 
   //packaging Hierarchy API
   const handleScannedData = async () => {
-    decodeAndSetConfig(setConfig, await AsyncStorage.getItem("authToken"));
-    backendUrl.current = await AsyncStorage.getItem("BackendUrl");
+    decodeAndSetConfig(setConfig, authToken);
     try {
-      const productId = await AsyncStorage.getItem("productId");
-      // const batchId = await AsyncStorage.getItem("batchId");
-      console.log("productId :-", productId);
-  
+      console.log('handlescanned data  :-', {productId, batchId});
+      setLoading(true);
       const response = await axios.post(
-        `${backendUrl.current}/product/packagingHierarchy`,
+        `${backendUrl}/product/packagingHierarchy`,
         {
           audit_log: {
             audit_log: config?.config?.audit_logs,
-            remarks: "none",
+            remarks: 'none',
           },
-          productId: productId
+          productId,
+          batchId
         },
         {
           headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${await AsyncStorage.getItem("authToken")}`,
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
           },
-        }
+        },
       );
-      console.log("Packaging Hierarchy API Res :", response.data);
-  
+      console.log('Packaging Hierarchy API Res :', response.data);
+
       if (response.data.success === true && response.data.code === 200) {
         onToggleSnackBar(response.data.message, response.data.code);
         if (response?.data?.data?.scannedCodes?.length > 0) {
           setData(response?.data?.data?.scannedCodes);
         }
-        setQuantity(response.data.data.quantity);
-        setTransactionId(response.data.data.transactionId);
+        setSsccNumber(response.data?.data?.ssccCode);
+        setSerialNumber(response.data?.data?.serialNo);
+        setQuantity(response.data.data?.quantity);
+        setTransactionId(response.data.data?.transactionId);
+        setLoading(false);
       } else {
-        console.log(response.data.message)
+        console.log(response.data.message);
         onToggleSnackBar(response.data.message, 400);
+        setLoading(false);
       }
     } catch (err) {
-      console.log("Error :", err);
+      console.log('Error :', err);
+      setLoading(false);
     }
   };
   //console.log('Total Quantity :', totalQuantity);
 
   //codescan API
-  const codeScan = async (barcodeData) => {
-    console.log("Code scan API called......");
-
+  const codeScan = async barcodeData => {
+    console.log('Code scan API called......');
     try {
-      const productId = await AsyncStorage.getItem("productId");
-      const batchId = await AsyncStorage.getItem("batchId");
-      const authToken = await AsyncStorage.getItem("authToken");
-
+      setLoading(true);
       const payload = {
         uniqueCode: barcodeData,
         transactionId,
-        quantity
+        quantity,
       };
-
       if (config?.config?.audit_logs) {
-        payload["audit_log"] = {
+        payload['audit_log'] = {
           audit_log: true,
           performed_action: `Scan transaction completed with Transaction ID: ${transactionId}, Product ID: ${productId}, Batch ID: ${batchId}, and scanned by User ID: ${config.userId}.`,
-          remarks: "none",
+          remarks: 'none',
         };
       }
-      console.log("Payload for codeScan API request:", payload);
+      console.log('Payload for codeScan API request:', payload);
 
       // Making the API call
       const codeScanResponse = await axios.post(
-        `${backendUrl.current}/scan/codescan`,
+        `${backendUrl}/scan/codescan`,
         payload,
         {
           headers: {
             Authorization: `Bearer ${authToken}`,
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
-        }
+        },
       );
 
-      console.log("codeScan API Response:", codeScanResponse.data);
+      console.log('codeScan API Response:', codeScanResponse.data);
 
       if (codeScanResponse.data.success && codeScanResponse.data.code === 200) {
-        setData((prevData) => {
+        setData(prevData => {
           const alreadyExist = prevData.includes(barcodeData);
           return alreadyExist ? [...prevData] : [...prevData, barcodeData];
         });
 
         onToggleSnackBar(codeScanResponse.data.message, 200);
-        console.log("Transaction ID:", transactionId);
+        console.log('Transaction ID:', transactionId);
 
         // Update state with new response data.
         const responseData = codeScanResponse.data.data;
@@ -251,25 +267,28 @@ function ScanList() {
         setQuantity(responseData.quantity);
         setSerialNumber(responseData.serialNo);
         setSsccNumber(responseData.sscc_code);
+        setLoading(false);
       } else {
         onToggleSnackBar(
           codeScanResponse.data.message,
-          codeScanResponse.data.code
+          codeScanResponse.data.code,
         );
+        setLoading(false);
       }
     } catch (error) {
-      console.error("Error during code scan API call:", error);
+      console.error('Error during code scan API call:', error);
+      setLoading(false);
     }
   };
 
   const handleEndTransaction = () => {
-    console.log("End transaction button pressed..");
+    console.log('End transaction button pressed..');
     setParentModalVisible(true);
   };
 
-  const handleParentModalDismiss = async (confirmed) => {
+  const handleParentModalDismiss = async confirmed => {
     setParentModalVisible(false);
-    setTransactionStatus(confirmed ? "completed" : "failed");
+    setTransactionStatus(confirmed ? 'completed' : 'failed');
 
     if (confirmed && ssccNumber) {
       await handlePrintCode(ssccNumber, parseInt(serialNumber));
@@ -278,19 +297,20 @@ function ScanList() {
 
   const handleChildModalDismiss = () => {
     setChildModalVisible(false);
+    navigation.goBack();
   };
 
   //Print SSCC codes API
   const handlePrintCode = async (ssccCode, serialNo) => {
-    console.log("print payload ", {
+    console.log('print payload ', {
       ssccCode,
       serialNo,
       macAddress: await DeviceInfo.getUniqueId(),
     });
-    
+
     try {
       const res = await axios.post(
-        `${backendUrl.current}/print`,
+        `${backendUrl}/print`,
         {
           ssccCode,
           serialNo,
@@ -298,26 +318,38 @@ function ScanList() {
         },
         {
           headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${await AsyncStorage.getItem("authToken")}`,
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
           },
-        }
+        },
       );
-      console.log("Response of handle print ", res.data);
+      console.log('Response of handle print ', res.data);
 
       if (res.data.success === true && res.data.code === 200) {
-        setData([]);
-        handleScannedData();
-        setChildModalVisible(true);
+        if (res.data.data?.allTransactionDone) {
+          onToggleSnackBar("All transactions has been completed", res.data.code);
+          setData([]);
+          setProductId(null);
+          setBatchId(null);
+          setAuthToken(null);
+          setSerialNumber(null);
+          setSsccNumber(null);
+          setTransactionId(null);
+          setChildModalVisible(true);
+        }else {
+          handleScannedData();
+          setData([]);
+          setChildModalVisible(true);
+        }
       } else {
         onToggleSnackBar(res.data.message, res.data.code);
       }
     } catch (error) {
-      console.log("Error to print code for ", error);
+      console.log('Error to print code for ', error);
     }
   };
 
-  const handleAggregateState = async (currentState) => {
+  const handleAggregateState = async currentState => {
     console.log(currentState);
 
     const payload = {
@@ -327,52 +359,54 @@ function ScanList() {
     };
     try {
       // if (state === 'inactive' || state === 'background') {
-      const res = await axios.post(
-        `${backendUrl.current}/aggregationtransaction/handleAggregatedTransactionScanState`,
-        {
-          ...payload,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${await AsyncStorage.getItem("authToken")}`,
-          },
-        }
-      );
-      console.log(
-        "Response for handleAggregatedTransactionScanState ",
-        res.data
-      );
-
-      if (res.data.success === true && res.data.code === 200) {
-        onToggleSnackBar(res.data.message, res.data.code);
-      } else {
-        onToggleSnackBar(res.data.message, res.data.code);
-      }
+      // const res = await axios.post(
+      //   `${backendUrl}/aggregationtransaction/handleAggregatedTransactionScanState`,
+      //   {
+      //     ...payload,
+      //   },
+      //   {
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //       Authorization: `Bearer ${await AsyncStorage.getItem("authToken")}`,
+      //     },
+      //   }
+      // );
+      // console.log(
+      //   "Response for handleAggregatedTransactionScanState ",
+      //   res.data
+      // );
+      // if (res.data.success === true && res.data.code === 200) {
+      //   onToggleSnackBar(res.data.message, res.data.code);
+      // } else {
+      //   onToggleSnackBar(res.data.message, res.data.code);
+      // }
       // }
     } catch (error) {
       console.log(
-        "Error to Aggregated Transaction Scan State code for ",
-        SsccCode
+        'Error to Aggregated Transaction Scan State code for ',
+        SsccCode,
       );
     }
   };
 
   AppState.addEventListener(
-    "change",
-    async (currentState) =>
-      currentState == "background" && (await handleAggregateState())
+    'change',
+    async currentState =>
+      currentState == 'background' && (await handleAggregateState()),
   );
+
+  if (loading) {
+    return <LoaderComponent />;
+  }
 
   return (
     <>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+        style={{flex: 1}}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Appbar.Header>
           <Appbar.BackAction
-            onPress={() => navigation.navigate("Aggregation")}
+            onPress={() => navigation.navigate('Aggregation')}
           />
           <Appbar.Content title="Scan List" />
         </Appbar.Header>
@@ -403,17 +437,13 @@ function ScanList() {
         {/* <Divider /> */}
 
         <ScrollView contentContainerStyle={styles.container}>
-          <List.Section style={{ flexDirection: "column-reverse" }}>
+          <List.Section style={{flexDirection: 'column-reverse'}}>
             {data.map((item, index) => (
               <List.Item
                 key={index}
                 title={item}
                 left={() => (
-                  <Feather
-                    name="package"
-                    size={25}
-                    style={{ paddingRight: 0 }}
-                  />
+                  <Feather name="package" size={25} style={{paddingRight: 0}} />
                 )}
               />
             ))}
@@ -426,16 +456,14 @@ function ScanList() {
           visible={snackbarInfo.visible}
           onDismiss={onDismissSnackBar}
           duration={3000}
-          style={[styles.snackbar, snackbarInfo.snackbarStyle]}
-        >
+          style={[styles.snackbar, snackbarInfo.snackbarStyle]}>
           {snackbarInfo.message}
         </Snackbar>
         <TouchableOpacity
           mode="contained"
-          disabled={quantity!==0}
+          disabled={quantity !== 0}
           style={styles.submitButton}
-          onPress={handleEndTransaction}
-        >
+          onPress={handleEndTransaction}>
           <Text style={styles.endTranTxt}>End Transaction</Text>
         </TouchableOpacity>
 
@@ -444,8 +472,7 @@ function ScanList() {
           <Modal
             visible={parentModalVisible}
             onDismiss={async () => await handleParentModalDismiss(false)} // Dismiss on Cancel
-            contentContainerStyle={styles.modalContainer}
-          > 
+            contentContainerStyle={styles.modalContainer}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Scan List</Text>
             </View>
@@ -468,15 +495,13 @@ function ScanList() {
               <Button
                 mode="contained"
                 onPress={async () => await handleParentModalDismiss(true)} // Confirm button action
-                style={styles.modalConfirmButton}
-              >
+                style={styles.modalConfirmButton}>
                 Confirm
               </Button>
               <Button
                 mode="contained"
                 onPress={async () => await handleParentModalDismiss(false)} // Cancel button action
-                style={styles.modalButton}
-              >
+                style={styles.modalButton}>
                 Cancel
               </Button>
             </View>
@@ -486,10 +511,9 @@ function ScanList() {
         {/* Child Modal (Printing Completed) */}
         <Portal>
           <Modal
-            visible={childModalVisible && transactionStatus === "completed"}
+            visible={childModalVisible && transactionStatus === 'completed'}
             onDismiss={handleChildModalDismiss} // Close the modal
-            contentContainerStyle={styles.modalContainer}
-          >
+            contentContainerStyle={styles.modalContainer}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Status</Text>
             </View>
@@ -510,8 +534,7 @@ function ScanList() {
               <Button
                 mode="contained"
                 onPress={handleChildModalDismiss}
-                style={styles.modalOKButton}
-              >
+                style={styles.modalOKButton}>
                 OK
               </Button>
             </View>
@@ -521,10 +544,9 @@ function ScanList() {
         {/* Child Modal (Printing Failed) */}
         <Portal>
           <Modal
-            visible={childModalVisible && transactionStatus === "failed"}
+            visible={childModalVisible && transactionStatus === 'failed'}
             onDismiss={handleChildModalDismiss} // Close the modal
-            contentContainerStyle={styles.modalContainer}
-          >
+            contentContainerStyle={styles.modalContainer}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Status</Text>
             </View>
@@ -546,8 +568,7 @@ function ScanList() {
               <Button
                 mode="contained"
                 onPress={handleChildModalDismiss}
-                style={styles.modelRetryButton}
-              >
+                style={styles.modelRetryButton}>
                 Retry
               </Button>
             </View>

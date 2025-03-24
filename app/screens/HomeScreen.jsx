@@ -22,8 +22,8 @@ function HomeScreen() {
   const [backendUrl, setBackendUrl] = useState(null);
   const {width, height} = Dimensions.get('window');
   const screenDimensions = Dimensions.get('screen');
-  console.log(width, height, 'height and weight');
-  console.log('screenDimensions', screenDimensions);
+  // console.log(width, height, 'height and weight');
+  // console.log('screenDimensions', screenDimensions);
   
   const [cssStyle, setCssStyle] = useState({
     imageView: {
