@@ -28,12 +28,13 @@ import Feather from 'react-native-vector-icons/Feather';
 import DeviceInfo from 'react-native-device-info';
 import {decodeAndSetConfig} from '../../utils/tokenUtils';
 import styles from '../../styles/scanlist';
-import LoaderComponent from '../components/Loader';
+import {useLoading} from '../../context/LoadingContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 function ScanList({route}) {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
-  const [loading, setLoading] = useState(true);
+  const {setLoading} = useLoading();
   const [data, setData] = useState([]);
   const [parentModalVisible, setParentModalVisible] = useState(false);
   const [childModalVisible, setChildModalVisible] = useState(false);
@@ -47,36 +48,20 @@ function ScanList({route}) {
     visible: false,
     message: '',
   });
-  const [productId, setProductId] = useState('');
-  const [batchId, setBatchId] = useState('');
-  const [authToken, setAuthToken] = useState('');
   /* Get the param */
-  const {backendUrl, exists} = route.params;
-  // let productId, batchId, authToken;
-
-  useEffect(() => {
-    if (productId && batchId && authToken) {
-      handleScannedData();
-    }
-    return () => {
-      console.log('returning from useeffect isFocused false');
-    };
-  }, [isFocused, productId, batchId, authToken]);
+  const { backendUrl, productId, batchId } = route.params;
+  const [authToken, setAuthToken] = useState('');
 
   useEffect(() => {
     (async () => {
-      const pId = await AsyncStorage.getItem('productId');
-      const bId = await AsyncStorage.getItem('batchId');
+      console.log('use effect ', backendUrl, productId, batchId, token);
+      setData([]);
       const token = await AsyncStorage.getItem('authToken');
-      setProductId(pId);
-      setBatchId(bId);
       setAuthToken(token);
-      console.log('route.params ', route.params, productId, batchId, authToken);
+      await handleScannedData();
     })();
     return () => {};
-  }, [productId, batchId, authToken]);
-
- 
+  }, [isFocused]);
 
   useEffect(() => {
     //console.log('Is compatible:', HoneywellBarcodeReader.isCompatible);
@@ -174,7 +159,8 @@ function ScanList({route}) {
 
   //packaging Hierarchy API
   const handleScannedData = async () => {
-    decodeAndSetConfig(setConfig, authToken);
+    const token = await AsyncStorage.getItem('authToken');
+    decodeAndSetConfig(setConfig, token);
     try {
       console.log('handlescanned data  :-', {productId, batchId});
       setLoading(true);
@@ -186,12 +172,12 @@ function ScanList({route}) {
             remarks: 'none',
           },
           productId,
-          batchId
+          batchId,
         },
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
+            Authorization: `Bearer ${token}`,
           },
         },
       );
@@ -297,7 +283,6 @@ function ScanList({route}) {
 
   const handleChildModalDismiss = () => {
     setChildModalVisible(false);
-    navigation.goBack();
   };
 
   //Print SSCC codes API
@@ -307,8 +292,8 @@ function ScanList({route}) {
       serialNo,
       macAddress: await DeviceInfo.getUniqueId(),
     });
-
     try {
+      setLoading(true);
       const res = await axios.post(
         `${backendUrl}/print`,
         {
@@ -327,25 +312,33 @@ function ScanList({route}) {
 
       if (res.data.success === true && res.data.code === 200) {
         if (res.data.data?.allTransactionDone) {
-          onToggleSnackBar("All transactions has been completed", res.data.code);
+          onToggleSnackBar(
+            'All transactions has been completed',
+            res.data.code,
+          );
           setData([]);
-          setProductId(null);
-          setBatchId(null);
           setAuthToken(null);
           setSerialNumber(null);
           setSsccNumber(null);
           setTransactionId(null);
-          setChildModalVisible(true);
-        }else {
+          setChildModalVisible(false);
+          setQuantity(0)
+          setTimeout(() => {
+            navigation.goBack();
+          }, 2000);
+        } else {
           handleScannedData();
           setData([]);
           setChildModalVisible(true);
         }
+        setLoading(true);
       } else {
         onToggleSnackBar(res.data.message, res.data.code);
+        setLoading(true);
       }
     } catch (error) {
       console.log('Error to print code for ', error);
+      setLoading(true);
     }
   };
 
@@ -394,10 +387,6 @@ function ScanList({route}) {
     async currentState =>
       currentState == 'background' && (await handleAggregateState()),
   );
-
-  if (loading) {
-    return <LoaderComponent />;
-  }
 
   return (
     <>

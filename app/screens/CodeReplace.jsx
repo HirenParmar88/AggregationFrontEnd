@@ -13,7 +13,6 @@ import {
   TextInput,
   Modal,
   Portal,
-  PaperProvider,
   Divider,
   Snackbar,
 } from 'react-native-paper';
@@ -23,27 +22,24 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
-import LoaderComponent from '../components/Loader';
 import styles from '../../styles/codereplace';
 import { decodeAndSetConfig } from '../../utils/tokenUtils';
 import EsignPage from './Esign';
 import { fetchProductData, fetchBatchData, fetchCountryCode } from '../components/fetchDetails';
+import { useLoading } from '../../context/LoadingContext';
 
 
 function CodeReplaceScreen() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [text, setText] = useState('');
-  const [loading, setLoading] = useState(true);
+  const { setLoading } = useLoading();
   const [token, setToken] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState({ value: null, label: null });
   const [selectedBatch, setSelectedBatch] = useState({ value: null, label: null });
   const [isFocusProduct, setIsFocusProduct] = useState(false);
   const [isFocusBatch, setIsFocusBatch] = useState(false);
   const [products, setProducts] = useState([]);
-  const [valueProduct, setValueProduct] = useState('');
-  const [valueBatch, setValueBatch] = useState('');
-  const [scannedCodes, setScannedCodes] = useState([]);
   const [batches, setBatches] = useState([]);
   const [countryCode, setCountryCode] = useState(null);
   const [visible, setVisible] = useState(false);
@@ -88,12 +84,19 @@ function CodeReplaceScreen() {
         if (storedToken) {
           setToken(storedToken);
           console.log('JWT token : ', storedToken);
-          await decodeAndSetConfig(setConfig, storedToken);
-          const backendUrl = await AsyncStorage.getItem("BackendUrl")
-          console.log(backendUrl)
-          await fetchProductData(storedToken, setProducts, setLoading, backendUrl);
+          decodeAndSetConfig(setConfig, storedToken);
+          setLoading(true);
+          const resProd = await fetchProductData();
+          setLoading(false);
+          if (resProd.success) {
+            setProducts(resProd.data)
+          } else if (resProd.code === 401) {
+            navigation.navigate('Login')
+          } else {
+            setSnackbarInfo({ visible: true, message: "Internal server error"});
+          }
         } else {
-          throw new Error('Token is missing');
+          setSnackbarInfo({ visible: true, message: "Token not found please login again"});
         }
       } catch (error) {
         console.error('Error fetching token:', error);
@@ -131,8 +134,16 @@ function CodeReplaceScreen() {
   useEffect(() => {
     if (selectedProduct?.value) {
       (async () => {
-        const backendUrl = await AsyncStorage.getItem('BackendUrl')
-        await fetchCountryCode(setCountryCode, selectedProduct, setLoading, token, backendUrl);
+        setLoading(true);
+        const resCountry = await fetchCountryCode(selectedProduct.value);
+        setLoading(false);
+        if (resCountry.success) {
+          setCountryCode(resCountry.data)
+        } else if (resCountry.code === 401) {
+          navigation.navigate('Login')
+        } else {
+          setSnackbarInfo({ visible: true, message: "Internal server error"});
+        }
       })();
     }
   }, [selectedProduct?.value]);
@@ -148,8 +159,16 @@ function CodeReplaceScreen() {
   const handleDropdownProductChange = async (item) => {
     setSelectedProduct({ value: item.value, label: item.label });
     setIsFocusProduct(false);
-    const backendUrl = await AsyncStorage.getItem('BackendUrl')
-    await fetchBatchData(setBatches, setLoading, token, item.value, backendUrl);
+    setLoading(true);
+    const resBatch = await fetchBatchData(item.value);
+    setLoading(false);
+    if (resBatch.success) {
+      setBatches(resBatch.data)
+    } else if (resBatch.code === 401) {
+      navigation.navigate('Login')
+    } else {
+      setSnackbarInfo({ visible: true, message: "Internal server error"});
+    }
   };
 
   const handleCodeReplace = () => {
@@ -163,10 +182,6 @@ function CodeReplaceScreen() {
     }
     setVisible(true);
   };
-
-  if (loading) {
-    return <LoaderComponent />;
-  }
 
   const codeReplace = async () => {
     try {
@@ -341,7 +356,6 @@ function CodeReplaceScreen() {
                 mode="outlined"
                 onChangeText={text => setScanCode(text)}
                 style={styles.textInput}
-                onFocus={() => setScannedCodes('')}
               />
             </View>
           </View>

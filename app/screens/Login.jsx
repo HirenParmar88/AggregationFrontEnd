@@ -16,6 +16,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import styles from '../../styles/login';
+import { useLoading } from '../../context/LoadingContext';
 
 // Initial state
 const initialState = {
@@ -51,10 +52,9 @@ const loginReducer = (state, action) => {
 const Login = ({ route }) => {
   const navigation = useNavigation();
   const { setIsAuthenticated } = route.params;
-
+  const { setLoading } = useLoading();
   // useReducer to manage state
   const [state, dispatch] = useReducer(loginReducer, initialState);
-
   const {
     backendUrl,
     userId,
@@ -106,6 +106,7 @@ const Login = ({ route }) => {
       return;
     }
     try {
+      setLoading(true);
       const res = await axios.post(
         `${backendUrl}/auth/login`,
         { userId, password, forceFully },
@@ -118,6 +119,7 @@ const Login = ({ route }) => {
         onToggleSnackBar(res.data.message, 200);
         setTimeout(() => {
           setIsAuthenticated(true);
+          setLoading(false);
           navigation.navigate('Home');
         }, 3000);
       } else if (res.data.code === 2004) {
@@ -128,6 +130,8 @@ const Login = ({ route }) => {
     } catch (error) {
       console.log(error);
       onToggleSnackBar(error.message);
+    } finally{
+      setLoading(false);
     }
   };
 

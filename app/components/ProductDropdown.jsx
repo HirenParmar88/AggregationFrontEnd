@@ -1,17 +1,15 @@
 import React, {useState, useEffect} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {Dropdown} from 'react-native-element-dropdown';
-import axios from 'axios';
-import {url} from '../../utils/constant';
-import LoaderComponent from '../components/Loader';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import {decodeAndSetConfig} from '../../utils/tokenUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetchProductData } from './fetchDetails';
+import { useLoading } from '../../context/LoadingContext';
 
 function ProductDropdownComponent({valueProduct,handleDropdownProductChange,setValueProduct}) {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  //   const [valueProduct, setValueProduct] = useState(null);
+  const { setLoading } = useLoading();
   const [isFocusProduct, setIsFocusProduct] = useState(false);
   
   useEffect(() => {
@@ -22,9 +20,18 @@ function ProductDropdownComponent({valueProduct,handleDropdownProductChange,setV
         if (storedToken) {
           decodeAndSetConfig(setConfig, storedToken);
           setToken(storedToken);
-          fetchProductData(storedToken);
+          setLoading(true);
+          const resProd = await fetchProductData();
+          setLoading(false);
+          if (resProd.success) {
+            setProducts(resProd.data)
+          } else if (resProd.code === 401) {
+            navigation.navigate('Login')
+          } else {
+            setSnackbarInfo({ visible: true, message: "Internal server error"});
+          }
         } else {
-          throw new Error('Token is missing');
+          setSnackbarInfo({ visible: true, message: "Token not found please login again"});
         }
       } catch (error) {
         console.error('Error fetching token:', error);
@@ -37,47 +44,6 @@ function ProductDropdownComponent({valueProduct,handleDropdownProductChange,setV
       setValueProduct(null);
     };
   }, []);
-
-  const fetchProductData = async token => {
-    console.log('Product APIs called..');
-
-    try {
-      setLoading(true);
-      const backendUrl=await AsyncStorage.getItem("BackendUrl")
-      const productResponse = await axios.get(`${backendUrl}/product/`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      //console.log("Product API Response :->",productResponse);
-
-      const {products} = productResponse.data.data; //destructuring objects
-      //console.log('This is products Data :', products);
-      //console.log('product_id :-', products[0].product_id);
-
-      if (products) {
-        //console.log("Dropdown Products :", products)
-        const fetchedProducts = products.map(product => ({
-          label: product.product_name,
-          value: product.id,
-        }));
-        setProducts(fetchedProducts);
-      } else {
-        console.error('No products data available');
-      }
-    } catch (error) {
-      console.error('Error fetching Product data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <LoaderComponent />
-    );
-  }
 
   return (
     <>

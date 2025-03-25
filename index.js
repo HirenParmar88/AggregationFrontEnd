@@ -12,6 +12,7 @@ import {
 } from 'react-native-paper';
 import {NetworkProvider} from './context/NetworkContext';
 import GetNetInfo from './app/components/NetInfo';
+import { LoadingProvider } from './context/LoadingContext';
 
 const fontConfig = {
   customVariant: {
@@ -79,7 +80,9 @@ export default function Main() {
   return (
     <PaperProvider theme={theme}>
       <NetworkProvider>
-          <App />
+          <LoadingProvider>
+            <App />
+          </LoadingProvider>
         <GetNetInfo />
       </NetworkProvider>
     </PaperProvider>

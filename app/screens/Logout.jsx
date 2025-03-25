@@ -64,10 +64,7 @@ function Logout({route}) {
     try {
       const token = await AsyncStorage.getItem('authToken');
       console.log('Token use for Logout :', token);
-      if (!token) {
-        Alert.alert('Error', 'No token found. Please log in again.');
-        return;
-      }
+
       // Make the logout API request
       const response = await axios.post(
         `${backendUrl}/auth/logout`,
@@ -81,21 +78,11 @@ function Logout({route}) {
       );
       console.log('Logout Api Res :', response.data);
       // Handle successful logout
-      if (response.data.success && response.data.code === 200) {
-        await AsyncStorage.removeItem('authToken');
-        await AsyncStorage.removeItem('screens');
-        setIsAuthenticated(false);
-        hideModal();
-        navigation.navigate('Login');
-        console.log('User Logged Out Successfully..');
-      } else {
-        hideModal();
-        navigation.navigate('Home');
-        Alert.alert(
-          'Error',
-          response.data.message || 'Logout failed. Please try again.',
-        );
-      }
+      await AsyncStorage.removeItem('authToken');
+      await AsyncStorage.removeItem('screens');
+      setIsAuthenticated(false);
+      hideModal();
+      navigation.navigate('Login');
     } catch (error) {
       console.error('Error logging out:', error);
       hideModal();

@@ -1,54 +1,11 @@
 import React, {useState, useEffect} from 'react';
 import {StyleSheet} from 'react-native';
 import {Dropdown} from 'react-native-element-dropdown';
-import axios from 'axios';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import {url} from '../../utils/constant';
-import LoaderComponent from '../components/Loader';
-import {decodeAndSetConfig} from '../../utils/tokenUtils';
 
 function BatchDropdownComponent() {
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const fetchBatchData = async (token, product_id) => {
-    console.log('Batch APIs called..');
-
-    try {
-      setLoading(true);
-      const backendUrl=await AsyncStorage.getItem("BackendUrl")
-      const batchResponse = await axios.get(`${backendUrl}/batch/${product_id}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      //console.log("Batch Response :", batchResponse)
-      const {batches} = batchResponse?.data?.data;
-      //console.log('Batche Res :', batches);
-
-      if (batches) {
-        const fetchedBatches = batches.map(batch => ({
-          label: batch.batch_no,
-          value: batch.id,
-        }));
-        setBatches(fetchedBatches);
-        console.log('Store for select :', batches);
-      } else {
-        console.error('No batches data available');
-      }
-    } catch (error) {
-      console.error('Error Fetching batch data', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <LoaderComponent />
-    );
-  }
   
   return (
     <>

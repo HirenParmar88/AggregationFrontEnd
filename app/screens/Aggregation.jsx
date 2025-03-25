@@ -6,14 +6,15 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import { Dropdown } from 'react-native-element-dropdown';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import EsignPage from './Esign';
 import { decodeAndSetConfig } from '../../utils/tokenUtils';
-import LoaderComponent from '../components/Loader';
 import styles from '../../styles/aggregation';
 import { fetchProductData, fetchBatchData } from '../components/fetchDetails';
+import { useLoading } from '../../context/LoadingContext';
 
-function AggregationComponent() {
+function AggregationComponent({ route }) {
+  const { setLoading } = useLoading();
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [valueProduct, setValueProduct] = useState(null);
@@ -23,7 +24,6 @@ function AggregationComponent() {
   const [config, setConfig] = useState(null);
   const [products, setProducts] = useState([]);
   const [batches, setBatches] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const [status, setStatus] = useState(undefined);
@@ -34,9 +34,7 @@ function AggregationComponent() {
     visible: false,
     message: '',
   });
-
-
-
+  const { setIsAuthenticated } = route.params;
   useEffect(() => {
     const loadTokenAndData = async () => {
       try {
@@ -45,10 +43,20 @@ function AggregationComponent() {
         if (storedToken) {
           decodeAndSetConfig(setConfig, storedToken);
           setToken(storedToken);
-          const backendUrl = await AsyncStorage.getItem('BackendUrl');
-          await fetchProductData(storedToken, setProducts, setLoading, backendUrl);
+          setLoading(true);
+          const resProd = await fetchProductData();
+          setLoading(false);
+          if (resProd.success) {
+            setProducts(resProd.data)
+          } else if (resProd.code === 401) {
+            console.log('navigate to login');
+            setIsAuthenticated(false)
+            // navigation.navigate('Login')
+          } else {
+            setSnackbarInfo({ visible: true, message: "Internal server error"});
+          }
         } else {
-          throw new Error('Token is missing');
+          setSnackbarInfo({ visible: true, message: "Token not found please login again"});
         }
       } catch (error) {
         console.error('Error fetching token:', error);
@@ -146,6 +154,8 @@ function AggregationComponent() {
   const addAggregrate = async esign_status => {
     if (valueProduct && valueBatch) {
       const backendUrl = await AsyncStorage.getItem('BackendUrl');
+      console.log('Add aggregation palyload ', { valueProduct, valueBatch, backendUrl });
+      
       const res = await axios.post(
         `${backendUrl}/aggregationtransaction/addaggregation`,
         {
@@ -165,13 +175,14 @@ function AggregationComponent() {
           },
         },
       );
-      console.log('aggregationtransactionResponse :', res.data);
+      console.log('aggregationtransaction Response :', res.data);
       await AsyncStorage.setItem('productId', valueProduct);
       await AsyncStorage.setItem('batchId', valueBatch);
       if(res.data?.code === 200){
         onToggleSnackBar(res.data.message, 200);
+        resetForm();
         setTimeout(async () => {
-          navigation.navigate('ScanList', { "backendUrl": backendUrl, exists: res.data.data.exists });
+          navigation.navigate('ScanList', { "backendUrl": backendUrl, productId: valueProduct, batchId: valueBatch, exists: res.data.data.exists });
         }, 2000);
       } else {
         onToggleSnackBar(res.data.message);
@@ -204,16 +215,19 @@ function AggregationComponent() {
     setIsFocusBatch(false);
   };
 
-  if (loading) {
-    return <LoaderComponent />;
-  }
-
   const handleDropdownProductChange = async item => {
     // console.log('item.value', item.value);
     setValueProduct(item.value);
-    // console.log('selected Product Item :-', item);
-    const backendUrl = await AsyncStorage.getItem('BackendUrl')
-    await fetchBatchData(setBatches, setLoading, token, item.value, backendUrl);
+    setLoading(true);
+    const resBatch = await fetchBatchData(item.value);
+    setLoading(false);
+    if (resBatch.success) {
+      setBatches(resBatch.data)
+    } else if (resBatch.code === 401) {
+      navigation.navigate('Login')
+    } else {
+      setSnackbarInfo({ visible: true, message: "Internal server error"});
+    }
     setIsFocusProduct(false);
   };
   return (

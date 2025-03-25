@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   KeyboardAvoidingView,
@@ -15,18 +15,22 @@ import {
   Portal,
   Snackbar,
 } from 'react-native-paper';
-import { useIsFocused, useNavigation } from '@react-navigation/native';
-import { Dropdown } from 'react-native-element-dropdown';
+import {useIsFocused, useNavigation} from '@react-navigation/native';
+import {Dropdown} from 'react-native-element-dropdown';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
-import LoaderComponent from '../components/Loader';
 import Feather from 'react-native-vector-icons/Feather';
 import EsignPage from './Esign';
-import { decodeAndSetConfig } from '../../utils/tokenUtils';
+import {decodeAndSetConfig} from '../../utils/tokenUtils';
 import styles from '../../styles/dropout';
-import { fetchProductData, fetchBatchData, fetchCountryCode } from '../components/fetchDetails';
+import {
+  fetchProductData,
+  fetchBatchData,
+  fetchCountryCode,
+} from '../components/fetchDetails';
+import { useLoading } from '../../context/LoadingContext';
 
 function DropoutFun() {
   const navigation = useNavigation();
@@ -37,9 +41,7 @@ function DropoutFun() {
   });
   const [products, setProducts] = useState([]);
   const [batches, setBatches] = useState([]);
-  // const [valueProduct, setValueProduct] = useState('');
-  // const [valueBatch, setValueBatch] = useState('');
-  const [loading, setLoading] = useState(true);
+  const { setLoading } = useLoading();
   const [wholeBatch, setWholeBatch] = useState(true);
   const [dropoutReason, setDropoutReason] = useState('');
   const [isFocusP, setIsFocusP] = useState([]);
@@ -67,11 +69,11 @@ function DropoutFun() {
     setSnackbarInfo({
       visible: true,
       message,
-      snackbarStyle: { backgroundColor },
+      snackbarStyle: {backgroundColor},
     });
   };
   const onDismissSnackBar = () =>
-    setSnackbarInfo({ visible: false, message: '' });
+    setSnackbarInfo({visible: false, message: ''});
   const [token, setToken] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState({
     value: null,
@@ -92,14 +94,14 @@ function DropoutFun() {
   };
 
   const dataConfirmDropout = [
-    { label: 'Damage', value: 'Damage' },
-    { label: 'Defect', value: 'Defect' },
-    { label: 'Expired Good', value: 'Expired Good' },
-    { label: 'QA-Sample', value: 'QA-Sample' },
-    { label: 'Product-Recall', value: 'Product-Recall' },
-    { label: 'Market Complaint', value: 'Market Complaint' },
-    { label: 'Product Testing', value: 'Product Testing' },
-    { label: 'Demo-Sample', value: 'Demo-Sample' },
+    {label: 'Damage', value: 'Damage'},
+    {label: 'Defect', value: 'Defect'},
+    {label: 'Expired Good', value: 'Expired Good'},
+    {label: 'QA-Sample', value: 'QA-Sample'},
+    {label: 'Product-Recall', value: 'Product-Recall'},
+    {label: 'Market Complaint', value: 'Market Complaint'},
+    {label: 'Product Testing', value: 'Product Testing'},
+    {label: 'Demo-Sample', value: 'Demo-Sample'},
   ];
 
   useEffect(() => {
@@ -114,7 +116,7 @@ function DropoutFun() {
       console.log('Previous data is :', scannedCodes);
       const scanRes = await scanValidation(event.data);
       if (scanRes && scanRes.code === 200) {
-        console.log("countryCode ### ", countryCode);
+        console.log('countryCode ### ', countryCode);
 
         setScannedCodes(prevData => {
           const uniqueCode = getUniqueCode(event.data, countryCode);
@@ -140,7 +142,7 @@ function DropoutFun() {
     HoneywellBarcodeReader.barcodeReaderInfo(details => {
       console.log('barcodeReaderClaimed', details);
     });
-    return () => { };
+    return () => {};
   }, [selectedProduct, selectedBatch]);
 
   const getUniqueCode = (url, format) => {
@@ -165,11 +167,22 @@ function DropoutFun() {
         if (storedToken) {
           setToken(storedToken);
           decodeAndSetConfig(setConfig, storedToken);
-          const backendUrl = await AsyncStorage.getItem("BackendUrl")
-          fetchProductData(storedToken, setProducts, setLoading, backendUrl);
+          setLoading(true);
+          const resProd = await fetchProductData();
+          setLoading(false);
+          if (resProd.success) {
+            setProducts(resProd.data);
+          } else if (resProd.code === 401) {
+            navigation.navigate('Login');
+          } else {
+            setSnackbarInfo({visible: true, message: 'Internal server error'});
+          }
           console.log('product get in dropout Page :-', products);
         } else {
-          throw new Error('Token is missing');
+          setSnackbarInfo({
+            visible: true,
+            message: 'Token not found please login again',
+          });
         }
       } catch (error) {
         console.error('Error fetching token:', error);
@@ -179,25 +192,34 @@ function DropoutFun() {
     if (isFocused) {
       loadTokenAndData();
     }
-    return () => { };
+    return () => {};
   }, [isFocused]);
 
   useEffect(() => {
     if (selectedProduct.value) {
       (async () => {
-        const backendUrl = await AsyncStorage.getItem("BackendUrl")
-        await fetchBatchData(setBatches, setLoading, token, selectedProduct.value, backendUrl);
-        await fetchCountryCode(
-          setCountryCode,
-          selectedProduct,
-          setLoading,
-          token,
-          backendUrl
-        );
+        setLoading(true);
+        const resBatch = await fetchBatchData(selectedProduct.value);
+        const resCountry = await fetchCountryCode(selectedProduct.value);
+        setLoading(false);
+        if (resBatch.success) {
+          setBatches(resBatch.data);
+        } else if (resBatch.code === 401) {
+          navigation.navigate('Login');
+        } else {
+          setSnackbarInfo({visible: true, message: 'Internal server error'});
+        }
+        if (resCountry.success) {
+          setCountryCode(resCountry.data)
+        } else if (resCountry.code === 401) {
+          navigation.navigate('Login')
+        } else {
+          setSnackbarInfo({ visible: true, message: "Internal server error"});
+        }
       })();
     }
 
-    return () => { };
+    return () => {};
   }, [selectedProduct, countryCode]);
 
   const handleAuthResult = async (
@@ -244,19 +266,19 @@ function DropoutFun() {
       if (isApprover) {
         console.log('Approved is ', esignStatus === 'approved');
         if (esignStatus === 'approved') {
-          console.log("approveAPIName ", approveAPIName, openModal)
-          setOpenModal(false)
+          console.log('approveAPIName ', approveAPIName, openModal);
+          setOpenModal(false);
           onToggleSnackBar(
             'eSign has been approved for dropout whole batch',
             200,
           );
-          if (approveAPIName === "dropout-create") {
+          if (approveAPIName === 'dropout-create') {
             setTimeout(() => {
-              setOpenModal(true)
+              setOpenModal(true);
               setApproveAPIName('dropout-approve');
-              setApproveAPImethod('POST')
-            }, 1000)
-            return
+              setApproveAPImethod('POST');
+            }, 1000);
+            return;
           }
           if (wholeBatch) {
             onToggleSnackBar(
@@ -304,13 +326,17 @@ function DropoutFun() {
         uniqueCode: barcodeData,
       };
       console.log('Payload for scan/validation/dropout :', payload);
-      const backendUrl = await AsyncStorage.getItem("BackendUrl")
-      const scanRes = await axios.post(`${backendUrl}/scan/validation/dropout`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+      const backendUrl = await AsyncStorage.getItem('BackendUrl');
+      const scanRes = await axios.post(
+        `${backendUrl}/scan/validation/dropout`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
         },
-      });
+      );
       console.log('scan/validation APIs Res for DropOut :', scanRes.data);
       if (scanRes.data.code === 200 && scanRes.data.success === true) {
         onToggleSnackBar(scanRes.data.message, 200);
@@ -330,17 +356,21 @@ function DropoutFun() {
 
   const handleDropdownProductChange = async item => {
     console.log('product id select ', item);
-    setSelectedProduct({ value: item.value, label: item.label });
-    //setBatches([]);
-    console.log('selected Product Item in dropout:-', item);
-    console.log('item.value Product', item.value);
-    await fetchBatchData(setBatches, setLoading, token, item.value);
-    console.log(item.value);
-    console.log(item.label);
+    setSelectedProduct({value: item.value, label: item.label});
+    setLoading(true);
+    const resBatch = await fetchBatchData(item.value);
+    setLoading(false);
+    if (resBatch.success) {
+      setBatches(resBatch.data);
+    } else if (resBatch.code === 401) {
+      navigation.navigate('Login');
+    } else {
+      setSnackbarInfo({visible: true, message: 'Internal server error'});
+    }
   };
 
   const handleDropdownBatchChange = item => {
-    setSelectedBatch({ value: item.value, label: item.label });
+    setSelectedBatch({value: item.value, label: item.label});
   };
 
   const radioBatchDropout = () => {
@@ -381,7 +411,7 @@ function DropoutFun() {
     if (!dropoutReason) {
       onToggleSnackBar('Select dropout reason');
     }
-    const backendUrl = await AsyncStorage.getItem("BackendUrl")
+    const backendUrl = await AsyncStorage.getItem('BackendUrl');
     const batchDropRes = await axios.post(
       `${backendUrl}/dropout/wholebatch`,
       {
@@ -406,8 +436,8 @@ function DropoutFun() {
     if (batchDropRes.data.success === true && batchDropRes.data.code === 200) {
       onToggleSnackBar(batchDropRes.data.message, 200);
       setDropoutReason('');
-      setSelectedBatch({ value: null, label: null });
-      setSelectedProduct({ value: null, label: null });
+      setSelectedBatch({value: null, label: null});
+      setSelectedProduct({value: null, label: null});
     } else if (batchResponse.data.code === 401) {
       await AsyncStorage.removeItem('authToken');
     }
@@ -425,8 +455,9 @@ function DropoutFun() {
     console.log('Codes dropout confirmed in final step!');
     if (!dropoutReason) {
       onToggleSnackBar('Select dropout reason');
+      return;
     }
-    const backendUrl = await AsyncStorage.getItem("BackendUrl")
+    const backendUrl = await AsyncStorage.getItem('BackendUrl');
     const codesDropRes = await axios.post(
       `${backendUrl}/dropout/codes`,
       {
@@ -450,8 +481,8 @@ function DropoutFun() {
     console.log('Response of codes dropout: ', codesDropRes.data);
     if (codesDropRes.data.success && codesDropRes.data.code === 200) {
       onToggleSnackBar(codesDropRes.data.message, 200);
-      setSelectedBatch({ value: null, label: null });
-      setSelectedProduct({ value: null, label: null });
+      setSelectedBatch({value: null, label: null});
+      setSelectedProduct({value: null, label: null});
       setDropoutReason('');
       setScannedCodes([]);
     } else if (codesDropRes.data.code === 500) {
@@ -465,13 +496,10 @@ function DropoutFun() {
     setDropoutReason(item.value);
   };
 
-  if (loading) {
-    return <LoaderComponent />;
-  }
 
   return (
     <>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <KeyboardAvoidingView style={{flex: 1}} behavior="padding">
         <Appbar.Header>
           <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
           <Appbar.Content title="Dropout" />
@@ -482,7 +510,7 @@ function DropoutFun() {
           <View style={styles.dropdownContainer}>
             <View style={styles.containerDropdownItem}>
               <Dropdown
-                style={[styles.dropdown, { borderColor: 'rgb(80, 189, 160)' }]}
+                style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
                 placeholderStyle={styles.placeholderStyle}
                 selectedTextStyle={styles.selectedTextStyle}
                 data={products}
@@ -507,7 +535,7 @@ function DropoutFun() {
           <View style={styles.dropdownContainer}>
             <View style={styles.containerDropdownItem}>
               <Dropdown
-                style={[styles.dropdown, { borderColor: 'rgb(80, 189, 160)' }]}
+                style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
                 placeholderStyle={styles.placeholderStyle}
                 selectedTextStyle={styles.selectedTextStyle}
                 data={batches}
@@ -536,7 +564,7 @@ function DropoutFun() {
                 status={wholeBatch ? 'checked' : 'unchecked'}
                 onPress={radioBatchDropout}
               />
-              <Text style={{ fontSize: 16 }}>Batch Dropout</Text>
+              <Text style={{fontSize: 16}}>Batch Dropout</Text>
             </View>
             <View style={styles.radioItem2}>
               <RadioButton
@@ -544,33 +572,37 @@ function DropoutFun() {
                 status={!wholeBatch ? 'checked' : 'unchecked'}
                 onPress={radioCodesDropout}
               />
-              <Text style={{ fontSize: 16 }}>Codes Dropout</Text>
+              <Text style={{fontSize: 16}}>Codes Dropout</Text>
             </View>
           </View>
+          {!wholeBatch && (
+            <>
+              <Text style={styles.showResultLabel}>
+                {' '}
+                Total Scan Results ({scannedCodes.length})
+              </Text>
 
-          <Text style={styles.showResultLabel}>
-            Show Results ({scannedCodes.length})
-          </Text>
-
-          <ScrollView>
-            {!wholeBatch && (
-              <List.Section style={{ flexDirection: 'column-reverse' }}>
-                {scannedCodes.map((item, index) => (
-                  <List.Item
-                    key={index}
-                    title={item}
-                    left={() => (
-                      <Feather
-                        name="package"
-                        size={25}
-                        style={{ marginLeft: 5 }}
+              <ScrollView>
+                {!wholeBatch && (
+                  <List.Section style={{flexDirection: 'column-reverse'}}>
+                    {scannedCodes.map((item, index) => (
+                      <List.Item
+                        key={index}
+                        title={item}
+                        left={() => (
+                          <Feather
+                            name="package"
+                            size={25}
+                            style={{marginLeft: 5}}
+                          />
+                        )}
                       />
-                    )}
-                  />
-                ))}
-              </List.Section>
-            )}
-          </ScrollView>
+                    ))}
+                  </List.Section>
+                )}
+              </ScrollView>
+            </>
+          )}
         </View>
 
         <View style={styles.submitView}>
@@ -591,11 +623,11 @@ function DropoutFun() {
             <Text style={styles.modalBatchContent}>
               Are you sure you want to dropout?
             </Text>
-            <View style={{ padding: 10 }}>
-              <Text style={{ fontSize: 18, fontWeight: 'bold' }}>
+            <View style={{padding: 10}}>
+              <Text style={{fontSize: 18, fontWeight: 'bold'}}>
                 Batch: {selectedBatch.label}
               </Text>
-              <Text style={{ fontSize: 18, fontWeight: 'bold' }}>
+              <Text style={{fontSize: 18, fontWeight: 'bold'}}>
                 Product: {selectedProduct.label}
               </Text>
             </View>
@@ -633,7 +665,7 @@ function DropoutFun() {
                   <Dropdown
                     style={[
                       styles.dropdown,
-                      isFocusP && { borderColor: 'rgb(80, 189, 160)' },
+                      isFocusP && {borderColor: 'rgb(80, 189, 160)'},
                     ]}
                     placeholderStyle={styles.placeholderStyle}
                     selectedTextStyle={styles.selectedTextStyle}
@@ -694,11 +726,11 @@ function DropoutFun() {
               <Text style={styles.modalCodesContent}>
                 Are you sure you want to dropout?
               </Text>
-              <View style={{ paddingTop: 25 }}>
-                <Text style={{ fontSize: 16, fontWeight: 'bold' }}>
+              <View style={{paddingTop: 25}}>
+                <Text style={{fontSize: 16, fontWeight: 'bold'}}>
                   Batch: {selectedBatch.label}
                 </Text>
-                <Text style={{ fontSize: 16, fontWeight: 'bold' }}>
+                <Text style={{fontSize: 16, fontWeight: 'bold'}}>
                   Product: {selectedProduct.label}
                 </Text>
               </View>
@@ -729,7 +761,7 @@ function DropoutFun() {
                   <Dropdown
                     style={[
                       styles.dropdown,
-                      isFocusP && { borderColor: 'rgb(80, 189, 160)' },
+                      isFocusP && {borderColor: 'rgb(80, 189, 160)'},
                     ]}
                     placeholderStyle={styles.placeholderStyle}
                     selectedTextStyle={styles.selectedTextStyle}

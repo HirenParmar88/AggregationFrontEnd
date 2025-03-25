@@ -19,144 +19,145 @@ import EsignPage from './app/screens/Esign';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {jwtDecode} from 'jwt-decode';
 import SettingScreen from './app/screens/Settings';
-import LoaderComponent from './app/components/Loader';
 import UrlScreen from './app/screens/UrlScreens';
 import {screenPrivileges} from './utils/screenPrivileges';
+import { useLoading } from './context/LoadingContext';
 //import GetNetInfo from './app/components/NetInfo';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
-const DRAWER_SCREENS = [
-  {
-    component: (
-      <Drawer.Screen
-        key={'1'}
-        name="Aggregation"
-        component={AggregationComponent}
-        options={{
-          headerShown: true,
-          drawerIcon: ({focused, size}) => (
-            <FontAwesome5
-              name="boxes"
-              size={size}
-              color={focused ? '#000000' : '#000000'}
-            />
-          ),
-        }}
-      />
-    ),
-    name: 'Aggregation',
-  },
-  {
-    component: (
-      <Drawer.Screen
-        key={'2'}
-        name="Dropout"
-        component={DropoutFun}
-        options={{
-          headerShown: false,
-          //drawerLabel:()=>null,
-          //title: null,
-          //drawerIcon: () => null,
-          drawerIcon: ({focused, size}) => (
-            <MaterialCommunityIcons
-              name="alert-box"
-              size={size}
-              color={focused ? '#000000' : '#000000'}
-            />
-          ),
-        }}
-      />
-    ),
-    name: 'Dropout',
-  },
-  {
-    component: (
-      <Drawer.Screen
-        key={'3'}
-        name="Reprint"
-        component={Reprint}
-        options={{
-          headerShown: false,
-          drawerIcon: ({focused, size}) => (
-            <MaterialCommunityIcons
-              name="cloud-print"
-              size={size}
-              color={focused ? '#000000' : '#000000'}
-            />
-          ),
-        }}
-      />
-    ),
-    name: 'Reprint',
-  },
-  {
-    component: (
-      <Drawer.Screen
-        key={'4'}
-        name="Remap"
-        component={RemapScreen}
-        options={{
-          headerShown: false,
-          drawerIcon: ({focused, size}) => (
-            <FontAwesome5
-              name="map-marked-alt"
-              size={size}
-              color={focused ? '#000000' : '#000000'}
-            />
-          ),
-        }}
-      />
-    ),
-    name: 'Code Remap',
-  },
-  {
-    component: (
-      <Drawer.Screen
-        key={'5'}
-        name="Code Replace"
-        component={CodeReplaceScreen}
-        options={{
-          headerShown: false,
-          drawerIcon: ({focused, size}) => (
-            <MaterialCommunityIcons
-              name="find-replace"
-              size={size}
-              color={focused ? '#000000' : '#000000'}
-            />
-          ),
-        }}
-      />
-    ),
-    name: 'Code Replace',
-  },
-  {
-    component: (
-      <Drawer.Screen
-        key={'6'}
-        name="Settings"
-        component={SettingScreen}
-        options={{
-          headerShown: false,
-          drawerIcon: ({focused, size}) => (
-            <MaterialIcons
-              name="settings"
-              size={size}
-              color={focused ? '#000000' : '#000000'}
-            />
-          ),
-        }}
-      />
-    ),
-    name: 'Settings',
-  },
-];
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { setLoading } = useLoading();
   const [backendURL, setBackendUrl] = useState('');
   const [screens, setScreens] = useState([]);
+  const DRAWER_SCREENS = [
+    {
+      component: (
+        <Drawer.Screen
+          key={'1'}
+          name="Aggregation"
+          component={AggregationComponent}
+          initialParams={{setIsAuthenticated}}
+          options={{
+            headerShown: true,
+            drawerIcon: ({focused, size}) => (
+              <FontAwesome5
+                name="boxes"
+                size={size}
+                color={focused ? '#000000' : '#000000'}
+              />
+            ),
+          }}
+        />
+      ),
+      name: 'Aggregation',
+    },
+    {
+      component: (
+        <Drawer.Screen
+          key={'2'}
+          name="Dropout"
+          component={DropoutFun}
+          options={{
+            headerShown: false,
+            //drawerLabel:()=>null,
+            //title: null,
+            //drawerIcon: () => null,
+            drawerIcon: ({focused, size}) => (
+              <MaterialCommunityIcons
+                name="alert-box"
+                size={size}
+                color={focused ? '#000000' : '#000000'}
+              />
+            ),
+          }}
+        />
+      ),
+      name: 'Dropout',
+    },
+    {
+      component: (
+        <Drawer.Screen
+          key={'3'}
+          name="Reprint"
+          component={Reprint}
+          options={{
+            headerShown: false,
+            drawerIcon: ({focused, size}) => (
+              <MaterialCommunityIcons
+                name="cloud-print"
+                size={size}
+                color={focused ? '#000000' : '#000000'}
+              />
+            ),
+          }}
+        />
+      ),
+      name: 'Reprint',
+    },
+    {
+      component: (
+        <Drawer.Screen
+          key={'4'}
+          name="Remap"
+          component={RemapScreen}
+          options={{
+            headerShown: false,
+            drawerIcon: ({focused, size}) => (
+              <FontAwesome5
+                name="map-marked-alt"
+                size={size}
+                color={focused ? '#000000' : '#000000'}
+              />
+            ),
+          }}
+        />
+      ),
+      name: 'Code Remap',
+    },
+    {
+      component: (
+        <Drawer.Screen
+          key={'5'}
+          name="Code Replace"
+          component={CodeReplaceScreen}
+          options={{
+            headerShown: false,
+            drawerIcon: ({focused, size}) => (
+              <MaterialCommunityIcons
+                name="find-replace"
+                size={size}
+                color={focused ? '#000000' : '#000000'}
+              />
+            ),
+          }}
+        />
+      ),
+      name: 'Code Replace',
+    },
+    {
+      component: (
+        <Drawer.Screen
+          key={'6'}
+          name="Settings"
+          component={SettingScreen}
+          options={{
+            headerShown: false,
+            drawerIcon: ({focused, size}) => (
+              <MaterialIcons
+                name="settings"
+                size={size}
+                color={focused ? '#000000' : '#000000'}
+              />
+            ),
+          }}
+        />
+      ),
+      name: 'Settings',
+    },
+  ];
 
   useEffect(() => {
     (async () => {
@@ -182,10 +183,6 @@ function App() {
       setScreens(updatedScreens);
     })();
   }, [isAuthenticated]);
-
-  if (loading) {
-    return <LoaderComponent />;
-  }
 
   return (
     <NavigationContainer>

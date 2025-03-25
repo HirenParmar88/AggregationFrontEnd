@@ -23,18 +23,18 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
-import LoaderComponent from '../components/Loader';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import styles from '../../styles/remap';
 import { decodeAndSetConfig } from '../../utils/tokenUtils';
 import EsignPage from './Esign';
 import { fetchProductData, fetchBatchData, fetchCountryCode } from '../components/fetchDetails';
+import { useLoading } from '../../context/LoadingContext';
 
 function RemapScreen() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [text, setText] = useState('');
-  const [loading, setLoading] = useState(true);
+  const { setLoading } = useLoading();
   const [token, setToken] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState({
     value: null,
@@ -96,12 +96,18 @@ function RemapScreen() {
         if (storedToken) {
           decodeAndSetConfig(setConfig, storedToken);
           setToken(storedToken);
-          console.log('JWT token : ', storedToken);
-          const backendUrl = await AsyncStorage.getItem("BackendUrl")
-          fetchProductData(storedToken, setProducts, setLoading, backendUrl);
-          console.log('product get in Remap Page :-', products);
+          setLoading(true);
+          const resProd = await fetchProductData();
+          setLoading(false);
+          if (resProd.success) {
+            setProducts(resProd.data);
+          } else if (resProd.code === 401) {
+            navigation.navigate('Login');
+          } else {
+            setSnackbarInfo({ visible: true, message: "Internal server error"});
+          }
         } else {
-          throw new Error('Token is missing');
+          setSnackbarInfo({ visible: true, message: "Token not found please login again"});
         }
       } catch (error) {
         console.error('Error fetching token:', error);
@@ -150,30 +156,43 @@ function RemapScreen() {
   useEffect(() => {
     if (selectedProduct.value) {
       (async () => {
-        const backendUrl = await AsyncStorage.getItem("BackendUrl")
-        await fetchCountryCode(
-          setCountryCode,
-          selectedProduct,
-          setLoading,
-          token,
-          backendUrl
-        );
-        await fetchBatchData(setBatches, setLoading, token, selectedProduct.value);
+        setLoading(true);
+        const resCountry = await fetchCountryCode(selectedProduct.value);
+        const resBatch = await fetchBatchData(selectedProduct.value);
+        setLoading(false);
+        if (resBatch.success) {
+          setBatches(resBatch.data)
+        } else if (resBatch.code === 401) {
+          navigation.navigate('Login')
+        } else {
+          setSnackbarInfo({ visible: true, message: "Internal server error"});
+        }
+        if (resCountry.success) {
+          setCountryCode(resCountry.data)
+        } else if (resCountry.code === 401) {
+          navigation.navigate('Login')
+        } else {
+          setSnackbarInfo({ visible: true, message: "Internal server error"});
+        }
       })();
     }
     return () => { };
   }, [selectedProduct.value, isFocused, countryCode]);
 
   const handleDropdownProductChange = async item => {
+    console.log('selected Product Item in remap:-', item);
     setSelectedProduct({ value: item.value, label: item.label });
     setIsFocusProduct(false);
-    //setBatches([]);
-    console.log('selected Product Item in remap:-', item);
-    console.log('remap item.value Product', item.value);
-    const backendUrl = await AsyncStorage.getItem("BackendUrl")
-    await fetchBatchData(setBatches, setLoading, token, item.value, backendUrl);
-    console.log(item.value);
-    console.log(item.label);
+    setLoading(true);
+    const resBatch = await fetchBatchData(item.value);
+    setLoading(false);
+    if (resBatch.success) {
+      setBatches(resBatch.data)
+    } else if (resBatch.code === 401) {
+      navigation.navigate('Login')
+    } else {
+      setSnackbarInfo({ visible: true, message: "Internal server error"});
+    }
   };
 
   const scanValidation = async barcodeData => {
@@ -232,9 +251,6 @@ function RemapScreen() {
     }
   };
 
-  if (loading) {
-    return <LoaderComponent />;
-  }
 
   const print = async () => {
     console.log('Remap success.');
