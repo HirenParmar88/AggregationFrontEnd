@@ -49,12 +49,11 @@ function ScanList({route}) {
     message: '',
   });
   /* Get the param */
-  const { backendUrl, productId, batchId } = route.params;
+  const { backendUrl, productId, batchId, countryCode } = route.params;
   const [authToken, setAuthToken] = useState('');
 
   useEffect(() => {
     (async () => {
-      console.log('use effect ', backendUrl, productId, batchId, token);
       setData([]);
       const token = await AsyncStorage.getItem('authToken');
       setAuthToken(token);
@@ -72,21 +71,26 @@ function ScanList({route}) {
     });
 
     HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
-      if (quantity > 0) {
-        console.log('Current Scanned data :', event.data);
-        console.log('Previous data is :', data);
-
-        const scanRes = await scanValidation(event.data);
-        console.log('Inside BarcodeRead Callback ', scanRes);
-        if (scanRes) {
-          await codeScan(event.data); //codeScan API call
+      console.log('Current Scanned data :', event.data);
+      console.log('countryCode ### ', countryCode);
+      if (countryCode) {
+        const uniqueCode = getUniqueCode(event.data, countryCode);
+        console.log('Unique data is :', uniqueCode);
+        if (uniqueCode) {
+          if (quantity > 0) {
+            console.log('Previous data is :', data);
+    
+            const scanRes = await scanValidation(uniqueCode);
+            console.log('Inside BarcodeRead Callback ', scanRes);
+            if (scanRes) {
+              await codeScan(uniqueCode); //codeScan API call
+            }
+          } else {
+            onToggleSnackBar('All codes have been scanned. You may now complete the transaction.', 400);
+          }
         }
-      } else {
-        onToggleSnackBar(
-          'All codes have been scanned. You may now complete the transaction.',
-          400,
-        );
       }
+      
     });
 
     HoneywellBarcodeReader.onBarcodeReadFail(() => {
@@ -103,6 +107,16 @@ function ScanList({route}) {
 
     return async () => {};
   }, [transactionId, quantity, isFocused]);
+
+  const getUniqueCode = (url, format) => {
+    const formatParts = format.split('/').length > 1 ? format.split('/') : format.split(' ');
+    const trimFormat = formatParts.map(i=> i.trim());
+    const inputParts = url.split('/')?.length > 1 ? url.split('/') : url;
+    const uniqueCodeIndex = trimFormat.indexOf('uniqueCode');
+    const uniqueCode = format.split('/').length > 1 ? Array.isArray(inputParts) ? inputParts[uniqueCodeIndex] : inputParts: inputParts[0].slice(-15);
+    console.log({ formatParts, trimFormat, inputParts, uniqueCodeIndex, uniqueCode });
+    return uniqueCode;
+  };
 
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =

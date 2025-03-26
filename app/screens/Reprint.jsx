@@ -28,9 +28,9 @@ import DeviceInfo from 'react-native-device-info';
 import { decodeAndSetConfig } from '../../utils/tokenUtils';
 import styles from '../../styles/reprint';
 import EsignPage from './Esign';
-import { fetchProductData, fetchBatchData, fetchCountryCode } from '../components/fetchDetails';
+import { fetchProductData, fetchBatchData } from '../components/fetchDetails';
 
-function Reprint() {
+function Reprint({ route }) {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [text, setText] = useState('');
@@ -51,7 +51,6 @@ function Reprint() {
   const [batches, setBatches] = useState([]);
   const [valueProduct, setValueProduct] = useState('');
   const [valueBatch, setValueBatch] = useState('');
-  const [countryCode, setCountryCode] = useState(null);
   const [visible, setVisible] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [status, setStatus] = useState(undefined);
@@ -62,6 +61,8 @@ function Reprint() {
     visible: false,
     message: '',
   });
+  const { setIsAuthenticated } = route.params;
+
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
       code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
@@ -99,7 +100,7 @@ function Reprint() {
           if (resProd.success) {
             setProducts(resProd.data)
           } else if (resProd.code === 401) {
-            navigation.navigate('Login')
+            setIsAuthenticated(false);
           } else {
             setSnackbarInfo({ visible: true, message: "Internal server error"});
           }
@@ -132,9 +133,7 @@ function Reprint() {
 
     HoneywellBarcodeReader.onBarcodeReadSuccess(event => {
       console.log('Current Scanned data :', event.data);
-      console.log('Country code is ', countryCode);
-      const uniqueCode = getUniqueCode(event.data, countryCode);
-      setText(uniqueCode);
+      setText(event.data);
     });
 
     HoneywellBarcodeReader.onBarcodeReadFail(() => {
@@ -150,27 +149,21 @@ function Reprint() {
     });
 
     return () => { };
-  }, [countryCode]);
+  }, []);
 
   useEffect(() => {
-    if (selectedProduct.value) {
+    const productId = selectedProduct.value;
+    console.log("useffect after select product", productId);
+    if (productId) {
       (async () => {
         setLoading(true);
-        const resCountry = await fetchCountryCode(selectedProduct.value);
-        const resBatch = await fetchBatchData(selectedProduct.value);
+        const resBatch = await fetchBatchData(productId);
         setLoading(false);
+
         if (resBatch.success) {
           setBatches(resBatch.data)
         } else if (resBatch.code === 401) {
-          navigation.navigate('Login')
-        } else {
-          setSnackbarInfo({ visible: true, message: "Internal server error"});
-        }
-
-        if (resCountry.success) {
-          setCountryCode(resCountry.data)
-        } else if (resCountry.code === 401) {
-          navigation.navigate('Login')
+          setIsAuthenticated(false);
         } else {
           setSnackbarInfo({ visible: true, message: "Internal server error"});
         }
@@ -180,15 +173,16 @@ function Reprint() {
   }, [selectedProduct.value]);
 
   const getUniqueCode = (url, format) => {
-    const formatParts = format.split('/');
+    const formatParts = format.split('/').length > 1 ? format.split('/') : format.split(' ');
+    const trimFormat = formatParts.map(i=> i.trim());
     const inputParts = url.split('/');
-    console.log('formatParts ', formatParts);
     console.log('inputParts ', inputParts);
+    console.log('trimFormat ', trimFormat);
 
-    const uniqueCodeIndex = formatParts.indexOf('uniqueCode');
+    const uniqueCodeIndex = trimFormat.indexOf('uniqueCode');
     console.log('uniqueCodeIndex ', uniqueCodeIndex);
 
-    const uniqueCode = inputParts[inputParts.length - 1];
+    const uniqueCode = format.split('/').length > 1 ? inputParts[uniqueCodeIndex] : inputParts[0].slice(-15);
     console.log('Unique Code:', uniqueCode);
     return uniqueCode;
   };
@@ -201,8 +195,6 @@ function Reprint() {
     console.log('item.value Product', item.value);
     const backendUrl = await AsyncStorage.getItem("BackendUrl")
     await fetchBatchData(setBatches, setLoading, token, item.value, backendUrl);
-    console.log(item.value);
-    console.log(item.label);
   };
 
   const handleReprint = () => {
@@ -258,8 +250,6 @@ function Reprint() {
       onToggleSnackBar(reprintRes.data.message, 200);
       //navigation.navigate('Home');
     } else {
-      setSelectedProduct({ value: null, label: null });
-      setSelectedBatch({ value: null, label: null });
       onToggleSnackBar(reprintRes.data.message, reprintRes.data.code);
     }
     hideModal();

@@ -34,7 +34,7 @@ export const fetchProductData = async () => {
 };
 
 export const fetchBatchData = async productId => {
-  // console.log('Batch APIs called..');
+  console.log('Batch APIs called..', productId);
   try {
     const token = await AsyncStorage.getItem('authToken');
     const backendUrl = await AsyncStorage.getItem('BackendUrl');
@@ -68,6 +68,9 @@ export const fetchBatchData = async productId => {
 
 export const fetchCountryCode = async productId => {
   try {
+    const token = await AsyncStorage.getItem('authToken');
+    const backendUrl = await AsyncStorage.getItem('BackendUrl');
+    
     const response = await axios.get(
       `${backendUrl}/product/countrycode/${productId}`,
       {
@@ -94,7 +97,5 @@ export const fetchCountryCode = async productId => {
     }
   } catch (error) {
     console.error('Error Fetching country code ', error);
-  } finally {
-    setLoading(false);
   }
 };

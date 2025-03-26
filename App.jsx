@@ -60,6 +60,7 @@ function App() {
           key={'2'}
           name="Dropout"
           component={DropoutFun}
+          initialParams={{setIsAuthenticated}}
           options={{
             headerShown: false,
             //drawerLabel:()=>null,
@@ -83,6 +84,7 @@ function App() {
           key={'3'}
           name="Reprint"
           component={Reprint}
+          initialParams={{setIsAuthenticated}}
           options={{
             headerShown: false,
             drawerIcon: ({focused, size}) => (
@@ -103,6 +105,7 @@ function App() {
           key={'4'}
           name="Remap"
           component={RemapScreen}
+          initialParams={{setIsAuthenticated}}
           options={{
             headerShown: false,
             drawerIcon: ({focused, size}) => (
@@ -123,6 +126,7 @@ function App() {
           key={'5'}
           name="Code Replace"
           component={CodeReplaceScreen}
+          initialParams={{setIsAuthenticated}}
           options={{
             headerShown: false,
             drawerIcon: ({focused, size}) => (
@@ -143,6 +147,7 @@ function App() {
           key={'6'}
           name="Settings"
           component={SettingScreen}
+          initialParams={{setIsAuthenticated}}
           options={{
             headerShown: false,
             drawerIcon: ({focused, size}) => (

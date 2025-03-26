@@ -10,7 +10,7 @@ import { useIsFocused, useNavigation } from '@react-navigation/native';
 import EsignPage from './Esign';
 import { decodeAndSetConfig } from '../../utils/tokenUtils';
 import styles from '../../styles/aggregation';
-import { fetchProductData, fetchBatchData } from '../components/fetchDetails';
+import { fetchProductData, fetchBatchData, fetchCountryCode } from '../components/fetchDetails';
 import { useLoading } from '../../context/LoadingContext';
 
 function AggregationComponent({ route }) {
@@ -34,7 +34,9 @@ function AggregationComponent({ route }) {
     visible: false,
     message: '',
   });
+  const [countryCode, setCountryCode] = useState(null);
   const { setIsAuthenticated } = route.params;
+
   useEffect(() => {
     const loadTokenAndData = async () => {
       try {
@@ -50,8 +52,7 @@ function AggregationComponent({ route }) {
             setProducts(resProd.data)
           } else if (resProd.code === 401) {
             console.log('navigate to login');
-            setIsAuthenticated(false)
-            // navigation.navigate('Login')
+            setIsAuthenticated(false);
           } else {
             setSnackbarInfo({ visible: true, message: "Internal server error"});
           }
@@ -182,7 +183,7 @@ function AggregationComponent({ route }) {
         onToggleSnackBar(res.data.message, 200);
         resetForm();
         setTimeout(async () => {
-          navigation.navigate('ScanList', { "backendUrl": backendUrl, productId: valueProduct, batchId: valueBatch, exists: res.data.data.exists });
+          navigation.navigate('ScanList', { "backendUrl": backendUrl, productId: valueProduct, batchId: valueBatch, countryCode });
         }, 2000);
       } else {
         onToggleSnackBar(res.data.message);
@@ -220,11 +221,20 @@ function AggregationComponent({ route }) {
     setValueProduct(item.value);
     setLoading(true);
     const resBatch = await fetchBatchData(item.value);
+    const resCountry = await fetchCountryCode(item.value);
+    
     setLoading(false);
     if (resBatch.success) {
       setBatches(resBatch.data)
     } else if (resBatch.code === 401) {
-      navigation.navigate('Login')
+      setIsAuthenticated(false);
+    } else {
+      setSnackbarInfo({ visible: true, message: "Internal server error"});
+    }
+    if (resCountry.success) {
+      setCountryCode(resCountry.data)
+    } else if (resCountry.code === 401) {
+      setIsAuthenticated(false);
     } else {
       setSnackbarInfo({ visible: true, message: "Internal server error"});
     }

@@ -29,7 +29,7 @@ import { fetchProductData, fetchBatchData, fetchCountryCode } from '../component
 import { useLoading } from '../../context/LoadingContext';
 
 
-function CodeReplaceScreen() {
+function CodeReplaceScreen({ route }) {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [text, setText] = useState('');
@@ -51,6 +51,7 @@ function CodeReplaceScreen() {
   const [approveAPImethod, setApproveAPImethod] = useState();
   const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
   const [snackbarInfo, setSnackbarInfo] = useState({ visible: false, message: '' });
+  const { setIsAuthenticated } = route.params;
 
   const onToggleSnackBar = (message, code) => {
     const backgroundColor = code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
@@ -91,7 +92,7 @@ function CodeReplaceScreen() {
           if (resProd.success) {
             setProducts(resProd.data)
           } else if (resProd.code === 401) {
-            navigation.navigate('Login')
+            setIsAuthenticated(false)
           } else {
             setSnackbarInfo({ visible: true, message: "Internal server error"});
           }
@@ -116,11 +117,16 @@ function CodeReplaceScreen() {
     });
 
     HoneywellBarcodeReader.onBarcodeReadSuccess(async (event) => {
-      const uniqueCode = getUniqueCode(event.data, countryCode);
-      if (!visible) {
-        setScanCode(uniqueCode);
-      } else if (visible) {
-        setText(uniqueCode);
+      console.log("Data code from scan ", event.data);
+      // const uniqueCode = event.data;
+      if (countryCode) {
+        const uniqueCode = getUniqueCode(event.data, countryCode);
+        console.log("unique code ", uniqueCode);
+        if (!visible) {
+          setScanCode(uniqueCode);
+        } else if (visible) {
+          setText(uniqueCode);
+        }
       }
     });
 
@@ -140,7 +146,7 @@ function CodeReplaceScreen() {
         if (resCountry.success) {
           setCountryCode(resCountry.data)
         } else if (resCountry.code === 401) {
-          navigation.navigate('Login')
+          setIsAuthenticated(false);
         } else {
           setSnackbarInfo({ visible: true, message: "Internal server error"});
         }
@@ -149,10 +155,11 @@ function CodeReplaceScreen() {
   }, [selectedProduct?.value]);
 
   const getUniqueCode = (url, format) => {
-    const formatParts = format.split('/');
+    const formatParts = format.split('/').length > 1 ? format.split('/') : format.split(' ');
+    const trimFormat = formatParts.map(i=> i.trim());
     const inputParts = url.split('/');
-    const uniqueCodeIndex = formatParts.indexOf('uniqueCode');
-    const uniqueCode = inputParts[inputParts.length - 1];
+    const uniqueCodeIndex = trimFormat.indexOf('uniqueCode');
+    const uniqueCode = format.split('/').length > 1 ? inputParts[uniqueCodeIndex] : inputParts[0].slice(-15);
     return uniqueCode;
   };
 
@@ -165,7 +172,7 @@ function CodeReplaceScreen() {
     if (resBatch.success) {
       setBatches(resBatch.data)
     } else if (resBatch.code === 401) {
-      navigation.navigate('Login')
+      setIsAuthenticated(false);
     } else {
       setSnackbarInfo({ visible: true, message: "Internal server error"});
     }

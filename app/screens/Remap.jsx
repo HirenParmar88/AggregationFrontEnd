@@ -30,7 +30,7 @@ import EsignPage from './Esign';
 import { fetchProductData, fetchBatchData, fetchCountryCode } from '../components/fetchDetails';
 import { useLoading } from '../../context/LoadingContext';
 
-function RemapScreen() {
+function RemapScreen({ route }) {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [text, setText] = useState('');
@@ -63,6 +63,7 @@ function RemapScreen() {
     visible: false,
     message: '',
   });
+  const { setIsAuthenticated } = route.params;
 
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
@@ -102,7 +103,7 @@ function RemapScreen() {
           if (resProd.success) {
             setProducts(resProd.data);
           } else if (resProd.code === 401) {
-            navigation.navigate('Login');
+            setIsAuthenticated(false);
           } else {
             setSnackbarInfo({ visible: true, message: "Internal server error"});
           }
@@ -135,9 +136,14 @@ function RemapScreen() {
     HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
       console.log('Current Scanned data :', event.data);
       console.log('Country code is ', countryCode);
-      const scanRes = await scanValidation(event.data);
-      if (scanRes && scanRes.code === 200) {
-        setScanCode(event.data);
+      if (countryCode) {
+        const uniqueCode = getUniqueCode(event.data, countryCode);
+        if (uniqueCode) {
+          const scanRes = await scanValidation(uniqueCode);
+          if (scanRes && scanRes.code === 200) {
+            setScanCode(uniqueCode);
+          }
+        }
       }
     });
     HoneywellBarcodeReader.onBarcodeReadFail(() => {
@@ -163,14 +169,14 @@ function RemapScreen() {
         if (resBatch.success) {
           setBatches(resBatch.data)
         } else if (resBatch.code === 401) {
-          navigation.navigate('Login')
+          setIsAuthenticated(false);
         } else {
           setSnackbarInfo({ visible: true, message: "Internal server error"});
         }
         if (resCountry.success) {
           setCountryCode(resCountry.data)
         } else if (resCountry.code === 401) {
-          navigation.navigate('Login')
+          setIsAuthenticated(false);
         } else {
           setSnackbarInfo({ visible: true, message: "Internal server error"});
         }
@@ -178,6 +184,16 @@ function RemapScreen() {
     }
     return () => { };
   }, [selectedProduct.value, isFocused, countryCode]);
+
+  const getUniqueCode = (url, format) => {
+    const formatParts = format.split('/').length > 1 ? format.split('/') : format.split(' ');
+    const trimFormat = formatParts.map(i=> i.trim());
+    const inputParts = url.split('/')?.length > 1 ? url.split('/') : url;
+    const uniqueCodeIndex = trimFormat.indexOf('uniqueCode');
+    const uniqueCode = format.split('/').length > 1 ? Array.isArray(inputParts) ? inputParts[uniqueCodeIndex] : inputParts: inputParts[0].slice(-15);
+    // console.log({ formatParts, trimFormat, inputParts, uniqueCodeIndex, uniqueCode });
+    return uniqueCode;
+  };
 
   const handleDropdownProductChange = async item => {
     console.log('selected Product Item in remap:-', item);
@@ -189,7 +205,7 @@ function RemapScreen() {
     if (resBatch.success) {
       setBatches(resBatch.data)
     } else if (resBatch.code === 401) {
-      navigation.navigate('Login')
+      setIsAuthenticated(false);
     } else {
       setSnackbarInfo({ visible: true, message: "Internal server error"});
     }

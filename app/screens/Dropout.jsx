@@ -32,7 +32,7 @@ import {
 } from '../components/fetchDetails';
 import { useLoading } from '../../context/LoadingContext';
 
-function DropoutFun() {
+function DropoutFun({ route }) {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [selectedBatch, setSelectedBatch] = useState({
@@ -61,6 +61,7 @@ function DropoutFun() {
   const [approveAPIName, setApproveAPIName] = useState();
   const [approveAPImethod, setApproveAPImethod] = useState();
   const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
+  const { setIsAuthenticated } = route.params;
 
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
@@ -113,24 +114,27 @@ function DropoutFun() {
     });
     HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
       console.log('Current Scanned data :', event.data);
-      console.log('Previous data is :', scannedCodes);
-      const scanRes = await scanValidation(event.data);
-      if (scanRes && scanRes.code === 200) {
-        console.log('countryCode ### ', countryCode);
-
-        setScannedCodes(prevData => {
-          const uniqueCode = getUniqueCode(event.data, countryCode);
-          const alreadyExist = prevData.find(item => item === uniqueCode);
-          if (!alreadyExist) {
-            // onToggleSnackBar("scanned successfully..",200)
-            return [...prevData, uniqueCode];
-          } else {
-            console.log('Already exitst...');
-            onToggleSnackBar('Items Already Exists!', 400);
-            //Alert.alert('Items Already Exists!');
-            return [...prevData];
+      console.log('countryCode ### ', countryCode);
+      if (countryCode) {
+        const uniqueCode = getUniqueCode(event.data, countryCode);
+        console.log('Unique data is :', uniqueCode);
+        if (uniqueCode) {
+          const scanRes = await scanValidation(uniqueCode);
+          if (scanRes && scanRes.code === 200) {
+            setScannedCodes(prevData => {
+              const alreadyExist = prevData.find(item => item === uniqueCode);
+              if (!alreadyExist) {
+                // onToggleSnackBar("scanned successfully..",200)
+                return [...prevData, uniqueCode];
+              } else {
+                console.log('Already exitst...');
+                onToggleSnackBar('Items Already Exists!', 400);
+                //Alert.alert('Items Already Exists!');
+                return [...prevData];
+              }
+            });
           }
-        });
+        }
       }
     });
     HoneywellBarcodeReader.onBarcodeReadFail(() => {
@@ -143,19 +147,15 @@ function DropoutFun() {
       console.log('barcodeReaderClaimed', details);
     });
     return () => {};
-  }, [selectedProduct, selectedBatch]);
+  }, [countryCode, selectedProduct, selectedBatch]);
 
   const getUniqueCode = (url, format) => {
-    const formatParts = format.split('/');
-    const inputParts = url.split('/');
-    console.log('formatParts ', formatParts);
-    console.log('inputParts ', inputParts);
-
-    const uniqueCodeIndex = formatParts.indexOf('uniqueCode');
-    console.log('uniqueCodeIndex ', uniqueCodeIndex);
-
-    const uniqueCode = inputParts[inputParts.length - 1];
-    console.log('Unique Code:', uniqueCode);
+    const formatParts = format.split('/').length > 1 ? format.split('/') : format.split(' ');
+    const trimFormat = formatParts.map(i=> i.trim());
+    const inputParts = url.split('/')?.length > 1 ? url.split('/') : url;
+    const uniqueCodeIndex = trimFormat.indexOf('uniqueCode');
+    const uniqueCode = format.split('/').length > 1 ? Array.isArray(inputParts) ? inputParts[uniqueCodeIndex] : inputParts: inputParts[0].slice(-15);
+    // console.log({ formatParts, trimFormat, inputParts, uniqueCodeIndex, uniqueCode });
     return uniqueCode;
   };
 
@@ -173,7 +173,7 @@ function DropoutFun() {
           if (resProd.success) {
             setProducts(resProd.data);
           } else if (resProd.code === 401) {
-            navigation.navigate('Login');
+            setIsAuthenticated(false);
           } else {
             setSnackbarInfo({visible: true, message: 'Internal server error'});
           }
@@ -205,14 +205,14 @@ function DropoutFun() {
         if (resBatch.success) {
           setBatches(resBatch.data);
         } else if (resBatch.code === 401) {
-          navigation.navigate('Login');
+          setIsAuthenticated(false);
         } else {
           setSnackbarInfo({visible: true, message: 'Internal server error'});
         }
         if (resCountry.success) {
           setCountryCode(resCountry.data)
         } else if (resCountry.code === 401) {
-          navigation.navigate('Login')
+          setIsAuthenticated(false);
         } else {
           setSnackbarInfo({ visible: true, message: "Internal server error"});
         }
@@ -363,7 +363,7 @@ function DropoutFun() {
     if (resBatch.success) {
       setBatches(resBatch.data);
     } else if (resBatch.code === 401) {
-      navigation.navigate('Login');
+      setIsAuthenticated(false);
     } else {
       setSnackbarInfo({visible: true, message: 'Internal server error'});
     }
