@@ -16,6 +16,7 @@ import {
   PaperProvider,
   Divider,
   Snackbar,
+  useTheme,
 } from 'react-native-paper';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { Dropdown } from 'react-native-element-dropdown';
@@ -59,15 +60,16 @@ function RemapScreen({ route }) {
   const [approveAPIName, setApproveAPIName] = useState();
   const [approveAPImethod, setApproveAPImethod] = useState();
   const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
+  const { colors } = useTheme();
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
+    snackbarStyle: { backgroundColor: colors.primary }
   });
   const { setIsAuthenticated } = route.params;
 
-  const onToggleSnackBar = (message, code) => {
-    const backgroundColor =
-      code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
+  const onToggleSnackBar = (message, code=500) => {
+    const backgroundColor = code !== 200 ? colors.error : colors.primary;
 
     setSnackbarInfo({
       visible: true,
@@ -105,10 +107,10 @@ function RemapScreen({ route }) {
           } else if (resProd.code === 401) {
             setIsAuthenticated(false);
           } else {
-            setSnackbarInfo({ visible: true, message: "Internal server error"});
+            onToggleSnackBar('Internal server error', 500);
           }
         } else {
-          setSnackbarInfo({ visible: true, message: "Token not found please login again"});
+          onToggleSnackBar("Token not found please login again", 500);
         }
       } catch (error) {
         console.error('Error fetching token:', error);
@@ -171,14 +173,14 @@ function RemapScreen({ route }) {
         } else if (resBatch.code === 401) {
           setIsAuthenticated(false);
         } else {
-          setSnackbarInfo({ visible: true, message: "Internal server error"});
+          onToggleSnackBar('Internal server error', 500);
         }
         if (resCountry.success) {
           setCountryCode(resCountry.data)
         } else if (resCountry.code === 401) {
           setIsAuthenticated(false);
         } else {
-          setSnackbarInfo({ visible: true, message: "Internal server error"});
+          onToggleSnackBar('Internal server error', 500);
         }
       })();
     }
@@ -207,7 +209,7 @@ function RemapScreen({ route }) {
     } else if (resBatch.code === 401) {
       setIsAuthenticated(false);
     } else {
-      setSnackbarInfo({ visible: true, message: "Internal server error"});
+      onToggleSnackBar('Internal server error', 500);
     }
   };
 
