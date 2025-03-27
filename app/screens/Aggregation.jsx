@@ -1,7 +1,7 @@
 //app/screens/Products.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Text, View, Alert, TouchableOpacity, Image } from 'react-native';
-import { Snackbar } from 'react-native-paper';
+import { Snackbar, useTheme } from 'react-native-paper';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { Dropdown } from 'react-native-element-dropdown';
 import axios from 'axios';
@@ -27,12 +27,12 @@ function AggregationComponent({ route }) {
   const [token, setToken] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const [status, setStatus] = useState(undefined);
-  const [approveAPIName, setApproveAPIName] = useState();
-  const [approveAPImethod, setApproveAPImethod] = useState();
-  const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
+  const [apiData, setApiData] = useState({ apiName: null, apiMethod: null, apiEndpoint: null });
+  const { colors } = useTheme();
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
+    snackbarStyle: { backgroundColor: colors.primary }
   });
   const [countryCode, setCountryCode] = useState(null);
   const { setIsAuthenticated } = route.params;
@@ -53,11 +53,11 @@ function AggregationComponent({ route }) {
             console.log('navigate to login');
             setIsAuthenticated(false);
           } else {
-            setSnackbarInfo({ visible: true, message: "Internal server error"});
+            onToggleSnackBar("Internal server error", 401);
           }
           setLoading(false);
         } else {
-          setSnackbarInfo({ visible: true, message: "Token not found please login again"});
+          onToggleSnackBar("Token not found please login again", 401);
         }
       } catch (error) {
         console.error('Error fetching token:', error);
@@ -73,9 +73,8 @@ function AggregationComponent({ route }) {
   const onDismissSnackBar = () =>
     setSnackbarInfo({ visible: false, message: '' });
 
-  const onToggleSnackBar = (message, code) => {
-    const backgroundColor =
-      code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
+  const onToggleSnackBar = (message, code=500) => {
+    const backgroundColor = code !== 200 ? colors.error : colors.primary;
 
     setSnackbarInfo({
       visible: true,
@@ -106,9 +105,7 @@ function AggregationComponent({ route }) {
       console.log(isApprover, isAuthenticated);
       const closeApprovalModal = () => setOpenModal(false);
       const resetState = () => {
-        setApproveAPIName('');
-        setApproveAPImethod('');
-        setApproveAPIEndPoint('');
+        setApiData({ apiName: null, apiMethod: null, apiEndpoint: null });
         setOpenModal(false);
       };
       if (!isAuthenticated && config.esignStatus) {
@@ -123,14 +120,11 @@ function AggregationComponent({ route }) {
         }
       };
       if (isApprover) {
-        console.log('Approved is ', esignStatus === 'approved');
-        console.log("approveAPIName ", approveAPIName, openModal)
         setOpenModal(false)
         onToggleSnackBar('eSign has been approved for add aggregate', 200);
-        if (approveAPIName === "aggregated-transaction-create") {
-          setOpenModal(true)
-          setApproveAPIName('aggregated-transaction-approve');
-          setApproveAPImethod('POST')
+        if (apiData.apiName === "aggregation-transaction-create") {
+          setOpenModal(true);
+          setApiData({ apiName: 'aggregation-transaction-approve', apiMethod: 'POST', apiEndpoint: ''})
           return
         }
         if (esignStatus === 'approved') {
@@ -200,8 +194,7 @@ function AggregationComponent({ route }) {
     if (config.config.esign_status && !openModal) {
       setTimeout(() => {
         setOpenModal(true);
-        setApproveAPIName('aggregated-transaction-create');
-        setApproveAPImethod('POST');
+        setApiData({ apiName: 'aggregation-transaction-create', apiMethod: 'POST', apiEndpoint: ''})
       }, 1000)
       return;
     }
@@ -228,14 +221,14 @@ function AggregationComponent({ route }) {
     } else if (resBatch.code === 401) {
       setIsAuthenticated(false);
     } else {
-      setSnackbarInfo({ visible: true, message: "Internal server error"});
+      onToggleSnackBar("Internal server error", 401);
     }
     if (resCountry.success) {
       setCountryCode(resCountry.data)
     } else if (resCountry.code === 401) {
       setIsAuthenticated(false);
     } else {
-      setSnackbarInfo({ visible: true, message: "Internal server error"});
+      onToggleSnackBar("Internal server error", 401);
     }
     setLoading(false);
     setIsFocusProduct(false);
@@ -336,16 +329,14 @@ function AggregationComponent({ route }) {
       </TouchableOpacity>
 
       {openModal && (
-        <EsignPage
+        {/* <EsignPage
           config={config}
           handleAuthResult={handleAuthResult}
-          approveAPIName={approveAPIName}
-          approveAPImethod={approveAPImethod}
-          approveAPIEndPoint={approveAPIEndPoint}
+          apiData={apiData}
           openModal={openModal}
           setOpenModal={setOpenModal}
           setStatus={setStatus}
-        />
+        /> */}
       )}
 
       <Snackbar

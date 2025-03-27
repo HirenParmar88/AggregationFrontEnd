@@ -17,6 +17,7 @@ import {
   Portal,
   Modal,
   Snackbar,
+  useTheme,
 } from 'react-native-paper';
 import {useIsFocused, useNavigation} from '@react-navigation/native';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
@@ -44,9 +45,11 @@ function ScanList({route}) {
   const [ssccNumber, setSsccNumber] = useState(null);
   const [config, setConfig] = useState(null);
   const [serialNumber, setSerialNumber] = useState(null);
+  const { colors } = useTheme();
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
+    snackbarStyle: { backgroundColor: colors.primary }
   });
   /* Get the param */
   const { backendUrl, productId, batchId, countryCode } = route.params;
@@ -118,9 +121,8 @@ function ScanList({route}) {
     return uniqueCode;
   };
 
-  const onToggleSnackBar = (message, code) => {
-    const backgroundColor =
-      code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
+  const onToggleSnackBar = (message, code=500) => {
+    const backgroundColor = code !== 200 ? colors.error : colors.primary;
 
     setSnackbarInfo({
       visible: true,
@@ -153,16 +155,15 @@ function ScanList({route}) {
           },
         },
       );
+      setLoading(false);
       console.log('scan/validation APIs Res :', scanRes.data);
 
       if (scanRes.data.success) {
         console.log(scanRes.data.message, 200);
-        setLoading(false);
         return true;
       } else {
         console.log('Invalid scan res :', scanRes.data.message);
-        onToggleSnackBar(scanRes.data.message);
-        setLoading(false);
+        onToggleSnackBar(scanRes.data.message, scanRes.data.code);
         return false;
       }
     } catch (error) {

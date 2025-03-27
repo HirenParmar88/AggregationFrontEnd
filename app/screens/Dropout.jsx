@@ -14,6 +14,7 @@ import {
   Modal,
   Portal,
   Snackbar,
+  useTheme,
 } from 'react-native-paper';
 import {useIsFocused, useNavigation} from '@react-navigation/native';
 import {Dropdown} from 'react-native-element-dropdown';
@@ -53,9 +54,11 @@ function DropoutFun({ route }) {
   const [visibleConfirmCodes, setVisibleConfirmCodes] = useState(false); // Added for Codes Dropout Confirmation
   const [config, setConfig] = useState(null);
   const [status, setStatus] = useState(undefined);
+  const { colors } = useTheme();
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
+    snackbarStyle: { backgroundColor: colors.primary }
   });
   const [openModal, setOpenModal] = useState(false);
   const [approveAPIName, setApproveAPIName] = useState();
@@ -63,9 +66,8 @@ function DropoutFun({ route }) {
   const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
   const { setIsAuthenticated } = route.params;
 
-  const onToggleSnackBar = (message, code) => {
-    const backgroundColor =
-      code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
+  const onToggleSnackBar = (message, code=500) => {
+    const backgroundColor = code !== 200 ? colors.error : colors.primary;
 
     setSnackbarInfo({
       visible: true,
@@ -175,14 +177,11 @@ function DropoutFun({ route }) {
           } else if (resProd.code === 401) {
             setIsAuthenticated(false);
           } else {
-            setSnackbarInfo({visible: true, message: 'Internal server error'});
+            onToggleSnackBar('Internal server error', 500);
           }
           console.log('product get in dropout Page :-', products);
         } else {
-          setSnackbarInfo({
-            visible: true,
-            message: 'Token not found please login again',
-          });
+          onToggleSnackBar('Token not found please login again', 500);
         }
       } catch (error) {
         console.error('Error fetching token:', error);
@@ -207,14 +206,14 @@ function DropoutFun({ route }) {
         } else if (resBatch.code === 401) {
           setIsAuthenticated(false);
         } else {
-          setSnackbarInfo({visible: true, message: 'Internal server error'});
+          onToggleSnackBar("Internal server error", 500);
         }
         if (resCountry.success) {
           setCountryCode(resCountry.data)
         } else if (resCountry.code === 401) {
           setIsAuthenticated(false);
         } else {
-          setSnackbarInfo({ visible: true, message: "Internal server error"});
+          onToggleSnackBar("Internal server error", 500);
         }
       })();
     }
@@ -365,7 +364,7 @@ function DropoutFun({ route }) {
     } else if (resBatch.code === 401) {
       setIsAuthenticated(false);
     } else {
-      setSnackbarInfo({visible: true, message: 'Internal server error'});
+      onToggleSnackBar("Internal server error", 500);
     }
   };
 

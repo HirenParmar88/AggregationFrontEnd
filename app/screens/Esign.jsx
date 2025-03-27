@@ -9,7 +9,7 @@ import {
   KeyboardAvoidingView,
   Alert,
 } from 'react-native';
-import { Modal, Portal, Text, TextInput, Snackbar } from 'react-native-paper';
+import { Modal, Portal, Text, TextInput, Snackbar, useTheme } from 'react-native-paper';
 import Fontisto from 'react-native-vector-icons/Fontisto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 //import {url} from '../../utils/constant';
@@ -27,15 +27,16 @@ function EsignPage({
   setOpenModal,
   setStatus,
 }) {
-  const [snackbarInfo, setSnackbarInfo] = useState({
-    visible: false,
-    message: '',
-  });
+  const { colors } = useTheme();
+    const [snackbarInfo, setSnackbarInfo] = useState({
+      visible: false,
+      message: '',
+      snackbarStyle: { backgroundColor: colors.primary }
+    });
   console.log(approveAPIName)
 
-  const onToggleSnackBar = (message, code) => {
-    const backgroundColor =
-      code === 200 ? 'rgb(80, 189, 160)' : 'rgb(210, 43, 43)';
+  const onToggleSnackBar = (message, code=500) => {
+    const backgroundColor = code !== 200 ? colors.error : colors.primary;
 
     setSnackbarInfo({
       visible: true,
@@ -127,7 +128,7 @@ function EsignPage({
         onDismiss={close}
         contentContainerStyle={containerStyle}>
 
-        <ModalContainer close={close} handleVerification={handleVerification} openModal={openModal} setSnackbarInfo={setSnackbarInfo} onToggleSnackBar={onToggleSnackBar} approveAPIName={approveAPIName} />
+        <ModalContainer close={close} handleVerification={handleVerification} onToggleSnackBar={onToggleSnackBar} approveAPIName={approveAPIName} />
         <Snackbar
           visible={snackbarInfo.visible}
           onDismiss={() =>
@@ -142,7 +143,7 @@ function EsignPage({
   );
 }
 
-function ModalContainer({ close, handleVerification, setSnackbarInfo, onToggleSnackBar, openModal, approveAPIName }) {
+function ModalContainer({ close, handleVerification, onToggleSnackBar, approveAPIName }) {
   const [userID, setUserID] = useState('');
   const [password, setPassword] = useState('');
   const [remark, setRemark] = useState('');
