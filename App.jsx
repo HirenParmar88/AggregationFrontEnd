@@ -21,16 +21,16 @@ import {jwtDecode} from 'jwt-decode';
 import SettingScreen from './app/screens/Settings';
 import UrlScreen from './app/screens/UrlScreens';
 import {screenPrivileges} from './utils/screenPrivileges';
-import { useLoading } from './context/LoadingContext';
+import {useLoading} from './context/LoadingContext';
 //import GetNetInfo from './app/components/NetInfo';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const { setLoading } = useLoading();
-  const [backendURL, setBackendUrl] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
+  const {setLoading} = useLoading();
+  const [backendURL, setBackendUrl] = useState(null);
   const [screens, setScreens] = useState([]);
   const DRAWER_SCREENS = [
     {
@@ -166,15 +166,19 @@ function App() {
 
   useEffect(() => {
     (async () => {
-      console.log('App useEffect calll..');
+      setLoading(true)
       const token = await AsyncStorage.getItem('authToken');
-      setBackendUrl(await AsyncStorage.getItem('BackendUrl'));
+      const mainUrl = await AsyncStorage.getItem('BackendUrl');
+      setBackendUrl(mainUrl);
+      console.log('App useEffect calll.. ', mainUrl);
 
       if (token) {
         const decoded = jwtDecode(token);
         const currentTime = Math.floor(Date.now() / 1000);
         if (currentTime < decoded.exp) {
+          const updatedScreens = await screenPrivileges(DRAWER_SCREENS);
           setIsAuthenticated(true);
+          setScreens(updatedScreens);
         } else {
           await AsyncStorage.removeItem('authToken');
           setIsAuthenticated(false);
@@ -183,9 +187,6 @@ function App() {
         setIsAuthenticated(false);
       }
       setLoading(false);
-
-      const updatedScreens = await screenPrivileges(DRAWER_SCREENS);
-      setScreens(updatedScreens);
     })();
   }, [isAuthenticated]);
 
@@ -256,42 +257,8 @@ function App() {
                   color={focused ? '#000000' : '#000000'}
                 />
               ),
-            }} // You can customize the label here
+            }} 
           />
-
-          {/* <Drawer.Screen
-            name="GetNetInfo"
-            component={GetNetInfo}
-            initialParams={{setIsAuthenticated, setScreens}}
-            options={{
-              drawerLabel: 'GetNetInfo',
-              headerShown: false,
-              drawerIcon: ({focused, size}) => (
-                <MaterialIcons
-                  name="logout"
-                  size={size}
-                  color={focused ? '#000000' : '#000000'}
-                />
-              ),
-            }} // You can customize the label here
-          /> */}
-
-          {/* <Drawer.Screen
-            name="Loader"
-            component={LoaderComponent}
-            initialParams={{setIsAuthenticated}}
-            options={{
-              drawerLabel: 'Loder',
-              headerShown: false,
-              drawerIcon: ({focused, size}) => (
-                <MaterialIcons
-                  name="logout"
-                  size={size}
-                  color={focused ? '#000000' : '#000000'}
-                />
-              ),
-            }} // You can customize the label here
-          /> */}
         </Drawer.Navigator>
       ) : (
         <Stack.Navigator

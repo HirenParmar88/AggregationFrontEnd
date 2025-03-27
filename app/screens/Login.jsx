@@ -4,13 +4,12 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
+  Alert
 } from 'react-native';
 import {
   Text,
   TextInput,
-  Snackbar,
-  Modal,
-  Portal,
+  Snackbar
 } from 'react-native-paper';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -25,7 +24,6 @@ const initialState = {
   password: '',
   snackbarInfo: { visible: false, message: '', snackbarStyle: {} },
   passwordShow: false,
-  showReLogin: false,
 };
 
 // Reducer function
@@ -42,8 +40,6 @@ const loginReducer = (state, action) => {
       return { ...state, snackbarInfo: action.payload };
     case 'TOGGLE_PASSWORD_VISIBILITY':
       return { ...state, passwordShow: !state.passwordShow };
-    case 'SET_SHOW_RELOGIN':
-      return { ...state, showReLogin: action.payload };
     default:
       return state;
   }
@@ -61,7 +57,6 @@ const Login = ({ route }) => {
     password,
     snackbarInfo,
     passwordShow,
-    showReLogin,
   } = state;
   
   const onToggleSnackBar = (message, code) => {
@@ -123,7 +118,14 @@ const Login = ({ route }) => {
           navigation.navigate('Home');
         }, 3000);
       } else if (res.data.code === 2004) {
-        dispatch({ type: 'SET_SHOW_RELOGIN', payload: true });
+        Alert.alert('Relogin', 'You are already logged in. Please confirm to relogin.', [
+          {
+            text: 'Cancel',
+            onPress: () => console.log('Cancel Pressed'),
+            style: 'cancel',
+          },
+          {text: 'OK', onPress: () => handleLogin(true)},
+        ]);
       } else {
         onToggleSnackBar(res.data.message, res.data.code);
       }
@@ -185,33 +187,6 @@ const Login = ({ route }) => {
           </View>
         </View>
       </ScrollView>
-
-      <Portal>
-        <Modal
-          visible={showReLogin}
-          onDismiss={() => dispatch({ type: 'SET_SHOW_RELOGIN', payload: false })}
-          contentContainerStyle={styles.reloginContainer}>
-          <View style={{ flex: 1 }}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                You are already logged in. Please confirm to relogin.
-              </Text>
-            </View>
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.confirmButton]}
-                onPress={() => handleLogin(true)}>
-                <Text style={styles.modalButtonText}>Submit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => dispatch({ type: 'SET_SHOW_RELOGIN', payload: false })}>
-                <Text style={styles.modalButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-      </Portal>
 
       <Snackbar
         visible={snackbarInfo.visible}

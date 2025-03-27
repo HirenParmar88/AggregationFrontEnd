@@ -323,6 +323,7 @@ function ScanList({route}) {
         },
       );
       console.log('Response of handle print ', res.data);
+      setLoading(false);
 
       if (res.data.success === true && res.data.code === 200) {
         if (res.data.data?.allTransactionDone) {
@@ -339,16 +340,16 @@ function ScanList({route}) {
           setQuantity(0)
           setTimeout(() => {
             navigation.goBack();
-          }, 2000);
+          }, 3000);
         } else {
           handleScannedData();
           setData([]);
           setChildModalVisible(true);
         }
-        setLoading(true);
+        setLoading(false);
       } else {
         onToggleSnackBar(res.data.message, res.data.code);
-        setLoading(true);
+        setLoading(false);
       }
     } catch (error) {
       console.log('Error to print code for ', error);

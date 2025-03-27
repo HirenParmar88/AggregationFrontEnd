@@ -47,7 +47,6 @@ function AggregationComponent({ route }) {
           setToken(storedToken);
           setLoading(true);
           const resProd = await fetchProductData();
-          setLoading(false);
           if (resProd.success) {
             setProducts(resProd.data)
           } else if (resProd.code === 401) {
@@ -56,6 +55,7 @@ function AggregationComponent({ route }) {
           } else {
             setSnackbarInfo({ visible: true, message: "Internal server error"});
           }
+          setLoading(false);
         } else {
           setSnackbarInfo({ visible: true, message: "Token not found please login again"});
         }
@@ -223,7 +223,6 @@ function AggregationComponent({ route }) {
     const resBatch = await fetchBatchData(item.value);
     const resCountry = await fetchCountryCode(item.value);
     
-    setLoading(false);
     if (resBatch.success) {
       setBatches(resBatch.data)
     } else if (resBatch.code === 401) {
@@ -238,6 +237,7 @@ function AggregationComponent({ route }) {
     } else {
       setSnackbarInfo({ visible: true, message: "Internal server error"});
     }
+    setLoading(false);
     setIsFocusProduct(false);
   };
   return (

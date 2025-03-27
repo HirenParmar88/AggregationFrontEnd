@@ -1,12 +1,14 @@
 import React, { createContext, useState, useContext } from 'react';
-import { View, Modal, ActivityIndicator } from 'react-native';
+import { View, Modal, ActivityIndicator, Dimensions } from 'react-native';
 import { useTheme } from 'react-native-paper';
 
 const LoadingContext = createContext();
+const { width, height } = Dimensions.get('window');
 
 export const LoadingProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { colors } = useTheme();
+
   const setLoading = (loading) => {
     setIsLoading(loading);
   };
@@ -18,12 +20,18 @@ export const LoadingProvider = ({ children }) => {
         transparent={true}
         animationType="none"
         visible={isLoading}
-        onRequestClose={() => {}}>
+        onRequestClose={() => {}}
+        statusBarTranslucent={true}
+      >
         <View style={{
-          flex: 1,
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: width,
+          height: height,
           justifyContent: 'center',
           alignItems: 'center',
-          backgroundColor: 'rgba(0,0,0,0.5)'
+          backgroundColor: 'rgba(0,0,0,0.5)',
         }}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>

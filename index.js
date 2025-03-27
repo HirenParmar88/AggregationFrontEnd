@@ -82,8 +82,8 @@ export default function Main() {
       <NetworkProvider>
           <LoadingProvider>
             <App />
+            <GetNetInfo />
           </LoadingProvider>
-        <GetNetInfo />
       </NetworkProvider>
     </PaperProvider>
   );
