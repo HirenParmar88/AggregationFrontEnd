@@ -20,12 +20,9 @@ const { width, height } = Dimensions.get('window');
 function EsignPage({
   config,
   handleAuthResult,
-  approveAPIName,
-  approveAPImethod,
-  approveAPIEndPoint,
+  apiData,
   openModal,
   setOpenModal,
-  setStatus,
 }) {
   const { colors } = useTheme();
     const [snackbarInfo, setSnackbarInfo] = useState({
@@ -33,7 +30,6 @@ function EsignPage({
       message: '',
       snackbarStyle: { backgroundColor: colors.primary }
     });
-  console.log(approveAPIName)
 
   const onToggleSnackBar = (message, code=500) => {
     const backgroundColor = code !== 200 ? colors.error : colors.primary;
@@ -53,24 +49,24 @@ function EsignPage({
   };
 
   //console.log("Config ",config)
-  const handleVerification = async (status, userID, password, remark) => {
-    console.log(status);
+  const handleVerification = async (status, userID, password, remark, action, feature) => {
+    console.log("handle verification ", {status, userID, password, remark, action, feature});
     try {
+      if (status === 'rejected' && apiData.apiName.includes('create')) {
+        setOpenModal(false);
+        return;
+      }
       const backendUrl = await AsyncStorage.getItem('BackendUrl');
-      console.log(backendUrl, backendUrl);
-
       const response = await axios.post(
         `${backendUrl}/auth/security-check`,
         {
           userId: userID,
           password: password,
           remark: remark,
-          securityCheck: true,
-          approveAPIName: approveAPIName,
-          approveAPImethod: 'POST',
+          apiData,
           audit_log: {
             audit_log: true,
-            performed_action: `${userID} is ${status} to aggregate-create api`,
+            performed_action: `${userID} is ${status} to ${feature.toLowerCase()} ${action.toLowerCase()} api`,
             remarks: remark,
           },
         },
@@ -81,28 +77,23 @@ function EsignPage({
         },
       );
       console.log('handle verification Res :', response.data);
-      console.log(response.data.code);
       if (response.data.success) {
         const { userId, userName, user_id } = response.data.data;
         const user = { userId, userName, user_id };
         const isAuthenticated = true;
-        const operation = approveAPIName.split('-')
-        const isApprover = operation[operation?.length - 1] === "create" && config.userId === user.user_id ||  config.userId !== user.user_id;
+        const isApprover = apiData.apiName.includes('approve') && config.userId !== user_id;
+        console.log("final data ", { isApprover, isAuthenticated, user, status, remark });
         
-
         await handleAuthResult(
           isAuthenticated,
           user,
           isApprover,
           status,
-          remark,
-          user_id,
+          remark
         );
-
         return;
       } else {
-        onToggleSnackBar(response.data.message, response.data.code)
-        // setOpenModal(false);
+        onToggleSnackBar(response.data.message, response.data.code);
         return;
       }
     } catch (err) {
@@ -110,17 +101,11 @@ function EsignPage({
       onToggleSnackBar(err.message, 500)
     }
   };
-  // const approve = () => {
-  //     console.log("approve btn pressed!");
 
-  // }
-  // const reject = () => {
-  //     console.log("reject btn pressed!");
-  // }
   const close = () => {
-    // console.log("close btn pressed!");
     setOpenModal(false);
   };
+
   return (
     <>
       <Modal
@@ -128,7 +113,7 @@ function EsignPage({
         onDismiss={close}
         contentContainerStyle={containerStyle}>
 
-        <ModalContainer close={close} handleVerification={handleVerification} onToggleSnackBar={onToggleSnackBar} approveAPIName={approveAPIName} />
+        <ModalContainer close={close} handleVerification={handleVerification} onToggleSnackBar={onToggleSnackBar} apiName={apiData.apiName} />
         <Snackbar
           visible={snackbarInfo.visible}
           onDismiss={() =>
@@ -143,21 +128,25 @@ function EsignPage({
   );
 }
 
-function ModalContainer({ close, handleVerification, onToggleSnackBar, approveAPIName }) {
+function ModalContainer({ close, handleVerification, onToggleSnackBar, apiName }) {
   const [userID, setUserID] = useState('');
   const [password, setPassword] = useState('');
   const [remark, setRemark] = useState('');
   const [secureText, setSecureText] = useState(true);
-  const position = approveAPIName.split('-').length - 1
-  console.log(position)
-  const operation = approveAPIName.split("-")[position]
+
+  const action = apiName.split('-').pop().toUpperCase();
+  const feature = apiName.replace('-create', '').replace('-approve', '').split('-').join(' ').toUpperCase();
+
   useEffect(() => {
-    if (operation == "approve") {
-      setPassword('')
-      setUserID('')
-      setRemark('')
+    setUserID('');
+    setPassword('');
+    setRemark('');
+  
+    return () => {
+      
     }
-  }, [operation])
+  }, [])
+  
 
   return (
     <KeyboardAvoidingView behavior='height'>
@@ -171,15 +160,15 @@ function ModalContainer({ close, handleVerification, onToggleSnackBar, approveAP
               style={styles.icons}
             />
             <Text variant="titleMedium" style={styles.headerTxt}>
-              Security check {approveAPIName && "for"} {approveAPIName.split('-').join(' ')}
+              Security check for {apiName.split('-').join(' ')}
             </Text>
           </View>
           <View style={styles.header2}>
             <Text variant="titleSmall" style={styles.header2Txt}>
-              Action: Create/Approve
+              Action: {action}
             </Text>
             <Text variant="titleSmall" style={styles.header2Txt}>
-              Feature: Add User/Edit User
+              Feature: { feature }
             </Text>
           </View>
           <View style={styles.body}>
@@ -220,14 +209,10 @@ function ModalContainer({ close, handleVerification, onToggleSnackBar, approveAP
               style={styles.bottomBtn}
               onPress={async () => {
                 if (!userID || !password) {
-                  // Alert.alert(
-                  //   'Validation Error',
-                  //   'User id and password is required',
-                  // );
                   onToggleSnackBar('User id and password is required');
                   return;
                 }
-                await handleVerification('approved', userID, password, remark);
+                await handleVerification('approved', userID, password, remark, action, feature);
               }}>
               <Text style={styles.btnfonts}>Approve</Text>
             </TouchableOpacity>
@@ -235,8 +220,7 @@ function ModalContainer({ close, handleVerification, onToggleSnackBar, approveAP
               mode="contained"
               style={styles.bottomBtn}
               onPress={async () => {
-
-                await handleVerification('rejected', userID, password, remark);
+                await handleVerification('rejected', userID, password, remark, action, feature);
               }}>
               <Text style={styles.btnfonts}>Reject</Text>
             </TouchableOpacity>

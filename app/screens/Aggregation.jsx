@@ -1,6 +1,6 @@
 //app/screens/Products.jsx
-import React, { useState, useEffect, useRef } from 'react';
-import { Text, View, Alert, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Text, View, TouchableOpacity, Image } from 'react-native';
 import { Snackbar, useTheme } from 'react-native-paper';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { Dropdown } from 'react-native-element-dropdown';
@@ -26,7 +26,6 @@ function AggregationComponent({ route }) {
   const [batches, setBatches] = useState([]);
   const [token, setToken] = useState(null);
   const [openModal, setOpenModal] = useState(false);
-  const [status, setStatus] = useState(undefined);
   const [apiData, setApiData] = useState({ apiName: null, apiMethod: null, apiEndpoint: null });
   const { colors } = useTheme();
   const [snackbarInfo, setSnackbarInfo] = useState({
@@ -83,27 +82,16 @@ function AggregationComponent({ route }) {
     });
   };
 
-  // Fetch products
-  //console.log('Config :->', config);
-
   const handleAuthResult = async (
     isAuthenticated,
     user,
     isApprover,
     esignStatus,
     remarks,
-    eSignStatusId,
   ) => {
+    console.log("handle auth resutl call ", { isAuthenticated, user, isApprover, esignStatus, remarks });
+    
     try {
-      console.log('handleAuthResult');
-      console.log('handleAuthResult', {
-        isAuthenticated,
-        isApprover,
-        esignStatus,
-        user,
-      });
-      console.log(isApprover, isAuthenticated);
-      const closeApprovalModal = () => setOpenModal(false);
       const resetState = () => {
         setApiData({ apiName: null, apiMethod: null, apiEndpoint: null });
         setOpenModal(false);
@@ -113,36 +101,26 @@ function AggregationComponent({ route }) {
         return;
       }
 
-      const handleEsignStatus = async () => {
-        if (esignStatus === 'rejected') {
-          onToggleSnackBar('eSign has been rejected for add aggregate');
-          closeApprovalModal();
-        }
-      };
       if (isApprover) {
-        setOpenModal(false)
-        onToggleSnackBar('eSign has been approved for add aggregate', 200);
-        if (apiData.apiName === "aggregation-transaction-create") {
-          setOpenModal(true);
-          setApiData({ apiName: 'aggregation-transaction-approve', apiMethod: 'POST', apiEndpoint: ''})
-          return
-        }
         if (esignStatus === 'approved') {
+          onToggleSnackBar('E-sign approved by approver', 200);
+          resetState();
           await addAggregrate('approved');
-
-          closeApprovalModal();
         } else {
-          onToggleSnackBar('eSign has been rejected for add aggregate');
-
-          // await addAggregrate('rejected');
-          if (esignStatus === 'rejected') closeApprovalModal();
+          onToggleSnackBar('E-sign rejected by approver');
+          resetState();
         }
       } else {
-        handleEsignStatus();
+        setOpenModal(false);
+        onToggleSnackBar("E-sign approved by creater.", 200);
+        setTimeout(() => {
+          setApiData({ apiName: 'aggregation-transaction-approve', apiMethod: 'PATCH', apiEndpoint: '/api/v1/aggregation'});
+          setOpenModal(true);
+        }, 1500);
       }
-      resetState();
     } catch (err) {
-      console.log(err);
+      console.log("Error in handle esign ", err);
+      onToggleSnackBar("Error to handle esign");
     }
   };
 
@@ -183,7 +161,7 @@ function AggregationComponent({ route }) {
         onToggleSnackBar(res.data.message);
       }
     } else {
-      Alert.alert('Error', 'Please select both product and batch.');
+      onToggleSnackBar("Select both product and batch")
     }
     resetForm();
   };
@@ -193,13 +171,12 @@ function AggregationComponent({ route }) {
 
     if (config.config.esign_status && !openModal) {
       setTimeout(() => {
+        setApiData({ apiName: 'aggregation-transaction-create', apiMethod: 'POST', apiEndpoint: '/api/v1/aggregation' })
         setOpenModal(true);
-        setApiData({ apiName: 'aggregation-transaction-create', apiMethod: 'POST', apiEndpoint: ''})
       }, 1000)
       return;
     }
     addAggregrate('approved');
-    
   };
 
   const resetForm = () => {
@@ -233,6 +210,7 @@ function AggregationComponent({ route }) {
     setLoading(false);
     setIsFocusProduct(false);
   };
+
   return (
     <>
       <View style={styles.imageView}>
@@ -320,7 +298,6 @@ function AggregationComponent({ route }) {
         onPress={async () => {
           if (!valueBatch || !valueProduct) {
             onToggleSnackBar('Please select both product and batch.', 400);
-            //Alert.alert('Error', 'Please select both product and batch.');
             return;
           }
           await handleSubmit();
@@ -329,21 +306,19 @@ function AggregationComponent({ route }) {
       </TouchableOpacity>
 
       {openModal && (
-        {/* <EsignPage
+        <EsignPage
           config={config}
           handleAuthResult={handleAuthResult}
           apiData={apiData}
           openModal={openModal}
           setOpenModal={setOpenModal}
-          setStatus={setStatus}
-        /> */}
+        />
       )}
 
       <Snackbar
         visible={snackbarInfo.visible}
         onDismiss={onDismissSnackBar}
         duration={3000}
-        //style={styles.snackbar}>
         style={[styles.snackbar, snackbarInfo.snackbarStyle]}>
         {snackbarInfo.message}
       </Snackbar>

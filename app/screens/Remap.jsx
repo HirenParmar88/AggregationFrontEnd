@@ -4,7 +4,6 @@ import {
   View,
   KeyboardAvoidingView,
   TouchableOpacity,
-  Alert,
   ScrollView,
 } from 'react-native';
 import {
@@ -13,7 +12,6 @@ import {
   TextInput,
   Modal,
   Portal,
-  PaperProvider,
   Divider,
   Snackbar,
   useTheme,
@@ -34,7 +32,6 @@ import { useLoading } from '../../context/LoadingContext';
 function RemapScreen({ route }) {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
-  const [text, setText] = useState('');
   const { setLoading } = useLoading();
   const [token, setToken] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState({
@@ -49,18 +46,17 @@ function RemapScreen({ route }) {
   const [isFocusBatch, setIsFocusBatch] = useState(false);
   const [products, setProducts] = useState([]);
   const [batches, setBatches] = useState([]);
-  const [valueProduct, setValueProduct] = useState('');
-  const [valueBatch, setValueBatch] = useState('');
   const [countryCode, setCountryCode] = useState(null);
   const [scanCode, setScanCode] = useState(undefined);
   const [visible, setVisible] = useState(false);
   const [config, setConfig] = useState(null);
   const [openModal, setOpenModal] = useState(false);
-  const [status, setStatus] = useState(undefined);
-  const [approveAPIName, setApproveAPIName] = useState();
-  const [approveAPImethod, setApproveAPImethod] = useState();
-  const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
   const { colors } = useTheme();
+  const [apiData, setApiData] = useState({
+      apiName: null,
+      apiMethod: null,
+      apiEndpoint: null,
+    });
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
@@ -123,7 +119,6 @@ function RemapScreen({ route }) {
       setSelectedProduct({ value: null, label: null });
       setSelectedBatch({ value: null, label: null });
       setScanCode('');
-      setText('');
     });
     return unsubscribe;
   }, [isFocused]);
@@ -246,31 +241,20 @@ function RemapScreen({ route }) {
     }
   };
 
-  const handleRemap = () => {
+  const handleConfirm = () => {
     if (!selectedProduct.value || !selectedBatch.value) {
       onToggleSnackBar('Please select both product and batch.', 400);
-      //Alert.alert('Error', 'Please select both product and batch.');
       return;
     }
     if (!scanCode) {
       onToggleSnackBar('Please scan or enter sscc code');
-      //Alert.alert('Error', 'Please scan or enter unique code');
       return;
     }
-    console.log(config.config.esign_status, !openModal);
-    if (config.config.esign_status && !openModal) {
-      setOpenModal(true);
-      setApproveAPIName('code-remap-create');
-      setApproveAPImethod('POST');
-      return;
-    } else {
-      setVisible(true); //modal open
-      console.log('Remap pressed..');
-    }
+    setVisible(true);
   };
 
 
-  const print = async () => {
+  const handleRemap = async () => {
     console.log('Remap success.');
     const backendUrl = await AsyncStorage.getItem("BackendUrl")
     const remapRes = await axios.post(
@@ -305,29 +289,24 @@ function RemapScreen({ route }) {
     navigation.navigate('Home');
   };
 
-  //for E-sign
   const handleAuthResult = async (
     isAuthenticated,
     user,
     isApprover,
     esignStatus,
     remarks,
-    eSignStatusId,
   ) => {
+    console.log('handle auth resutl call ', {
+      isAuthenticated,
+      user,
+      isApprover,
+      esignStatus,
+      remarks,
+    });
+
     try {
-      console.log('handleAuthResult');
-      console.log('handleAuthResult', {
-        isAuthenticated,
-        isApprover,
-        esignStatus,
-        user,
-      });
-      console.log(isApprover, isAuthenticated);
-      const closeApprovalModal = () => setOpenModal(false);
       const resetState = () => {
-        setApproveAPIName('');
-        setApproveAPImethod('');
-        setApproveAPIEndPoint('');
+        setApiData({apiName: null, apiMethod: null, apiEndpoint: null});
         setOpenModal(false);
       };
       if (!isAuthenticated && config.esignStatus) {
@@ -335,46 +314,30 @@ function RemapScreen({ route }) {
         return;
       }
 
-      const handleEsignStatus = async () => {
-        if (esignStatus === 'rejected') {
-          onToggleSnackBar('eSign has been rejected for code remap');
-          closeApprovalModal();
-        } else {
-          onToggleSnackBar(
-            'You do not have permission to access e-sign. Please request approval from a user with e-sign permissions.',
-            401,
-          );
-        }
-      };
       if (isApprover) {
-        console.log('Approved is ', esignStatus === 'approved');
-        console.log("approveAPIName ", approveAPIName, openModal)
-        setOpenModal(false)
-        onToggleSnackBar('eSign has been approved for code remap', 200);
-        if (approveAPIName === "code-remap-create") {
-          setTimeout(() => {
-            setOpenModal(true)
-            setApproveAPIName('code-remap-approve');
-            setApproveAPImethod('POST')
-          }, 1000)
-          return
-        }
         if (esignStatus === 'approved') {
-          onToggleSnackBar('eSign has been approved for code remap', 200);
-          setVisible(true);
-
-          closeApprovalModal();
+          onToggleSnackBar('E-sign approved by approver', 200);
+          resetState();
+          await handleRemap();
         } else {
-          onToggleSnackBar('eSign has been rejected for code remap');
-          if (esignStatus === 'rejected') closeApprovalModal();
+          onToggleSnackBar('E-sign rejected by approver');
+          resetState();
         }
       } else {
-        console.log('dfdfdsffxddf');
-        handleEsignStatus();
+        setOpenModal(false);
+        onToggleSnackBar('E-sign approved by creater.', 200);
+        setTimeout(() => {
+          setApiData({
+            apiName: 'code-remap-approve',
+            apiMethod: 'PATCH',
+            apiEndpoint: '/api/v1/code-remap',
+          });
+          setOpenModal(true);
+        }, 1500);
       }
-      resetState();
     } catch (err) {
-      console.log(err);
+      console.log('Error in handle esign ', err);
+      onToggleSnackBar('Error to handle esign');
     }
   };
 
@@ -491,7 +454,7 @@ function RemapScreen({ route }) {
             mode="contained"
             //labelStyle={{ fontSize: 20 }}
             style={styles.remapButton}
-            onPress={handleRemap}>
+            onPress={handleConfirm}>
             <Text style={styles.remapText}>Remap</Text>
           </TouchableOpacity>
         </View>
@@ -515,7 +478,17 @@ function RemapScreen({ route }) {
                 <TouchableOpacity
                   style={styles.printbtn}
                   mode="contained"
-                  onPress={print}>
+                  onPress={()=> {
+                    if (config.config.esign_status && !openModal) {
+                      setVisible(false);
+                      setOpenModal(true);
+                      setApiData({ apiName: 'code-remap-create', apiMethod: 'POST', apiEndpoint: '/api/v1/code-remap'})
+                      return;
+                    } else {
+                      console.log('Remap pressed..');
+                      handleRemap();
+                    }
+                  }}>
                   <Text style={styles.btnText}>Remap</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -532,12 +505,9 @@ function RemapScreen({ route }) {
           <EsignPage
             config={config}
             handleAuthResult={handleAuthResult}
-            approveAPIName={approveAPIName}
-            approveAPImethod={approveAPImethod}
-            approveAPIEndPoint={approveAPIEndPoint}
+            apiData={apiData}
             openModal={openModal}
             setOpenModal={setOpenModal}
-            setStatus={setStatus}
           />
         )}
         <Snackbar

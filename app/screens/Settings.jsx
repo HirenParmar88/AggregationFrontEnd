@@ -17,14 +17,9 @@ function SettingScreen() {
   const [printerIP, setPrinterIP] = useState('');
   const [printerPort, setPrinterPort] = useState(0);
   const [variables, setVariables] = useState('');
-
   const [config, setConfig] = useState(null);
   const [openModal, setOpenModal] = useState(false);
-  const [status, setStatus] = useState(undefined);
-  const [approveAPIName, setApproveAPIName] = useState();
-  const [approveAPImethod, setApproveAPImethod] = useState();
-  const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
-
+  const [apiData, setApiData] = useState({ apiName: null, apiMethod: null, apiEndpoint: null });
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
@@ -45,34 +40,25 @@ function SettingScreen() {
     //getData();
     getApiSettings();
     (async () =>
-      await decodeAndSetConfig(
+      decodeAndSetConfig(
         setConfig,
         await AsyncStorage.getItem('authToken'),
       ))();
     return () => { };
   }, [isFocused]);
+  
   const handleAuthResult = async (
     isAuthenticated,
     user,
     isApprover,
     esignStatus,
     remarks,
-    eSignStatusId,
   ) => {
+    console.log("handle auth resutl call ", { isAuthenticated, user, isApprover, esignStatus, remarks });
+    
     try {
-      console.log('handleAuthResult');
-      console.log('handleAuthResult', {
-        isAuthenticated,
-        isApprover,
-        esignStatus,
-        user,
-      });
-      console.log(isApprover, isAuthenticated);
-      const closeApprovalModal = () => setOpenModal(false);
       const resetState = () => {
-        setApproveAPIName('');
-        setApproveAPImethod('');
-        setApproveAPIEndPoint('');
+        setApiData({ apiName: null, apiMethod: null, apiEndpoint: null });
         setOpenModal(false);
       };
       if (!isAuthenticated && config.esignStatus) {
@@ -80,67 +66,32 @@ function SettingScreen() {
         return;
       }
 
-      const handleEsignStatus = async () => {
-        if (esignStatus === 'rejected') {
-          onToggleSnackBar('eSign has been rejected for settings');
-          closeApprovalModal();
-        } else {
-          onToggleSnackBar(
-            'You do not have permission to access e-sign. Please request approval from a user with e-sign permissions.',
-            401,
-          );
-        }
-      };
       if (isApprover) {
-        console.log('Approved is ', esignStatus === 'approved');
-        console.log('approveAPIName ', approveAPIName, openModal);
-        setOpenModal(false);
-        if (approveAPIName === 'settings-create') {
-          setTimeout(() => {
-            setOpenModal(true);
-            setApproveAPIName('settings-approve');
-            setApproveAPImethod('POST');
-          }, 1000);
-          return;
-        }
         if (esignStatus === 'approved') {
-          onToggleSnackBar('eSign has been approved for settings', 200);
-          await settings()
-          closeApprovalModal();
+          onToggleSnackBar('E-sign approved by approver', 200);
+          resetState();
+          await settings();
         } else {
-          onToggleSnackBar('eSign has been rejected for settings');
-          if (esignStatus === 'rejected') closeApprovalModal();
+          onToggleSnackBar('E-sign rejected by approver');
+          resetState();
         }
       } else {
-        handleEsignStatus();
+        setOpenModal(false);
+        onToggleSnackBar("E-sign approved by creater.", 200);
+        setTimeout(() => {
+          setApiData({ apiName: 'settings-approve', apiMethod: 'PATCH', apiEndpoint: '/api/v1/printerallocation'});
+          setOpenModal(true);
+        }, 1500);
       }
-      resetState();
     } catch (err) {
-      console.log(err);
+      console.log("Error in handle esign ", err);
+      onToggleSnackBar("Error to handle esign");
     }
-  };
-
-  //Get Device Info
-  const getData = async () => {
-    console.log('getUniqueId :', await DeviceInfo.getUniqueId());
-    // console.log('getAndroidId :', await DeviceInfo.getAndroidId());
-    // console.log('getDeviceId :', await DeviceInfo.getDeviceId());
-    // console.log('getMacAddress :', await DeviceInfo.getMacAddress());
-    // console.log('getMacAddressSync :', await DeviceInfo.getMacAddressSync());
-    // console.log('getIpAddress :', await DeviceInfo.getIpAddress());
-    // console.log('getManufacturer :', await DeviceInfo.getManufacturer());
-    // console.log('getFingerprint :', await DeviceInfo.getFingerprint());
-    // console.log('getDisplay :', await DeviceInfo.getDisplay());
-    // console.log('getDeviceToken :', await DeviceInfo.getDeviceToken());
-    // console.log('getHost :', await DeviceInfo.getHost());
-    // console.log('getInstanceId :', await DeviceInfo.getInstanceId());
   };
 
   // GET APIs for Settings Screen
   const getApiSettings = async () => {
     console.log('GET Api call.');
-    // const token = await AsyncStorage.getItem('authToken');
-    // console.log("Token use for getApiSettings:",token);
     const backendUrl = await AsyncStorage.getItem("BackendUrl")
 
     console.log('URL', backendUrl);
@@ -243,8 +194,7 @@ function SettingScreen() {
               console.log(config.config.esign_status, !openModal);
               if (config.config.esign_status && !openModal) {
                 setOpenModal(true);
-                setApproveAPIName('settings-create');
-                setApproveAPImethod('POST');
+                setApiData({ apiName: 'settings-create', apiMethod: 'POST', apiEndpoint: '/api/v1/printerallcation'});
                 return;
               }
               await settings();
@@ -258,12 +208,9 @@ function SettingScreen() {
         <EsignPage
           config={config}
           handleAuthResult={handleAuthResult}
-          approveAPIName={approveAPIName}
-          approveAPImethod={approveAPImethod}
-          approveAPIEndPoint={approveAPIEndPoint}
+          apiData={apiData}
           openModal={openModal}
           setOpenModal={setOpenModal}
-          setStatus={setStatus}
         />
       )}
 

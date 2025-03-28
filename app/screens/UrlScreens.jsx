@@ -1,12 +1,6 @@
-import React, {useState,useEffect} from 'react';
-import {
-  Text,
-  View,
-  TouchableOpacity,
-  Alert,
-  ScrollView,
-} from 'react-native';
-import {TextInput, Button, Snackbar} from 'react-native-paper';
+import React, {useState} from 'react';
+import {Text, View, TouchableOpacity, Alert, ScrollView} from 'react-native';
+import {TextInput, Snackbar} from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
 import styles from '../../styles/urlscreen';
@@ -14,11 +8,11 @@ import styles from '../../styles/urlscreen';
 function UrlScreen() {
   const navigation = useNavigation();
   const [text, setText] = useState('');
-
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
   });
+
   const onDismissSnackBar = () =>
     setSnackbarInfo({visible: false, message: ''});
 
@@ -32,21 +26,20 @@ function UrlScreen() {
       snackbarStyle: {backgroundColor},
     });
   };
+  
   const handleNextBtn = async () => {
-    console.log('Next btn pressed..');
     if (!text) {
-      console.log('Empty !!');
-      onToggleSnackBar("Please enter Dynamic Backend Url !")
+      onToggleSnackBar('Please enter Dynamic Backend Url !');
       return;
     }
     if (isValidUrl(text)) {
       try {
         await AsyncStorage.setItem('BackendUrl', text);
         console.log('URL successfully saved to AsyncStorage:', text);
-        onToggleSnackBar("URL successfully saved",200)
-        setTimeout(()=>{
+        onToggleSnackBar('URL successfully saved', 200);
+        setTimeout(() => {
           navigation.navigate('Login');
-        },3000)
+        }, 3000);
       } catch (error) {
         console.error('Error to store Url :', error);
         Alert.alert('Error', 'Failed to save URL. Please try again.');
@@ -72,7 +65,7 @@ function UrlScreen() {
         <View style={styles.container}>
           <View style={styles.textbox}>
             <TextInput
-              mode='outlined'
+              mode="outlined"
               label="Back-End URL"
               style={styles.input}
               placeholder="http://example.com/"

@@ -31,9 +31,9 @@ import {
   fetchBatchData,
   fetchCountryCode,
 } from '../components/fetchDetails';
-import { useLoading } from '../../context/LoadingContext';
+import {useLoading} from '../../context/LoadingContext';
 
-function DropoutFun({ route }) {
+function DropoutFun({route}) {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [selectedBatch, setSelectedBatch] = useState({
@@ -42,7 +42,7 @@ function DropoutFun({ route }) {
   });
   const [products, setProducts] = useState([]);
   const [batches, setBatches] = useState([]);
-  const { setLoading } = useLoading();
+  const {setLoading} = useLoading();
   const [wholeBatch, setWholeBatch] = useState(true);
   const [dropoutReason, setDropoutReason] = useState('');
   const [isFocusP, setIsFocusP] = useState([]);
@@ -53,20 +53,21 @@ function DropoutFun({ route }) {
   const [visibleConfirmBatch, setVisibleConfirmBatch] = useState(false);
   const [visibleConfirmCodes, setVisibleConfirmCodes] = useState(false); // Added for Codes Dropout Confirmation
   const [config, setConfig] = useState(null);
-  const [status, setStatus] = useState(undefined);
-  const { colors } = useTheme();
+  const {colors} = useTheme();
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
-    snackbarStyle: { backgroundColor: colors.primary }
+    snackbarStyle: {backgroundColor: colors.primary},
   });
   const [openModal, setOpenModal] = useState(false);
-  const [approveAPIName, setApproveAPIName] = useState();
-  const [approveAPImethod, setApproveAPImethod] = useState();
-  const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
-  const { setIsAuthenticated } = route.params;
+  const [apiData, setApiData] = useState({
+    apiName: null,
+    apiMethod: null,
+    apiEndpoint: null,
+  });
+  const {setIsAuthenticated} = route.params;
 
-  const onToggleSnackBar = (message, code=500) => {
+  const onToggleSnackBar = (message, code = 500) => {
     const backgroundColor = code !== 200 ? colors.error : colors.primary;
 
     setSnackbarInfo({
@@ -152,11 +153,17 @@ function DropoutFun({ route }) {
   }, [countryCode, selectedProduct, selectedBatch]);
 
   const getUniqueCode = (url, format) => {
-    const formatParts = format.split('/').length > 1 ? format.split('/') : format.split(' ');
-    const trimFormat = formatParts.map(i=> i.trim());
+    const formatParts =
+      format.split('/').length > 1 ? format.split('/') : format.split(' ');
+    const trimFormat = formatParts.map(i => i.trim());
     const inputParts = url.split('/')?.length > 1 ? url.split('/') : url;
     const uniqueCodeIndex = trimFormat.indexOf('uniqueCode');
-    const uniqueCode = format.split('/').length > 1 ? Array.isArray(inputParts) ? inputParts[uniqueCodeIndex] : inputParts: inputParts[0].slice(-15);
+    const uniqueCode =
+      format.split('/').length > 1
+        ? Array.isArray(inputParts)
+          ? inputParts[uniqueCodeIndex]
+          : inputParts
+        : inputParts[0].slice(-15);
     // console.log({ formatParts, trimFormat, inputParts, uniqueCodeIndex, uniqueCode });
     return uniqueCode;
   };
@@ -206,14 +213,14 @@ function DropoutFun({ route }) {
         } else if (resBatch.code === 401) {
           setIsAuthenticated(false);
         } else {
-          onToggleSnackBar("Internal server error", 500);
+          onToggleSnackBar('Internal server error', 500);
         }
         if (resCountry.success) {
-          setCountryCode(resCountry.data)
+          setCountryCode(resCountry.data);
         } else if (resCountry.code === 401) {
           setIsAuthenticated(false);
         } else {
-          onToggleSnackBar("Internal server error", 500);
+          onToggleSnackBar('Internal server error', 500);
         }
       })();
     }
@@ -227,91 +234,50 @@ function DropoutFun({ route }) {
     isApprover,
     esignStatus,
     remarks,
-    eSignStatusId,
   ) => {
+    console.log('handle auth resutl call ', {
+      isAuthenticated,
+      user,
+      isApprover,
+      esignStatus,
+      remarks,
+    });
+
     try {
-      console.log('handleAuthResult');
-      console.log('handleAuthResult', {
-        isAuthenticated,
-        isApprover,
-        esignStatus,
-        user,
-      });
-      console.log(isApprover, isAuthenticated);
       const resetState = () => {
-        setApproveAPIName('');
-        setApproveAPImethod('');
-        setApproveAPIEndPoint('');
+        setApiData({apiName: null, apiMethod: null, apiEndpoint: null});
         setOpenModal(false);
       };
-      const closeApprovalModal = () => setOpenModal(false);
-      if (!isAuthenticated) {
-        onToggleSnackBar('Authentication failed, Please try again.', 400);
-        //Alert.alert('Authentication failed, Please try again.');
+      if (!isAuthenticated && config.esignStatus) {
         resetState();
         return;
       }
 
-      const handleEsignStatus = async () => {
-        if (esignStatus === 'rejected') {
-          if (wholeBatch) {
-            await handleConfirmBatchDropout('rejected');
-          } else {
-            await handleConfirmCodesDropout('rejected');
-          }
-          closeApprovalModal();
-        }
-      };
       if (isApprover) {
-        console.log('Approved is ', esignStatus === 'approved');
         if (esignStatus === 'approved') {
-          console.log('approveAPIName ', approveAPIName, openModal);
-          setOpenModal(false);
-          onToggleSnackBar(
-            'eSign has been approved for dropout whole batch',
-            200,
-          );
-          if (approveAPIName === 'dropout-create') {
-            setTimeout(() => {
-              setOpenModal(true);
-              setApproveAPIName('dropout-approve');
-              setApproveAPImethod('POST');
-            }, 1000);
-            return;
-          }
-          if (wholeBatch) {
-            onToggleSnackBar(
-              'eSign has been approved for dropout whole batch',
-              200,
-            );
-            await handleConfirmBatchDropout('approved');
-          } else {
-            onToggleSnackBar(
-              'eSign has been approved for dropout code scan',
-              200,
-            );
-            await handleConfirmCodesDropout('approved');
-          }
+          onToggleSnackBar('E-sign approved by approver', 200);
+          console.log("Whoel batch ", wholeBatch);
+          resetState();
+          wholeBatch ? await handleConfirmBatchDropout() : await handleConfirmCodesDropout();
         } else {
-          if (esignStatus === 'rejected') {
-            if (wholeBatch) {
-              onToggleSnackBar(
-                'eSign has been rejected for dropout whole batch',
-              );
-              await handleConfirmBatchDropout('rejected');
-            } else {
-              onToggleSnackBar('eSign has been rejected for dropout code scan');
-              await handleConfirmCodesDropout('rejected');
-            }
-            closeApprovalModal();
-          }
+          onToggleSnackBar('E-sign rejected by approver');
+          resetState();
         }
       } else {
-        handleEsignStatus();
+        setOpenModal(false);
+        onToggleSnackBar('E-sign approved by creater.', 200);
+        setTimeout(() => {
+          setApiData({
+            apiName: 'dropout-approve',
+            apiMethod: 'PATCH',
+            apiEndpoint: '/api/v1/dropout',
+          });
+          setOpenModal(true);
+        }, 1500);
       }
-      resetState();
     } catch (err) {
-      console.log(err);
+      console.log('Error in handle esign ', err);
+      onToggleSnackBar('Error to handle esign');
     }
   };
 
@@ -364,7 +330,7 @@ function DropoutFun({ route }) {
     } else if (resBatch.code === 401) {
       setIsAuthenticated(false);
     } else {
-      onToggleSnackBar("Internal server error", 500);
+      onToggleSnackBar('Internal server error', 500);
     }
   };
 
@@ -405,7 +371,7 @@ function DropoutFun({ route }) {
     setVisibleConfirmBatch(true); // Show Confirm Batch Dropout Modal
   };
 
-  const handleConfirmBatchDropout = async esign_status => {
+  const handleConfirmBatchDropout = async () => {
     console.log('Batch dropout confirmed in final step!');
     if (!dropoutReason) {
       onToggleSnackBar('Select dropout reason');
@@ -494,7 +460,6 @@ function DropoutFun({ route }) {
     console.log('reason to drop out....', item.value);
     setDropoutReason(item.value);
   };
-
 
   return (
     <>
@@ -698,11 +663,14 @@ function DropoutFun({ route }) {
                     setVisibleConfirmBatch(false);
                     if (config.config.esign_status && !openModal) {
                       setOpenModal(true);
-                      setApproveAPIName('dropout-create');
-                      setApproveAPImethod('POST');
+                      setApiData({
+                        apiName: 'dropout-create',
+                        apiMethod: 'POST',
+                        apiEndpoint: '/api/v1/dropout',
+                      });
                       return;
                     }
-                    await handleConfirmBatchDropout('approved');
+                    await handleConfirmBatchDropout();
                   }}>
                   <Text style={styles.modalButtonText}>Confirm</Text>
                 </TouchableOpacity>
@@ -794,11 +762,14 @@ function DropoutFun({ route }) {
                     setVisibleConfirmCodes(false);
                     if (config.config.esign_status && !openModal) {
                       setOpenModal(true);
-                      setApproveAPIName('dropout-create');
-                      setApproveAPImethod('POST');
+                      setApiData({
+                        apiName: 'dropout-create',
+                        apiMethod: 'POST',
+                        apiEndpoint: '/api/v1/dropout',
+                      });
                       return;
                     }
-                    await handleConfirmCodesDropout('approved');
+                    await handleConfirmCodesDropout();
                   }}>
                   <Text style={styles.modalButtonText}>Confirm</Text>
                 </TouchableOpacity>
@@ -810,12 +781,9 @@ function DropoutFun({ route }) {
           <EsignPage
             config={config}
             handleAuthResult={handleAuthResult}
-            approveAPIName={approveAPIName}
-            approveAPImethod={approveAPImethod}
-            approveAPIEndPoint={approveAPIEndPoint}
+            apiData={apiData}
             openModal={openModal}
             setOpenModal={setOpenModal}
-            setStatus={setStatus}
           />
         )}
         <Snackbar

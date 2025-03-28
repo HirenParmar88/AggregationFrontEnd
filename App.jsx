@@ -1,5 +1,5 @@
-import React, {useState, useEffect, useCallback} from 'react';
-import {NavigationContainer, useFocusEffect} from '@react-navigation/native';
+import React, {useState, useEffect} from 'react';
+import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createDrawerNavigator} from '@react-navigation/drawer';
 import Login from './app/screens/Login'; // Import your Login screen
@@ -170,8 +170,6 @@ function App() {
       const token = await AsyncStorage.getItem('authToken');
       const mainUrl = await AsyncStorage.getItem('BackendUrl');
       setBackendUrl(mainUrl);
-      console.log('App useEffect calll.. ', mainUrl);
-
       if (token) {
         const decoded = jwtDecode(token);
         const currentTime = Math.floor(Date.now() / 1000);

@@ -1,6 +1,6 @@
 //app/components/screens/Reprint.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   KeyboardAvoidingView,
@@ -19,19 +19,19 @@ import {
   Snackbar,
   useTheme,
 } from 'react-native-paper';
-import { useIsFocused, useNavigation } from '@react-navigation/native';
-import { Dropdown } from 'react-native-element-dropdown';
+import {useIsFocused, useNavigation} from '@react-navigation/native';
+import {Dropdown} from 'react-native-element-dropdown';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import DeviceInfo from 'react-native-device-info';
-import { decodeAndSetConfig } from '../../utils/tokenUtils';
+import {decodeAndSetConfig} from '../../utils/tokenUtils';
 import styles from '../../styles/reprint';
 import EsignPage from './Esign';
-import { fetchProductData, fetchBatchData } from '../components/fetchDetails';
+import {fetchProductData, fetchBatchData} from '../components/fetchDetails';
 
-function Reprint({ route }) {
+function Reprint({route}) {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [text, setText] = useState('');
@@ -50,33 +50,32 @@ function Reprint({ route }) {
   const [isFocusBatch, setIsFocusBatch] = useState(false);
   const [products, setProducts] = useState([]);
   const [batches, setBatches] = useState([]);
-  const [valueProduct, setValueProduct] = useState('');
-  const [valueBatch, setValueBatch] = useState('');
   const [visible, setVisible] = useState(false);
   const [openModal, setOpenModal] = useState(false);
-  const [status, setStatus] = useState(undefined);
-  const [approveAPIName, setApproveAPIName] = useState();
-  const [approveAPImethod, setApproveAPImethod] = useState();
-  const [approveAPIEndPoint, setApproveAPIEndPoint] = useState();
-  const { colors } = useTheme();
+  const [apiData, setApiData] = useState({
+    apiName: null,
+    apiMethod: null,
+    apiEndpoint: null,
+  });
+  const {colors} = useTheme();
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
-    snackbarStyle: { backgroundColor: colors.primary }
+    snackbarStyle: {backgroundColor: colors.primary},
   });
-  const { setIsAuthenticated } = route.params;
+  const {setIsAuthenticated} = route.params;
 
-  const onToggleSnackBar = (message, code=500) => {
+  const onToggleSnackBar = (message, code = 500) => {
     const backgroundColor = code !== 200 ? colors.error : colors.primary;
 
     setSnackbarInfo({
       visible: true,
       message,
-      snackbarStyle: { backgroundColor },
+      snackbarStyle: {backgroundColor},
     });
   };
   const onDismissSnackBar = () =>
-    setSnackbarInfo({ visible: false, message: '' });
+    setSnackbarInfo({visible: false, message: ''});
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
 
@@ -100,14 +99,14 @@ function Reprint({ route }) {
           const resProd = await fetchProductData();
           setLoading(false);
           if (resProd.success) {
-            setProducts(resProd.data)
+            setProducts(resProd.data);
           } else if (resProd.code === 401) {
             setIsAuthenticated(false);
           } else {
             onToggleSnackBar('Internal server error', 500);
           }
         } else {
-          onToggleSnackBar("Token not found please login again", 500);
+          onToggleSnackBar('Token not found please login again', 500);
         }
       } catch (error) {
         console.error('Error fetching token:', error);
@@ -118,8 +117,8 @@ function Reprint({ route }) {
     loadTokenAndData();
 
     return () => {
-      setSelectedProduct({ value: null, label: null });
-      setSelectedBatch({ value: null, label: null });
+      setSelectedProduct({value: null, label: null});
+      setSelectedBatch({value: null, label: null});
       setText('');
     };
   }, [isFocused]);
@@ -150,12 +149,12 @@ function Reprint({ route }) {
       console.log('barcodeReaderClaimed', details);
     });
 
-    return () => { };
+    return () => {};
   }, []);
 
   useEffect(() => {
     const productId = selectedProduct.value;
-    console.log("useffect after select product", productId);
+    console.log('useffect after select product', productId);
     if (productId) {
       (async () => {
         setLoading(true);
@@ -163,7 +162,7 @@ function Reprint({ route }) {
         setLoading(false);
 
         if (resBatch.success) {
-          setBatches(resBatch.data)
+          setBatches(resBatch.data);
         } else if (resBatch.code === 401) {
           setIsAuthenticated(false);
         } else {
@@ -171,12 +170,13 @@ function Reprint({ route }) {
         }
       })();
     }
-    return () => { };
+    return () => {};
   }, [selectedProduct.value]);
 
   const getUniqueCode = (url, format) => {
-    const formatParts = format.split('/').length > 1 ? format.split('/') : format.split(' ');
-    const trimFormat = formatParts.map(i=> i.trim());
+    const formatParts =
+      format.split('/').length > 1 ? format.split('/') : format.split(' ');
+    const trimFormat = formatParts.map(i => i.trim());
     const inputParts = url.split('/');
     console.log('inputParts ', inputParts);
     console.log('trimFormat ', trimFormat);
@@ -184,45 +184,39 @@ function Reprint({ route }) {
     const uniqueCodeIndex = trimFormat.indexOf('uniqueCode');
     console.log('uniqueCodeIndex ', uniqueCodeIndex);
 
-    const uniqueCode = format.split('/').length > 1 ? inputParts[uniqueCodeIndex] : inputParts[0].slice(-15);
+    const uniqueCode =
+      format.split('/').length > 1
+        ? inputParts[uniqueCodeIndex]
+        : inputParts[0].slice(-15);
     console.log('Unique Code:', uniqueCode);
     return uniqueCode;
   };
 
   const handleDropdownProductChange = async item => {
-    setSelectedProduct({ value: item.value, label: item.label });
+    setSelectedProduct({value: item.value, label: item.label});
     setIsFocusProduct(false);
     //setBatches([]);
     console.log('selected Product Item in reprint:-', item);
     console.log('item.value Product', item.value);
-    const backendUrl = await AsyncStorage.getItem("BackendUrl")
+    const backendUrl = await AsyncStorage.getItem('BackendUrl');
     await fetchBatchData(setBatches, setLoading, token, item.value, backendUrl);
   };
 
   const handleReprint = () => {
     if (!selectedProduct.value || !selectedBatch.value) {
       onToggleSnackBar('Please select both product and batch.');
-      //Alert.alert('Error', 'Please select both product and batch.');
       return;
     }
     if (!text) {
       onToggleSnackBar('Please scan or enter sscc code');
-      //Alert.alert('Error', 'Please scan or enter sscc code');
-      return;
-    }
-    if (config.config.esign_status && !openModal) {
-      setOpenModal(true);
-      setApproveAPIName('reprint-create');
-      setApproveAPImethod('POST');
       return;
     }
     setVisible(true); //modal open
-    //console.log('Reprint pressed..');
   };
 
   const print = async () => {
     //console.log('Reprint success.');
-    const backendUrl = await AsyncStorage.getItem("BackendUrl")
+    const backendUrl = await AsyncStorage.getItem('BackendUrl');
     const reprintRes = await axios.post(
       `${backendUrl}/reprint`,
       {
@@ -247,8 +241,8 @@ function Reprint({ route }) {
     console.log('Response of reprint code ', reprintRes.data);
     if (reprintRes.data.success === true && reprintRes.data.code === 200) {
       setText('');
-      setSelectedProduct({ value: null, label: null });
-      setSelectedBatch({ value: null, label: null });
+      setSelectedProduct({value: null, label: null});
+      setSelectedBatch({value: null, label: null});
       onToggleSnackBar(reprintRes.data.message, 200);
       //navigation.navigate('Home');
     } else {
@@ -269,22 +263,18 @@ function Reprint({ route }) {
     isApprover,
     esignStatus,
     remarks,
-    eSignStatusId,
   ) => {
+    console.log('handle auth resutl call ', {
+      isAuthenticated,
+      user,
+      isApprover,
+      esignStatus,
+      remarks,
+    });
+
     try {
-      console.log('handleAuthResult');
-      console.log('handleAuthResult', {
-        isAuthenticated,
-        isApprover,
-        esignStatus,
-        user,
-      });
-      console.log(isApprover, isAuthenticated);
-      const closeApprovalModal = () => setOpenModal(false);
       const resetState = () => {
-        setApproveAPIName('');
-        setApproveAPImethod('');
-        setApproveAPIEndPoint('');
+        setApiData({apiName: null, apiMethod: null, apiEndpoint: null});
         setOpenModal(false);
       };
       if (!isAuthenticated && config.esignStatus) {
@@ -292,51 +282,37 @@ function Reprint({ route }) {
         return;
       }
 
-      const handleEsignStatus = async () => {
-        if (esignStatus === 'rejected') {
-          onToggleSnackBar('eSign has been rejected in reprint');
-          closeApprovalModal();
-        } else {
-          onToggleSnackBar(
-            'You do not have permission to access e-sign. Please request approval from a user with e-sign permissions.',
-            401,
-          );
-        }
-      };
       if (isApprover) {
-        console.log('Approved is ', esignStatus === 'approved');
-        console.log("approveAPIName ", approveAPIName, openModal)
-        setOpenModal(false)
-        onToggleSnackBar('eSign has been approved in reprint', 200);
-        if (approveAPIName === "reprint-create") {
-          setTimeout(() => {
-            setOpenModal(true)
-            setApproveAPIName('reprint-approve');
-            setApproveAPImethod('POST')
-          }, 1000)
-          return
-        }
         if (esignStatus === 'approved') {
-          setVisible(true);
-
-          closeApprovalModal();
+          onToggleSnackBar('E-sign approved by approver', 200);
+          resetState();
+          await print();
         } else {
-          onToggleSnackBar('eSign has been rejected in reprint');
-          if (esignStatus === 'rejected') closeApprovalModal();
+          onToggleSnackBar('E-sign rejected by approver');
+          resetState();
         }
       } else {
-        handleEsignStatus();
+        setOpenModal(false);
+        onToggleSnackBar('E-sign approved by creater.', 200);
+        setTimeout(() => {
+          setApiData({
+            apiName: 'reprint-approve',
+            apiMethod: 'PATCH',
+            apiEndpoint: '/api/v1/reprint',
+          });
+          setOpenModal(true);
+        }, 1500);
       }
-      resetState();
     } catch (err) {
-      console.log(err);
+      console.log('Error in handle esign ', err);
+      onToggleSnackBar('Error to handle esign');
     }
   };
 
   return (
     <>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={{flex: 1}}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Appbar.Header>
           <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
@@ -348,7 +324,7 @@ function Reprint({ route }) {
               {/* <Text variant="titleMedium" style={styles.labelText}>Product</Text> */}
               <View style={styles.containerDropdownItem}>
                 <Dropdown
-                  style={[styles.dropdown, { borderColor: 'rgb(80, 189, 160)' }]}
+                  style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
                   placeholderStyle={styles.placeholderStyle}
                   selectedTextStyle={styles.selectedTextStyle}
                   inputSearchStyle={styles.inputSearchStyle}
@@ -380,7 +356,7 @@ function Reprint({ route }) {
               {/* <Text variant="titleMedium" style={styles.labelText}>Batch</Text> */}
               <View style={styles.containerDropdownItem}>
                 <Dropdown
-                  style={[styles.dropdown, { borderColor: 'rgb(80, 189, 160)' }]}
+                  style={[styles.dropdown, {borderColor: 'rgb(80, 189, 160)'}]}
                   placeholderStyle={styles.placeholderStyle}
                   selectedTextStyle={styles.selectedTextStyle}
                   inputSearchStyle={styles.inputSearchStyle}
@@ -396,7 +372,7 @@ function Reprint({ route }) {
                   onFocus={() => setIsFocusBatch(true)}
                   onBlur={() => setIsFocusBatch(false)}
                   onChange={item => {
-                    setSelectedBatch({ value: item.value, label: item.label });
+                    setSelectedBatch({value: item.value, label: item.label});
                     setIsFocusBatch(false);
                   }}
                   renderLeftIcon={() => (
@@ -456,7 +432,19 @@ function Reprint({ route }) {
                 <TouchableOpacity
                   style={styles.printbtn}
                   mode="contained"
-                  onPress={print}>
+                  onPress={() => {
+                    if (config.config.esign_status && !openModal) {
+                      setVisible(false);
+                      setOpenModal(true);
+                      setApiData({
+                        apiName: 'reprint-create',
+                        apiMethod: 'POST',
+                        apiEndpoint: '/api/v1/reprint',
+                      });
+                    } else {
+                      print();
+                    }
+                  }}>
                   <Text style={styles.btnText}>Reprint</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -473,12 +461,9 @@ function Reprint({ route }) {
           <EsignPage
             config={config}
             handleAuthResult={handleAuthResult}
-            approveAPIName={approveAPIName}
-            approveAPImethod={approveAPImethod}
-            approveAPIEndPoint={approveAPIEndPoint}
+            apiData={apiData}
             openModal={openModal}
             setOpenModal={setOpenModal}
-            setStatus={setStatus}
           />
         )}
         <Snackbar
