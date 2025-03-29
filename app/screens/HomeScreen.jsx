@@ -103,6 +103,12 @@ function HomeScreen() {
     console.log('Code Replace Called..');
     navigation.navigate('Code Replace');
   };
+
+  const handleTrackCodeBtn = () => {
+    console.log('Track code Btn pressed');
+    navigation.navigate('Track Code');
+  }
+
   const [screens, setScreens] = useState([
     {
       component: (
@@ -204,6 +210,26 @@ function HomeScreen() {
         </TouchableOpacity>
       ),
       name: 'Code Replace',
+    },
+    //Add btn
+    {
+      component: (
+        <TouchableOpacity
+          key={'6'}
+          mode="contained"
+          style={cssStyle.TouchableBtn}
+          onPress={handleTrackCodeBtn}>
+          <Text style={cssStyle.BtnIconStyle}>
+            <MaterialCommunityIcons
+              name="find-replace"
+              size={25}
+              style={{paddingRight: 60}}
+            />
+          </Text>
+          <Text style={cssStyle.btnGroupsText}>Track Code</Text>
+        </TouchableOpacity>
+      ),
+      name: 'Track Code',
     },
   ]);
 

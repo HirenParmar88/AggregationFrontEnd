@@ -22,6 +22,7 @@ import SettingScreen from './app/screens/Settings';
 import UrlScreen from './app/screens/UrlScreens';
 import {screenPrivileges} from './utils/screenPrivileges';
 import {useLoading} from './context/LoadingContext';
+import TrackCode from './app/screens/TrackCodeScreen';
 //import GetNetInfo from './app/components/NetInfo';
 
 const Stack = createNativeStackNavigator();
@@ -141,6 +142,7 @@ function App() {
       ),
       name: 'Code Replace',
     },
+  
     {
       component: (
         <Drawer.Screen
@@ -162,6 +164,28 @@ function App() {
       ),
       name: 'Settings',
     },
+    //Track Code Drawer Screen Registered
+    // {
+    //   component: (
+    //     <Drawer.Screen
+    //       key={'7'}
+    //       name="Track Code"
+    //       component={TrackCode}
+    //       initialParams={{setIsAuthenticated}}
+    //       options={{
+    //         headerShown: true,
+    //         drawerIcon: ({focused, size}) => (
+    //           <MaterialCommunityIcons
+    //             name="find-replace"
+    //             size={size}
+    //             color={focused ? '#000000' : '#000000'}
+    //           />
+    //         ),
+    //       }}
+    //     />
+    //   ),
+    //   name: 'Track Code',
+    // },
   ];
 
   useEffect(() => {
@@ -205,6 +229,22 @@ function App() {
                 />
               ),
             }}
+          />
+
+          {/* add track code navigation temporary */}
+          <Drawer.Screen
+          name="Track Code"
+          component={TrackCode}
+          options={{
+            headerShown: false,
+            drawerIcon: ({focused, size}) => (
+              <MaterialCommunityIcons
+                name="find-replace"
+                size={size}
+                color={focused ? '#000000' : '#000000'}
+              />
+            ),
+          }}
           />
 
           {screens.map(screen => screen.component)}
@@ -277,4 +317,5 @@ function App() {
     </NavigationContainer>
   );
 }
+
 export default App;
