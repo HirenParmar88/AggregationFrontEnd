@@ -76,6 +76,8 @@ const Login = ({route}) => {
   }, []);
 
   const handleLogin = async (forceFully = false) => {
+    console.log("Login Btn Press");
+    
     if (!userId) {
       onToggleSnackBar('Username cannot be Empty!');
       return;

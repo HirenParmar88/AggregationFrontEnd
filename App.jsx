@@ -238,8 +238,8 @@ function App() {
           options={{
             headerShown: false,
             drawerIcon: ({focused, size}) => (
-              <MaterialCommunityIcons
-                name="find-replace"
+              <MaterialIcons
+                name="share-location"
                 size={size}
                 color={focused ? '#000000' : '#000000'}
               />
