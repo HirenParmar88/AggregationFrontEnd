@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import HoneywellBarcodeReader from 'react-native-honeywell-datacollection';
 import { decodeAndSetConfig } from '../../utils/tokenUtils';
+import Feather from 'react-native-vector-icons/Feather';
 
 function TrackCode() {
   const navigation = useNavigation();
@@ -88,6 +89,7 @@ function TrackCode() {
       //console.log('Country code is ', countryCode);
       if (countryCode) {
         const uniqueCode = event.data;
+        //const uc = `00${uniqueCode}`
         console.log("scanned code :->", uniqueCode);
         if (uniqueCode) {
           setScanCode(uniqueCode);
@@ -112,7 +114,6 @@ function TrackCode() {
   const trackCode = async (barcodeData) => {
     console.log('Track Code API call..');
     console.log("barcodeData", barcodeData);
-
     try {
       console.log("current scan code:", scanCode);
 
@@ -139,9 +140,9 @@ function TrackCode() {
         })
         console.log(trackCodeRes.data.data.parentCode);
         console.log("trackCodes.parentCode", trackCodes.parentCode);
-
         return trackCodeRes.data;
       } else if (trackCodeRes.data.code) {
+        setTrackCodes('');
         console.log("400", trackCodeRes.data.message);
         onToggleSnackBar(trackCodeRes.data.message);
         return null;
@@ -154,7 +155,7 @@ function TrackCode() {
   };
 
   const handleSubmit = () => {
-    console.log('Track code submit pressed !!');
+    console.log('handleSubmit function call..');
     trackCode();
     if (!scanCode) {
       onToggleSnackBar('Please scan or enter sscc code or Level 1 code', 400);
@@ -191,7 +192,7 @@ function TrackCode() {
             <View style={styles.div1}>
               <Text style={styles.txtTitle}>Scan / Enter Code</Text>
               <TextInput
-                label="Scan / Enter sscc code"
+                label="Scan / Enter code"
                 value={scanCode}
                 mode="outlined"
                 onChangeText={text => setScanCode(text)}
@@ -202,20 +203,28 @@ function TrackCode() {
             <View style={styles.div2}>
               <View style={styles.childCodeContainer}>
                 <View style={styles.childCode}>
-                  <Text style={styles.childTxtHeading}>{trackCodes?.childCodes?.length} Child Codes:</Text>
+                  <Text style={styles.childTxtHeading}> Child Codes : [ {trackCodes?.childCodes?.length} ] </Text>
                 </View>
                 <View>
+                  <List.Section style={{ flexDirection: 'column-reverse' }}>
                   <FlatList
                     data={trackCodes.childCodes}
-                    renderItem={({ item }) => <Text style={styles.childCodesText}> {item} </Text>}
+                    renderItem={({ item }) => <List.Item
+                    //key={index}
+                    title={item}
+                    left={() => (
+                      <Feather name="package" size={25} style={{ paddingRight: 0 }} />
+                    )}
+                  />}
                     keyExtractor={({ item }) => item}
                     ListEmptyComponent={() => <Text style={{ fontSize: 16, fontWeight: 'bold' }}> - </Text>}
                   />
+                  </List.Section>
                 </View>
               </View>
               <View style={styles.parentCodeContainer}>
                 <View style={styles.parentCode}>
-                  <Text style={styles.parentTxt}>Parent Code:</Text>
+                  <Text style={styles.parentTxtHeading}>Parent Code:</Text>
                 </View>
                 <View style={styles.dynamicParentCode}>
                   <Text style={styles.parentTxt}>
@@ -254,9 +263,11 @@ const styles = StyleSheet.create({
   TrackCodeSubmitButton: {
     backgroundColor: 'rgb(80, 189, 160)',
     position: 'absolute', // Fix button to bottom
-    bottom: 0,
+    bottom: 7,
     left: 0,
     right: 0,
+    borderRadius:10,
+    marginHorizontal:5,
     //zIndex: 10, // Ensure button stays above scroll content
   },
   submitBtnText: {
@@ -282,7 +293,7 @@ const styles = StyleSheet.create({
     //backgroundColor:'red',
     marginHorizontal: 2,
     marginVertical: 5,
-    width:'100%'
+    width: '100%'
   },
   div2: {
     //backgroundColor: 'red',
@@ -303,11 +314,16 @@ const styles = StyleSheet.create({
   childTxtHeading: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 12,
+    marginBottom: 8,
+  },
+  parentTxtHeading: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
   parentTxt: {
     fontSize: 16,
-    fontWeight: 'bold',
+    //fontWeight: 'bold',
     marginBottom: 8,
     //backgroundColor:'red'
   },
@@ -316,7 +332,7 @@ const styles = StyleSheet.create({
     //fontWeight: 'bold',
     display: 'flex',
     flexDirection: 'row',
-    fontSize:16,
+    fontSize: 16,
   },
   dynamicParentCode: {
     //backgroundColor: '#f5f5f5',
