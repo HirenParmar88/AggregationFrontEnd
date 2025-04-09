@@ -1,6 +1,6 @@
 //app/components/HomeScreen/HomeScreen.tsx
 
-import React, {useState, useEffect, useContext} from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   ScrollView,
@@ -9,22 +9,24 @@ import {
   Dimensions,
   Platform,
 } from 'react-native';
-import {Card, Text} from 'react-native-paper';
+import { Card, Text } from 'react-native-paper';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import {useNavigation} from '@react-navigation/native';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
+import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {screenPrivileges} from '../../utils/screenPrivileges';
+import { screenPrivileges } from '../../utils/screenPrivileges';
 //import styles from '../../styles/home';
 
 function HomeScreen() {
   const navigation = useNavigation();
   const [backendUrl, setBackendUrl] = useState(null);
-  const {width, height} = Dimensions.get('window');
+
+  const { width, height } = Dimensions.get('window');
   const screenDimensions = Dimensions.get('screen');
-  // console.log(width, height, 'height and weight');
-  // console.log('screenDimensions', screenDimensions);
-  
+  console.log(width, height, 'height and weight');
+  console.log('screenDimensions', screenDimensions);
+
   const [cssStyle, setCssStyle] = useState({
     imageView: {
       marginLeft: width * 0.05, // 5% of screen width
@@ -35,14 +37,6 @@ function HomeScreen() {
       marginLeft: width * 0.15, // Center the image horizontally
       marginTop: height * 0.01,
     },
-    btnGroups: {
-      // marginBottom: height * 0.05,
-      marginTop: height * 0.02,
-      marginRight: width * 0.15, // 15% margin on the right
-      marginLeft: width * 0.15, // 15% margin on the leftw
-      borderRadius: 0,
-      // backgroundColor:'yellow',
-    },
     headerTxt: {
       textAlign: 'center',
       fontSize: width * 0.05, // font size based on screen width
@@ -50,22 +44,42 @@ function HomeScreen() {
     },
     container: {
       flex: 1,
+      //backgroundColor: 'lightblue',
+      borderRadius: 20,
+      justifyContent: 'center'
       // display:'grid',
       // alignitems:'end',
     },
+
+    btnGroups: {
+      // marginBottom: height * 0.05,
+      marginTop: height * 0.02,
+      marginRight: width * 0.00, // 15% margin on the right
+      marginLeft: width * 0.00, // 15% margin on the leftw
+      //backgroundColor: 'yellow',
+      borderRadius: 30,
+      flexWrap: 'wrap',
+      height: height * 0.30,
+      justifyContent:'center'
+    },
     TouchableBtn: {
-      padding: width * 0.02, // Padding based on width
+      padding: width * 0.05, // Padding based on width
       flexDirection: 'row',
       backgroundColor: 'rgb(80, 189, 160)',
-      marginBottom: height * 0.015, // marginBottom based on screen height
-      borderRadius: 4,
+      //marginBottom: height * 0.015, // marginBottom based on screen height
+      borderRadius: 5,
+      margin: width * 0.02,
+      justifyContent: 'center',
+      width: width * 0.5,
     },
     BtnIconStyle: {
       // paddingRight:30,
-      paddingLeft: width * 0.1, // Padding left based on width
+      paddingLeft: width * 0.0, // Padding left based on width
       color: 'white',
       paddingTop: 1,
       flexDirection: 'row',
+      //backgroundColor:'red',
+      marginRight: 10,
     },
     btnGroupsText: {
       color: 'white',
@@ -109,6 +123,7 @@ function HomeScreen() {
     navigation.navigate('Track Code');
   }
 
+
   const [screens, setScreens] = useState([
     {
       component: (
@@ -123,7 +138,7 @@ function HomeScreen() {
               name="boxes"
               size={25}
               paddingRight={60}
-              style={{paddingRight: 20}}
+              style={{ paddingRight: 20 }}
             />
           </Text>
           <Text style={cssStyle.btnGroupsText}>Aggregation</Text>
@@ -143,7 +158,7 @@ function HomeScreen() {
             <MaterialCommunityIcons
               name="alert-box"
               size={25}
-              style={{paddingRight: 60}}
+              style={{ paddingRight: 60 }}
             />
           </Text>
           <Text style={cssStyle.btnGroupsText}>Dropout</Text>
@@ -163,7 +178,7 @@ function HomeScreen() {
             <MaterialCommunityIcons
               name="cloud-print"
               size={25}
-              style={{paddingRight: 60}}
+              style={{ paddingRight: 60 }}
             />
           </Text>
           <Text style={cssStyle.btnGroupsText}>Reprint</Text>
@@ -183,7 +198,7 @@ function HomeScreen() {
             <FontAwesome5
               name="map-marked-alt"
               size={25}
-              style={{paddingRight: 60}}
+              style={{ paddingRight: 60 }}
             />
           </Text>
           <Text style={cssStyle.btnGroupsText}>Remap</Text>
@@ -203,7 +218,7 @@ function HomeScreen() {
             <MaterialCommunityIcons
               name="find-replace"
               size={25}
-              style={{paddingRight: 60}}
+              style={{ paddingRight: 60 }}
             />
           </Text>
           <Text style={cssStyle.btnGroupsText}>Code Replace</Text>
@@ -211,27 +226,9 @@ function HomeScreen() {
       ),
       name: 'Code Replace',
     },
-    //Add btn
-    {
-      component: (
-        <TouchableOpacity
-          key={'6'}
-          mode="contained"
-          style={cssStyle.TouchableBtn}
-          onPress={handleTrackCodeBtn}>
-          <Text style={cssStyle.BtnIconStyle}>
-            <MaterialCommunityIcons
-              name="find-replace"
-              size={25}
-              style={{paddingRight: 60}}
-            />
-          </Text>
-          <Text style={cssStyle.btnGroupsText}>Track Code</Text>
-        </TouchableOpacity>
-      ),
-      name: 'Track Code',
-    },
   ]);
+
+  console.log("Registered Home screens :->", screens);
 
   useEffect(() => {
     console.log('user entered backendUrl :', backendUrl);
@@ -257,70 +254,14 @@ function HomeScreen() {
     loadURL();
   }, []);
   console.log('Home Page URL :', backendUrl);
-
-  // const imageView = {
-  //   marginLeft: width * 0.05, // 5% of screen width
-  // };
-  // const img = {
-  //   height: width * 0.6, // 60% of screen width for responsiveness
-  //   width: width * 0.6, // Maintain square aspect ratio
-  //   marginLeft: width * 0.15, // Center the image horizontally
-  //   marginTop: height * 0.01,
-  // };
-  // const btnGroups = {
-  //   // marginBottom: height * 0.05,
-  //   marginTop: height * 0.02,
-  //   marginRight: width * 0.15, // 15% margin on the right
-  //   marginLeft: width * 0.15, // 15% margin on the leftw
-  //   borderRadius: 0,
-  //   // backgroundColor:'yellow',
-  // };
-  // const headerTxt = {
-  //   textAlign: 'center',
-  //   fontSize: width * 0.05, // font size based on screen width
-  //   fontWeight: 'bold',
-  // };
-  // const container = {
-  //   flex: 1,
-  //   // display:'grid',
-  //   // alignitems:'end',
-  // };
-  // const TouchableBtn = {
-  //   padding: width * 0.02, // Padding based on width
-  //   flexDirection: 'row',
-  //   backgroundColor: 'rgb(80, 189, 160)',
-  //   marginBottom: height * 0.015, // marginBottom based on screen height
-  //   borderRadius: 4,
-  // };
-  // const BtnIconStyle = {
-  //   // paddingRight:30,
-  //   paddingLeft: width * 0.1, // Padding left based on width
-  //   color: 'white',
-  //   paddingTop: 1,
-  //   flexDirection: 'row',
-  // };
-  // const btnGroupsText = {
-  //   color: 'white',
-  //   fontSize: width * 0.04, // font size based on width
-  //   // paddingLeft: 24,
-  //   textTransform: 'uppercase',
-  //   paddingTop: 3,
-  //   justifyContent: 'flex-start',
-  //   textAlign: 'center',
-  //   flex: 1,
-  // };
-  // const textGroups = {
-  //   // marginTop: 258,
-  //   marginTop: height * 0.02, // Adjusting margin top based on height
-  //   // backgroundColor:'red',
-  // };
   console.log(cssStyle.img);
+
   return (
     <>
       <View style={cssStyle.container}>
         {/* <View>
           <Text>Back-End URL : {backendUrl}</Text>
-        </View> */}
+          </View> */}
         <View style={cssStyle.imageView}>
           <Image
             source={require('../../assets/images/Aggregation.png')}
@@ -329,12 +270,12 @@ function HomeScreen() {
         </View>
         {/* <View>
             <Card style={styles.card}>
-              <Card.Cover
-                source={require('../../assets/images/Aggregation.png')}
-                style={styles.img}
-              />
+            <Card.Cover
+            source={require('../../assets/images/Aggregation.png')}
+            style={styles.img}
+            />
             </Card>
-          </View> */}
+            </View> */}
         <View style={cssStyle.textGroups}>
           <Text style={cssStyle.headerTxt}>Welcome to Inspecta-Trace</Text>
           <Text style={cssStyle.headerTxt}>
@@ -342,9 +283,28 @@ function HomeScreen() {
           </Text>
         </View>
 
-        <View style={cssStyle.btnGroups}>
-          {screens?.map(screen => screen.component)}
+        <View>
+          <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
+            <View style={cssStyle.btnGroups}>
+              {screens?.map(screen => screen.component)}
+              <TouchableOpacity
+                key={'6'}
+                mode="contained"
+                style={cssStyle.TouchableBtn}
+                onPress={handleTrackCodeBtn}>
+                <Text style={cssStyle.BtnIconStyle}>
+                  <MaterialIcons
+                    name="share-location"
+                    size={25}
+                    style={{ paddingRight: 60 }}
+                  />
+                </Text>
+                <Text style={cssStyle.btnGroupsText}>Track Code</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
         </View>
+
       </View>
     </>
   );

@@ -43,11 +43,13 @@ function App() {
           initialParams={{setIsAuthenticated}}
           options={{
             headerShown: true,
+            drawerActiveBackgroundColor:'rgb(80, 189, 160)',
+            drawerActiveTintColor:'#fff',
             drawerIcon: ({focused, size}) => (
               <FontAwesome5
                 name="boxes"
                 size={size}
-                color={focused ? '#000000' : '#000000'}
+                color={focused ? '#fff' : '#000000'}
               />
             ),
           }}
@@ -64,6 +66,8 @@ function App() {
           initialParams={{setIsAuthenticated}}
           options={{
             headerShown: false,
+            drawerActiveBackgroundColor:'rgb(80, 189, 160)',
+            drawerActiveTintColor:'#fff',
             //drawerLabel:()=>null,
             //title: null,
             //drawerIcon: () => null,
@@ -71,7 +75,7 @@ function App() {
               <MaterialCommunityIcons
                 name="alert-box"
                 size={size}
-                color={focused ? '#000000' : '#000000'}
+                color={focused ? '#fff' : '#000000'}
               />
             ),
           }}
@@ -88,11 +92,13 @@ function App() {
           initialParams={{setIsAuthenticated}}
           options={{
             headerShown: false,
+            drawerActiveBackgroundColor:'rgb(80, 189, 160)',
+            drawerActiveTintColor:'#fff',
             drawerIcon: ({focused, size}) => (
               <MaterialCommunityIcons
                 name="cloud-print"
                 size={size}
-                color={focused ? '#000000' : '#000000'}
+                color={focused ? '#fff' : '#000000'}
               />
             ),
           }}
@@ -109,11 +115,13 @@ function App() {
           initialParams={{setIsAuthenticated}}
           options={{
             headerShown: false,
+            drawerActiveBackgroundColor:'rgb(80, 189, 160)',
+            drawerActiveTintColor:'#fff',
             drawerIcon: ({focused, size}) => (
               <FontAwesome5
                 name="map-marked-alt"
                 size={size}
-                color={focused ? '#000000' : '#000000'}
+                color={focused ? '#fff' : '#000000'}
               />
             ),
           }}
@@ -130,11 +138,13 @@ function App() {
           initialParams={{setIsAuthenticated}}
           options={{
             headerShown: false,
+            drawerActiveBackgroundColor:'rgb(80, 189, 160)',
+            drawerActiveTintColor:'#fff',
             drawerIcon: ({focused, size}) => (
               <MaterialCommunityIcons
                 name="find-replace"
                 size={size}
-                color={focused ? '#000000' : '#000000'}
+                color={focused ? '#fff' : '#000000'}
               />
             ),
           }}
@@ -152,11 +162,13 @@ function App() {
           initialParams={{setIsAuthenticated}}
           options={{
             headerShown: false,
+            drawerActiveBackgroundColor:'rgb(80, 189, 160)',
+            drawerActiveTintColor:'#fff',
             drawerIcon: ({focused, size}) => (
               <MaterialIcons
                 name="settings"
                 size={size}
-                color={focused ? '#000000' : '#000000'}
+                color={focused ? '#fff' : '#000000'}
               />
             ),
           }}
@@ -164,28 +176,30 @@ function App() {
       ),
       name: 'Settings',
     },
-    //Track Code Drawer Screen Registered
-    // {
-    //   component: (
-    //     <Drawer.Screen
-    //       key={'7'}
-    //       name="Track Code"
-    //       component={TrackCode}
-    //       initialParams={{setIsAuthenticated}}
-    //       options={{
-    //         headerShown: true,
-    //         drawerIcon: ({focused, size}) => (
-    //           <MaterialCommunityIcons
-    //             name="find-replace"
-    //             size={size}
-    //             color={focused ? '#000000' : '#000000'}
-    //           />
-    //         ),
-    //       }}
-    //     />
-    //   ),
-    //   name: 'Track Code',
-    // },
+    // Track Code Drawer Screen Registered
+    {
+      component: (
+        <Drawer.Screen
+          key={'7'}
+          name="Track Code"
+          component={TrackCode}
+          initialParams={{setIsAuthenticated}}
+          options={{
+            headerShown: true,
+            drawerActiveBackgroundColor:'rgb(80, 189, 160)',
+            drawerActiveTintColor:'#fff',
+            drawerIcon: ({focused, size}) => (
+              <MaterialIcons
+                name="share-location"
+                size={size}
+                color={focused ? '#fff' : '#000000'}
+              />
+            ),
+          }}
+        />
+      ),
+      name: 'Track Code',
+    },
   ];
 
   useEffect(() => {
@@ -221,34 +235,37 @@ function App() {
             name="Home"
             component={HomeScreen}
             options={{
+              drawerActiveBackgroundColor:'rgb(80, 189, 160)',
+              drawerActiveTintColor:'#fff',
               drawerIcon: ({focused, size}) => (
                 <AntDesign
                   name="home"
+                  size={size}
+                  color={focused ? '#fff' : '#000000'}
+                />
+              ),
+            }}
+          />
+
+          {screens.map(screen => screen.component)}
+
+          {/* add track code menu option temporary */}
+          <Drawer.Screen
+            name="Track Code"
+            component={TrackCode}
+            options={{
+              headerShown: false,
+              drawerActiveBackgroundColor:'rgb(80, 189, 160)',
+              drawerActiveTintColor:'#fff',
+              drawerIcon: ({focused, size}) => (
+               <MaterialIcons
+                  name="share-location"
                   size={size}
                   color={focused ? '#000000' : '#000000'}
                 />
               ),
             }}
           />
-
-          {/* add track code navigation temporary */}
-          <Drawer.Screen
-          name="Track Code"
-          component={TrackCode}
-          options={{
-            headerShown: false,
-            drawerIcon: ({focused, size}) => (
-              <MaterialIcons
-                name="share-location"
-                size={size}
-                color={focused ? '#000000' : '#000000'}
-              />
-            ),
-          }}
-          />
-
-          {screens.map(screen => screen.component)}
-
           <Drawer.Screen
             name="ScanList"
             component={ScanList}
@@ -288,6 +305,8 @@ function App() {
             options={{
               drawerLabel: 'Logout',
               headerShown: false,
+              drawerActiveBackgroundColor:'rgb(80, 189, 160)',
+              drawerActiveTintColor:'#fff',
               drawerIcon: ({focused, size}) => (
                 <MaterialIcons
                   name="logout"

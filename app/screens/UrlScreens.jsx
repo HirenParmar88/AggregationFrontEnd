@@ -1,8 +1,8 @@
-import React, {useState} from 'react';
-import {Text, View, TouchableOpacity, Alert, ScrollView} from 'react-native';
-import {TextInput, Snackbar} from 'react-native-paper';
+import React, { useState } from 'react';
+import { Text, View, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { TextInput, Snackbar } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useNavigation} from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import styles from '../../styles/urlscreen';
 
 function UrlScreen() {
@@ -14,7 +14,7 @@ function UrlScreen() {
   });
 
   const onDismissSnackBar = () =>
-    setSnackbarInfo({visible: false, message: ''});
+    setSnackbarInfo({ visible: false, message: '' });
 
   const onToggleSnackBar = (message, code) => {
     const backgroundColor =
@@ -23,10 +23,10 @@ function UrlScreen() {
     setSnackbarInfo({
       visible: true,
       message,
-      snackbarStyle: {backgroundColor},
+      snackbarStyle: { backgroundColor },
     });
   };
-  
+
   const handleNextBtn = async () => {
     if (!text) {
       onToggleSnackBar('Please enter Dynamic Backend Url !');
@@ -61,8 +61,8 @@ function UrlScreen() {
 
   return (
     <>
-      <ScrollView>
-        <View style={styles.container}>
+      <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
           <View style={styles.textbox}>
             <TextInput
               mode="outlined"
@@ -73,18 +73,15 @@ function UrlScreen() {
               onChangeText={setText}
             />
           </View>
-        </View>
-        <View>
-          <Text>{setText}</Text>
-        </View>
-      </ScrollView>
-      <TouchableOpacity
-        style={styles.TouchableBtn}
-        labelStyle={{fontSize: 15}}
-        mode="contained"
-        onPress={handleNextBtn}>
-        <Text style={styles.btnGroupsText}>Next</Text>
-      </TouchableOpacity>
+        </ScrollView>
+        <TouchableOpacity
+          style={styles.TouchableBtn}
+          labelStyle={{ fontSize: 15 }}
+          mode="contained"
+          onPress={handleNextBtn}>
+          <Text style={styles.btnGroupsText}>Next</Text>
+        </TouchableOpacity>
+      </View>
 
       <Snackbar
         visible={snackbarInfo.visible}
@@ -97,4 +94,5 @@ function UrlScreen() {
     </>
   );
 }
+
 export default UrlScreen;
