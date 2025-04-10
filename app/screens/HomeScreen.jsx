@@ -1,6 +1,6 @@
 //app/components/HomeScreen/HomeScreen.tsx
 
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -9,14 +9,13 @@ import {
   Dimensions,
   Platform,
 } from 'react-native';
-import { Card, Text } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { screenPrivileges } from '../../utils/screenPrivileges';
-//import styles from '../../styles/home';
 
 function HomeScreen() {
   const navigation = useNavigation();
@@ -35,70 +34,51 @@ function HomeScreen() {
       height: width * 0.6, // 60% of screen width for responsiveness
       width: width * 0.6, // Maintain square aspect ratio
       marginLeft: width * 0.15, // Center the image horizontally
-      marginTop: height * 0.01,
+      marginTop: height * 0.01
     },
     headerTxt: {
       textAlign: 'center',
       fontSize: width * 0.05, // font size based on screen width
-      fontWeight: 'bold',
+      fontWeight: 'bold'
     },
     container: {
       flex: 1,
-      //backgroundColor: 'lightblue',
-      borderRadius: 20,
+      backgroundColor: '#fff',
       justifyContent: 'center'
-      // display:'grid',
-      // alignitems:'end',
     },
-
     btnGroups: {
-      // marginBottom: height * 0.05,
-      marginTop: height * 0.02,
-      marginRight: width * 0.00, // 15% margin on the right
-      marginLeft: width * 0.00, // 15% margin on the leftw
       //backgroundColor: 'yellow',
-      borderRadius: 30,
+      marginTop: height * 0.06,
+      marginRight: width * 0.00, // 15% margin on the right
+      marginLeft: width * 0.02, // 15% margin on the leftw
       flexWrap: 'wrap',
-      height: height * 0.30,
-      justifyContent:'center'
+      height: height * 0.21,
+      justifyContent: 'center'
     },
     TouchableBtn: {
-      padding: width * 0.05, // Padding based on width
+      padding: width * 0.04, // Padding based on width
       flexDirection: 'row',
       backgroundColor: 'rgb(80, 189, 160)',
-      //marginBottom: height * 0.015, // marginBottom based on screen height
       borderRadius: 5,
-      margin: width * 0.02,
-      justifyContent: 'center',
-      width: width * 0.5,
+      margin: width * 0.01,
+      width: width * 0.44,
     },
     BtnIconStyle: {
-      // paddingRight:30,
-      paddingLeft: width * 0.0, // Padding left based on width
-      color: 'white',
-      paddingTop: 1,
-      flexDirection: 'row',
-      //backgroundColor:'red',
-      marginRight: 10,
+      color: '#fff',
     },
     btnGroupsText: {
-      color: 'white',
+      color: '#fff',
       fontSize: width * 0.04, // font size based on width
-      // paddingLeft: 24,
       textTransform: 'uppercase',
-      paddingTop: 3,
-      justifyContent: 'flex-start',
+      paddingTop: 2,
       textAlign: 'center',
       flex: 1,
     },
     textGroups: {
-      // marginTop: 258,
-      marginTop: height * 0.02, // Adjusting margin top based on height
-      // backgroundColor:'red',
+      marginTop: height * 0.03,
     },
   });
   const handleAggregationBtn = () => {
-    //console.log("Aggregation Btn Called..");
     navigation.navigate('Aggregation');
   };
   const handleDropoutBtn = () => {
@@ -117,12 +97,10 @@ function HomeScreen() {
     console.log('Code Replace Called..');
     navigation.navigate('Code Replace');
   };
-
   const handleTrackCodeBtn = () => {
     console.log('Track code Btn pressed');
     navigation.navigate('Track Code');
   }
-
 
   const [screens, setScreens] = useState([
     {
@@ -229,11 +207,9 @@ function HomeScreen() {
   ]);
 
   console.log("Registered Home screens :->", screens);
-
   useEffect(() => {
     console.log('user entered backendUrl :', backendUrl);
     (async () => setScreens(await screenPrivileges(screens)))();
-    // setCssStyle()
   }, []);
 
   //Back End URL get this page using Async Storage
@@ -259,23 +235,12 @@ function HomeScreen() {
   return (
     <>
       <View style={cssStyle.container}>
-        {/* <View>
-          <Text>Back-End URL : {backendUrl}</Text>
-          </View> */}
         <View style={cssStyle.imageView}>
           <Image
             source={require('../../assets/images/Aggregation.png')}
             style={cssStyle.img}
           />
         </View>
-        {/* <View>
-            <Card style={styles.card}>
-            <Card.Cover
-            source={require('../../assets/images/Aggregation.png')}
-            style={styles.img}
-            />
-            </Card>
-            </View> */}
         <View style={cssStyle.textGroups}>
           <Text style={cssStyle.headerTxt}>Welcome to Inspecta-Trace</Text>
           <Text style={cssStyle.headerTxt}>

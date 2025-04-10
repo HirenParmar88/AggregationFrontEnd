@@ -50,7 +50,6 @@ function TrackCode() {
     setSnackbarInfo({ visible: false, message: '' });
 
   console.log("config :->", config);
-
   useEffect(() => {
     const loadTokenAndData = async () => {
       try {
@@ -69,7 +68,6 @@ function TrackCode() {
       }
     };
     loadTokenAndData();
-
     const unsubscribe = navigation.addListener('blur', () => {
       setScanCode('');
     });
@@ -84,12 +82,9 @@ function TrackCode() {
       );
     });
     HoneywellBarcodeReader.onBarcodeReadSuccess(async event => {
-      //console.log('Current Scanned data :', event.data);
       const countryCode = event.data;
-      //console.log('Country code is ', countryCode);
       if (countryCode) {
         const uniqueCode = event.data;
-        //const uc = `00${uniqueCode}`
         console.log("scanned code :->", uniqueCode);
         if (uniqueCode) {
           setScanCode(uniqueCode);
@@ -115,13 +110,10 @@ function TrackCode() {
     console.log('Track Code API call..');
     console.log("barcodeData", barcodeData);
     try {
-      console.log("current scan code:", scanCode);
-
       const backendUrl = await AsyncStorage.getItem("BackendUrl")
       console.log("backendUrl :->", backendUrl);
       console.log("scanCode :->", scanCode);
       console.log("token :->", token);
-
       const trackCodeRes = await axios.get(`${backendUrl}/track-code/${scanCode}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -130,7 +122,6 @@ function TrackCode() {
       });
       console.log('track code GET APIs Res:', trackCodeRes.data);
       if (trackCodeRes.data.code === 200 && trackCodeRes.data.success === true) {
-        //setScanCode('');
         onToggleSnackBar(trackCodeRes.data.message, 200);
         console.log("200", trackCodeRes.data.message);
         console.log(trackCodeRes.data.data.childCode);
@@ -168,20 +159,18 @@ function TrackCode() {
     Keyboard.dismiss();
   };
 
-  console.log("scanCode ", scanCode);
-  console.log("scanCode?.toString()", scanCode?.toString());
-
   return (
     <>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <Appbar.Header>
-          <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
-          <Appbar.Content title="Track code" />
-        </Appbar.Header>
+      <View style={styles.mainContainer}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 
-        <View style={styles.mainContainer}>
+          <Appbar.Header style={{ backgroundColor: '#fff', elevation: 4, }}>
+            <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
+            <Appbar.Content title="Track code" />
+          </Appbar.Header>
+
           <ScrollView
             contentContainerStyle={styles.container}
             showsVerticalScrollIndicator={false} // Hide vertical scrollbar
@@ -207,18 +196,17 @@ function TrackCode() {
                 </View>
                 <View>
                   <List.Section style={{ flexDirection: 'column-reverse' }}>
-                  <FlatList
-                    data={trackCodes.childCodes}
-                    renderItem={({ item }) => <List.Item
-                    //key={index}
-                    title={item}
-                    left={() => (
-                      <Feather name="package" size={25} style={{ paddingRight: 0 }} />
-                    )}
-                  />}
-                    keyExtractor={({ item }) => item}
-                    ListEmptyComponent={() => <Text style={{ fontSize: 16, fontWeight: 'bold' }}> - </Text>}
-                  />
+                    <FlatList
+                      data={trackCodes.childCodes}
+                      renderItem={({ item }) => <List.Item
+                        title={item}
+                        left={() => (
+                          <Feather name="package" size={25} style={{ paddingRight: 0 }} />
+                        )}
+                      />}
+                      keyExtractor={({ item }) => item}
+                      ListEmptyComponent={() => <Text style={{ fontSize: 16, fontWeight: 'bold' }}> - </Text>}
+                    />
                   </List.Section>
                 </View>
               </View>
@@ -234,23 +222,22 @@ function TrackCode() {
               </View>
             </View>
           </ScrollView>
-        </View>
-        <TouchableOpacity
-          mode="contained"
-          //labelStyle={{ fontSize: 20 }}
-          style={styles.TrackCodeSubmitButton}
-          onPress={handleSubmit}>
-          <Text style={styles.submitBtnText}>Submit</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            mode="contained"
+            style={styles.TrackCodeSubmitButton}
+            onPress={handleSubmit}>
+            <Text style={styles.submitBtnText}>Submit</Text>
+          </TouchableOpacity>
 
-        <Snackbar
-          visible={snackbarInfo.visible}
-          onDismiss={onDismissSnackBar}
-          duration={3000}
-          style={[styles.snackbar, snackbarInfo.snackbarStyle]}>
-          {snackbarInfo.message}
-        </Snackbar>
-      </KeyboardAvoidingView>
+          <Snackbar
+            visible={snackbarInfo.visible}
+            onDismiss={onDismissSnackBar}
+            duration={3000}
+            style={[styles.snackbar, snackbarInfo.snackbarStyle]}>
+            {snackbarInfo.message}
+          </Snackbar>
+        </KeyboardAvoidingView>
+      </View>
     </>
   );
 }
@@ -259,6 +246,7 @@ export default TrackCode;
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   TrackCodeSubmitButton: {
     backgroundColor: 'rgb(80, 189, 160)',
@@ -266,9 +254,8 @@ const styles = StyleSheet.create({
     bottom: 7,
     left: 0,
     right: 0,
-    borderRadius:10,
-    marginHorizontal:5,
-    //zIndex: 10, // Ensure button stays above scroll content
+    borderRadius: 10,
+    marginHorizontal: 7,
   },
   submitBtnText: {
     textAlign: 'center',
@@ -278,11 +265,6 @@ const styles = StyleSheet.create({
   },
   div1: {
     paddingTop: 5,
-    //borderBottomColor: '#b2b2b2',
-    //backgroundColor:'red',
-    // borderBottomWidth: 2,
-    //width:'100%',
-    //maxWidth:'100%',
   },
   txtTitle: {
     fontSize: 16,
@@ -290,20 +272,18 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   textInput: {
-    //backgroundColor:'red',
+    backgroundColor: '#fff',
     marginHorizontal: 2,
     marginVertical: 5,
     width: '100%'
   },
   div2: {
-    //backgroundColor: 'red',
-    //borderRadius:10,
     flex: 1,
-    paddingBottom: 80, // Space for absolute button
+    paddingBottom: 80,
   },
   container: {
     flexGrow: 1,
-    paddingHorizontal: 16, // Consistent horizontal padding
+    paddingHorizontal: 16,
   },
   childCodeContainer: {
     marginVertical: 16,
@@ -323,30 +303,25 @@ const styles = StyleSheet.create({
   },
   parentTxt: {
     fontSize: 16,
-    //fontWeight: 'bold',
     marginBottom: 8,
-    //backgroundColor:'red'
   },
   childCodesText: {
-    //backgroundColor:"yellow",
-    //fontWeight: 'bold',
     display: 'flex',
     flexDirection: 'row',
     fontSize: 16,
   },
   dynamicParentCode: {
-    //backgroundColor: '#f5f5f5',
     padding: 10,
     borderRadius: 4,
-    minHeight: 60, // Ensure minimum height for empty state
+    minHeight: 60,
   },
   snackbar: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 12,
     left: 0,
     right: 0,
     paddingHorizontal: 10,
     borderRadius: 2,
-    marginBottom: 70, // Extra space from the bottom if needed
+    marginBottom: 70,
   },
 });

@@ -1,5 +1,5 @@
 'use client';
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect } from 'react';
 import {
   AppState,
   ScrollView,
@@ -30,7 +30,6 @@ import DeviceInfo from 'react-native-device-info';
 import {decodeAndSetConfig} from '../../utils/tokenUtils';
 import styles from '../../styles/scanlist';
 import {useLoading} from '../../context/LoadingContext';
-import { useFocusEffect } from '@react-navigation/native';
 
 function ScanList({route}) {
   const navigation = useNavigation();
@@ -123,7 +122,6 @@ function ScanList({route}) {
 
   const onToggleSnackBar = (message, code=500) => {
     const backgroundColor = code !== 200 ? colors.error : colors.primary;
-
     setSnackbarInfo({
       visible: true,
       message,
@@ -407,9 +405,9 @@ function ScanList({route}) {
   return (
     <>
       <KeyboardAvoidingView
-        style={{flex: 1}}
+        style={{flex: 1, backgroundColor:'#fff'}}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <Appbar.Header>
+        <Appbar.Header style={{backgroundColor:'#fff', elevation:50}}>
           <Appbar.BackAction
             onPress={() => navigation.navigate('Aggregation')}
           />

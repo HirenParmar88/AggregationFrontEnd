@@ -2,16 +2,18 @@ import { StyleSheet } from "react-native";
 const styles = StyleSheet.create({
     container: {
       flex: 1,
-      //backgroundColor: 'yellow',
+      backgroundColor: '#fff',
       //position:'relative',
     },
     textInputIP: {
       margin: 18,
       width: 144,
+      backgroundColor:'#fff'
     },
     textInputPort: {
       margin: 18,
       width: 144,
+       backgroundColor:'#fff'
     },
     textInputVariables: {
       margin: 18,

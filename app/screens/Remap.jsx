@@ -53,10 +53,10 @@ function RemapScreen({ route }) {
   const [openModal, setOpenModal] = useState(false);
   const { colors } = useTheme();
   const [apiData, setApiData] = useState({
-      apiName: null,
-      apiMethod: null,
-      apiEndpoint: null,
-    });
+    apiName: null,
+    apiMethod: null,
+    apiEndpoint: null,
+  });
   const [snackbarInfo, setSnackbarInfo] = useState({
     visible: false,
     message: '',
@@ -64,7 +64,7 @@ function RemapScreen({ route }) {
   });
   const { setIsAuthenticated } = route.params;
 
-  const onToggleSnackBar = (message, code=500) => {
+  const onToggleSnackBar = (message, code = 500) => {
     const backgroundColor = code !== 200 ? colors.error : colors.primary;
 
     setSnackbarInfo({
@@ -184,11 +184,10 @@ function RemapScreen({ route }) {
 
   const getUniqueCode = (url, format) => {
     const formatParts = format.split('/').length > 1 ? format.split('/') : format.split(' ');
-    const trimFormat = formatParts.map(i=> i.trim());
+    const trimFormat = formatParts.map(i => i.trim());
     const inputParts = url.split('/')?.length > 1 ? url.split('/') : url;
     const uniqueCodeIndex = trimFormat.indexOf('uniqueCode');
-    const uniqueCode = format.split('/').length > 1 ? Array.isArray(inputParts) ? inputParts[uniqueCodeIndex] : inputParts: inputParts[0].slice(-15);
-    // console.log({ formatParts, trimFormat, inputParts, uniqueCodeIndex, uniqueCode });
+    const uniqueCode = format.split('/').length > 1 ? Array.isArray(inputParts) ? inputParts[uniqueCodeIndex] : inputParts : inputParts[0].slice(-15);
     return uniqueCode;
   };
 
@@ -253,7 +252,6 @@ function RemapScreen({ route }) {
     setVisible(true);
   };
 
-
   const handleRemap = async () => {
     console.log('Remap success.');
     const backendUrl = await AsyncStorage.getItem("BackendUrl")
@@ -306,7 +304,7 @@ function RemapScreen({ route }) {
 
     try {
       const resetState = () => {
-        setApiData({apiName: null, apiMethod: null, apiEndpoint: null});
+        setApiData({ apiName: null, apiMethod: null, apiEndpoint: null });
         setOpenModal(false);
       };
       if (!isAuthenticated && config.esignStatus) {
@@ -344,9 +342,9 @@ function RemapScreen({ route }) {
   return (
     <>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={{ flex: 1, backgroundColor: '#fff' }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <Appbar.Header>
+        <Appbar.Header style={{ backgroundColor: '#fff', elevation: 4 }}>
           <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
           <Appbar.Content title="Remap" />
         </Appbar.Header>
@@ -478,11 +476,11 @@ function RemapScreen({ route }) {
                 <TouchableOpacity
                   style={styles.printbtn}
                   mode="contained"
-                  onPress={()=> {
+                  onPress={() => {
                     if (config.config.esign_status && !openModal) {
                       setVisible(false);
                       setOpenModal(true);
-                      setApiData({ apiName: 'code-remap-create', apiMethod: 'POST', apiEndpoint: '/api/v1/code-remap'})
+                      setApiData({ apiName: 'code-remap-create', apiMethod: 'POST', apiEndpoint: '/api/v1/code-remap' })
                       return;
                     } else {
                       console.log('Remap pressed..');
@@ -521,4 +519,5 @@ function RemapScreen({ route }) {
     </>
   );
 }
+
 export default RemapScreen;

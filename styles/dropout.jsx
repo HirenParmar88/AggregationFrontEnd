@@ -45,6 +45,9 @@ const styles = StyleSheet.create({
       fontSize: 18,
     },
     btn: {
+      bottom:6,
+      borderRadius: 6,
+      marginHorizontal:8,
       padding: 20,
       backgroundColor: 'rgb(80, 189, 160)',
     },
@@ -167,7 +170,7 @@ const styles = StyleSheet.create({
     },
     snackbar: {
       position: 'absolute',
-      bottom: 20,
+      bottom: 30,
       left: 0,
       right: 0,
       paddingHorizontal: 10,

@@ -219,7 +219,7 @@ function AggregationComponent({ route }) {
           style={styles.img}
         />
       </View>
-      <View>
+      <View style={styles.txtGroup}>
         <Text style={styles.txt1}>Ready To Start Aggregation?</Text>
         <Text style={styles.txt1}>
           Select Your Product & Batch to Continue.

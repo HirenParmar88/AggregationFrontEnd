@@ -4,7 +4,6 @@ const styles = StyleSheet.create({
       flex: 1,
     },
     loadingContainer: {
-      //flex: 1,
       textAlign: 'center',
       display: 'flex',
       justifyContent: 'center',
@@ -53,6 +52,7 @@ const styles = StyleSheet.create({
     },
     textInput: {
       margin: 18,
+      backgroundColor:'#fff'
     },
     txtInputStyle: {
       marginTop: 0,
@@ -60,10 +60,13 @@ const styles = StyleSheet.create({
     codeReplaceButton: {
       borderRadius: 0,
       padding: 20,
+      bottom:6,
+      borderRadius: 6,
+      marginHorizontal:8,
       backgroundColor: 'rgb(80, 189, 160)',
     },
     codeReplaceText: {
-      fontSize: 20,
+      fontSize: 18,
       textAlign: 'center',
       color: '#fff',
     },
@@ -129,11 +132,6 @@ const styles = StyleSheet.create({
       justifyContent: 'center',
       textAlign: 'center',
     },
-    //   cancelbtn: {
-    //     backgroundColor: 'gray',
-    //     padding: 15,
-    //     borderRadius: 4,
-    //   },
     snackbar: {
       position: 'absolute',
       bottom: 70,

@@ -463,8 +463,8 @@ function DropoutFun({route}) {
 
   return (
     <>
-      <KeyboardAvoidingView style={{flex: 1}} behavior="padding">
-        <Appbar.Header>
+      <KeyboardAvoidingView style={{flex: 1, backgroundColor:'#fff'}} behavior="padding">
+        <Appbar.Header style={{backgroundColor:'#fff', elevation:4}}>
           <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
           <Appbar.Content title="Dropout" />
         </Appbar.Header>

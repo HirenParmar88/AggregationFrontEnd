@@ -48,6 +48,7 @@ const styles = StyleSheet.create({
     },
     textInput: {
       margin: 18,
+      backgroundColor:'#fff'
     },
     txtInputStyle: {
       marginTop: 0,
@@ -55,10 +56,13 @@ const styles = StyleSheet.create({
     remapButton: {
       borderRadius: 0,
       padding: 20,
+      bottom:6,
+      borderRadius: 6,
+      marginHorizontal:8,
       backgroundColor: 'rgb(80, 189, 160)',
     },
     remapText: {
-      fontSize: 20,
+      fontSize: 18,
       textAlign: 'center',
       color: '#fff',
     },
@@ -71,19 +75,11 @@ const styles = StyleSheet.create({
       fontSize: 22,
       fontWeight:'bold'
     },
-    modalBody: {
-      //height: 20,
-      //backgroundColor:'yellow'
-    },
     bodyTxt: {
       fontSize: 18,
-      //textAlign: 'center',
-      //paddingTop: 10,
       fontWeight:'bold'
-      //backgroundColor:'red'
     },
     footer: {
-      //backgroundColor:'orange',
       bottom: 0,
       display: 'flex',
       flexDirection: 'row',
@@ -119,7 +115,6 @@ const styles = StyleSheet.create({
       position:'absolute',
       top:100,
       right:100,
-      // paddingRight: 50,
       justifyContent: 'center',
     },
   });

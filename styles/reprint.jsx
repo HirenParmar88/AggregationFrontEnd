@@ -47,6 +47,7 @@ const styles = StyleSheet.create({
     },
     textInput: {
       margin: 18,
+      backgroundColor:'#fff'
     },
     txtInputStyle: {
       marginTop: 0,
@@ -54,10 +55,13 @@ const styles = StyleSheet.create({
     reprintButton: {
       borderRadius: 0,
       padding: 20,
+      bottom:6,
+      borderRadius: 6,
+      marginHorizontal:8,
       backgroundColor: 'rgb(80, 189, 160)',
     },
     reprintText: {
-      fontSize: 20,
+      fontSize: 18,
       textAlign: 'center',
       color: '#fff',
     },

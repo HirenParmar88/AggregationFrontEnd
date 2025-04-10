@@ -23,7 +23,7 @@ import UrlScreen from './app/screens/UrlScreens';
 import {screenPrivileges} from './utils/screenPrivileges';
 import {useLoading} from './context/LoadingContext';
 import TrackCode from './app/screens/TrackCodeScreen';
-//import GetNetInfo from './app/components/NetInfo';
+import { Text } from 'react-native';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -303,7 +303,12 @@ function App() {
             component={Logout}
             initialParams={{setIsAuthenticated, setScreens}}
             options={{
-              drawerLabel: 'Logout',
+              //drawerLabel: 'Logout',
+              drawerLabel: () => (
+                <Text style={{ color :'rgb(210, 43, 43)'}}>
+                  Logout
+                </Text>
+              ),
               headerShown: false,
               drawerActiveBackgroundColor:'rgb(80, 189, 160)',
               drawerActiveTintColor:'#fff',
@@ -311,7 +316,7 @@ function App() {
                 <MaterialIcons
                   name="logout"
                   size={size}
-                  color={focused ? '#000000' : '#000000'}
+                  color={focused ? '#000000' : 'rgb(210, 43, 43)'}
                 />
               ),
             }} 

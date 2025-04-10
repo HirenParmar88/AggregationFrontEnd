@@ -5,7 +5,6 @@ import {
   View,
   KeyboardAvoidingView,
   TouchableOpacity,
-  Alert,
   ScrollView,
 } from 'react-native';
 import {
@@ -14,7 +13,6 @@ import {
   TextInput,
   Modal,
   Portal,
-  PaperProvider,
   Divider,
   Snackbar,
   useTheme,
@@ -312,9 +310,9 @@ function Reprint({route}) {
   return (
     <>
       <KeyboardAvoidingView
-        style={{flex: 1}}
+        style={{flex: 1, backgroundColor:'#fff'}}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <Appbar.Header>
+        <Appbar.Header style={{backgroundColor:'#fff', elevation:4}}>
           <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
           <Appbar.Content title="Reprint" />
         </Appbar.Header>

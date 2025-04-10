@@ -7,15 +7,12 @@ import {
   View,
   Dimensions,
   KeyboardAvoidingView,
-  Alert,
 } from 'react-native';
-import { Modal, Portal, Text, TextInput, Snackbar, useTheme } from 'react-native-paper';
+import { Modal, Text, TextInput, Snackbar, useTheme } from 'react-native-paper';
 import Fontisto from 'react-native-vector-icons/Fontisto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-//import {url} from '../../utils/constant';
 import styles from '../../styles/esign';
 const { width, height } = Dimensions.get('window');
-//console.log("Widht & heig ", width, height)
 
 function EsignPage({
   config,
@@ -25,21 +22,21 @@ function EsignPage({
   setOpenModal,
 }) {
   const { colors } = useTheme();
-    const [snackbarInfo, setSnackbarInfo] = useState({
-      visible: false,
-      message: '',
-      snackbarStyle: { backgroundColor: colors.primary }
-    });
+  const [snackbarInfo, setSnackbarInfo] = useState({
+    visible: false,
+    message: '',
+    snackbarStyle: { backgroundColor: colors.primary }
+  });
 
-  const onToggleSnackBar = (message, code=500) => {
+  const onToggleSnackBar = (message, code = 500) => {
     const backgroundColor = code !== 200 ? colors.error : colors.primary;
-
     setSnackbarInfo({
       visible: true,
       message,
       snackbarStyle: { backgroundColor },
     });
   };
+
   const containerStyle = {
     backgroundColor: '#fff',
     padding: 10,
@@ -48,9 +45,8 @@ function EsignPage({
     borderRadius: 6,
   };
 
-  //console.log("Config ",config)
   const handleVerification = async (status, userID, password, remark, action, feature) => {
-    console.log("handle verification ", {status, userID, password, remark, action, feature});
+    console.log("handle verification ", { status, userID, password, remark, action, feature });
     try {
       if (status === 'rejected' && apiData.apiName.includes('create')) {
         setOpenModal(false);
@@ -83,7 +79,6 @@ function EsignPage({
         const isAuthenticated = true;
         const isApprover = apiData.apiName.includes('approve') && config.userId !== user_id;
         console.log("final data ", { isApprover, isAuthenticated, user, status, remark });
-        
         await handleAuthResult(
           isAuthenticated,
           user,
@@ -112,7 +107,6 @@ function EsignPage({
         visible={openModal}
         onDismiss={close}
         contentContainerStyle={containerStyle}>
-
         <ModalContainer close={close} handleVerification={handleVerification} onToggleSnackBar={onToggleSnackBar} apiName={apiData.apiName} />
         <Snackbar
           visible={snackbarInfo.visible}
@@ -133,7 +127,6 @@ function ModalContainer({ close, handleVerification, onToggleSnackBar, apiName }
   const [password, setPassword] = useState('');
   const [remark, setRemark] = useState('');
   const [secureText, setSecureText] = useState(true);
-
   const action = apiName.split('-').pop().toUpperCase();
   const feature = apiName.replace('-create', '').replace('-approve', '').split('-').join(' ').toUpperCase();
 
@@ -141,12 +134,9 @@ function ModalContainer({ close, handleVerification, onToggleSnackBar, apiName }
     setUserID('');
     setPassword('');
     setRemark('');
-  
     return () => {
-      
     }
   }, [])
-  
 
   return (
     <KeyboardAvoidingView behavior='height'>
@@ -168,7 +158,7 @@ function ModalContainer({ close, handleVerification, onToggleSnackBar, apiName }
               Action: {action}
             </Text>
             <Text variant="titleSmall" style={styles.header2Txt}>
-              Feature: { feature }
+              Feature: {feature}
             </Text>
           </View>
           <View style={styles.body}>
@@ -236,4 +226,5 @@ function ModalContainer({ close, handleVerification, onToggleSnackBar, apiName }
     </KeyboardAvoidingView>
   );
 }
+
 export default EsignPage;

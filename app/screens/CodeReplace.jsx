@@ -292,10 +292,10 @@ function CodeReplaceScreen({ route }) {
   return (
     <>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={{ flex: 1, backgroundColor:'#fff' }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <Appbar.Header>
+        <Appbar.Header style={{backgroundColor:'#fff', elevation:4}}>
           <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
           <Appbar.Content title="Code Replace" />
         </Appbar.Header>

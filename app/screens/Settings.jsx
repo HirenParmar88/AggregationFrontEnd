@@ -16,7 +16,6 @@ function SettingScreen() {
 
   const [printerIP, setPrinterIP] = useState('');
   const [printerPort, setPrinterPort] = useState(0);
-  const [variables, setVariables] = useState('');
   const [config, setConfig] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const [apiData, setApiData] = useState({ apiName: null, apiMethod: null, apiEndpoint: null });
@@ -163,7 +162,7 @@ function SettingScreen() {
   return (
     <>
       <View style={styles.container}>
-        <Appbar.Header>
+        <Appbar.Header style={{ backgroundColor:'#fff', elevation:4 }}>
           <Appbar.BackAction onPress={() => navigation.navigate('Home')} />
           <Appbar.Content title="Settings" />
         </Appbar.Header>

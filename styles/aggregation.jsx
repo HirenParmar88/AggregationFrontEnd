@@ -2,33 +2,31 @@ import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
     container: {
-      //backgroundColor: 'yellow',
+      backgroundColor: '#fff',
       padding: 16,
-      // paddingLeft:16,
-      // paddingRight:16,
       flex: 1,
       justifyContent: 'center',
       alignContent: 'center',
       width: '100%',
     },
     imageView: {
-      //marginLeft:20,
-      //backgroundColor:'red',
+      backgroundColor:'#fff',
     },
     img: {
-      //backgroundColor: 'lightblue',
       height: 250,
       width: 250,
-      //marginLeft: '15%',
       marginTop: 0,
       marginLeft: 55,
+    },
+    txtGroup:{
+      backgroundColor:'#fff',
     },
     txt1: {
       textAlign: 'center',
       fontSize: 16,
       fontWeight: 'bold',
       marginTop: 5,
-      //backgroundColor:'rgb(80, 189, 160)',
+      backgroundColor:'#fff',
     },
     LoadingContainer: {
       flex: 1,
@@ -40,7 +38,6 @@ const styles = StyleSheet.create({
       padding: 10,
     },
     dropdownContainer: {
-      //backgroundColor:'red',
       width: '100%',
       marginBottom: 20,
     },
@@ -57,7 +54,6 @@ const styles = StyleSheet.create({
     },
     label: {
       position: 'relative',
-      //backgroundColor: 'white',
       left: 22,
       top: 8,
       zIndex: 999,
@@ -79,17 +75,18 @@ const styles = StyleSheet.create({
       fontSize: 16,
     },
     btn: {
-      borderRadius: 0,
+      bottom:6,
+      borderRadius: 6,
+      marginHorizontal:8,
       padding: 20,
       backgroundColor: 'rgb(80, 189, 160)',
     },
     submitBtnText: {
-      fontSize: 20,
+      fontSize: 18,
       textAlign: 'center',
       color: '#fff',
     },
     snackbar: {
-      //backgroundColor: "red",
       position: 'absolute',
       bottom: 70,
       left: 0,
